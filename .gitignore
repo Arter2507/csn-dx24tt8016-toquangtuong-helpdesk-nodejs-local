@@ -1,0 +1,9 @@
+/documents/
+/README.local.md
+/.ai/
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+.angular/
