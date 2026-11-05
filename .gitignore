@@ -1,6 +1,3 @@
-/documents/
-/README.local.md
-/.ai/
 node_modules/
 .env
 .env.*
