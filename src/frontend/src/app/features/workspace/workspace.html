@@ -1,0 +1,46 @@
+<h2>{{ isTicket ? 'Quản lý ticket' : 'Quản lý người dùng' }}</h2>
+@if (busy) { <p role="status">Đang xử lý…</p> }
+@if (error) { <p role="alert" class="error">{{ error }}</p> }
+<form (ngSubmit)="load(1)">
+  <label>Tìm kiếm <input name="search" [(ngModel)]="search"></label>
+  <label>Bộ lọc
+    <select name="filter" [(ngModel)]="filter">
+      <option value="">Tất cả</option>
+      @for (value of filters; track value) { <option [value]="value">{{ value }}</option> }
+    </select>
+  </label>
+  <label>Thứ tự <select name="order" [(ngModel)]="order"><option value="asc">Tăng</option><option value="desc">Giảm</option></select></label>
+  <button [disabled]="busy">Tìm</button>
+</form>
+<table>
+  <thead><tr><th>ID</th><th>{{ isTicket ? 'Tiêu đề' : 'Họ tên' }}</th><th>{{ isTicket ? 'Trạng thái' : 'Vai trò' }}</th><th>Thao tác</th></tr></thead>
+  <tbody>
+    @for (row of rows; track row.id) {
+      <tr><td>{{ row.id }}</td><td>{{ row[displayField] }}</td><td>{{ row[isTicket ? 'status' : 'role'] }}</td>
+        <td><button type="button" [disabled]="busy" (click)="edit(row)">{{ row['status'] === 'CLOSED' ? 'Xem' : 'Xem / sửa' }}</button></td></tr>
+    } @empty { <tr><td colspan="4">Không có dữ liệu</td></tr> }
+  </tbody>
+</table>
+<p>Trang {{ page }} / {{ totalPages || 1 }}</p>
+<button type="button" [disabled]="busy || page <= 1" (click)="load(page - 1)">Trước</button>
+<button type="button" [disabled]="busy || page >= totalPages" (click)="load(page + 1)">Sau</button>
+@if (fields.length) {
+  <h3>{{ editing ? 'Chi tiết #' + editing.id : 'Thêm mới' }}</h3>
+  <form #editor="ngForm" (ngSubmit)="save()">
+    @for (field of visibleFields; track field.key) {
+      <label>{{ field.label }}
+        @switch (field.kind) {
+          @case ('select') {
+            <select [name]="field.key" [(ngModel)]="form[field.key]">
+              @for (option of field.options; track option.value) { <option [ngValue]="option.value">{{ option.label }}</option> }
+            </select>
+          }
+          @case ('textarea') { <textarea required [name]="field.key" [(ngModel)]="form[field.key]"></textarea> }
+          @default { <input required [name]="field.key" [(ngModel)]="form[field.key]"> }
+        }
+      </label>
+    }
+    <button [disabled]="busy || editor.invalid || editing?.['status'] === 'CLOSED'">Lưu</button>
+    <button type="button" [disabled]="busy" (click)="reset()">Hủy</button>
+  </form>
+}

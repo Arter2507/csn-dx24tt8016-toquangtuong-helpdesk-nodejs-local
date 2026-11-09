@@ -15,7 +15,7 @@ Dự án gốc/                    Repository báo cáo cá nhân (master)
     ├── progress-report/      Báo cáo tiến độ
     ├── setup/                Cài đặt, dữ liệu thử và triển khai
     ├── soft/                 Phần mềm liên quan
-    ├── src/backend/          Node.js / Express, hiện mới có package và lockfile
+    ├── src/backend/          Node.js / Express và SQL mẫu
     ├── src/frontend/         Angular
     ├── thesis/               Tài liệu đồ án và tham khảo
     ├── README.md             Giới thiệu chia sẻ cùng mã nguồn
@@ -33,7 +33,7 @@ Các thư mục rỗng có `.gitkeep` để xuất hiện trong Git. `documents/
 
 ## Môi trường và chạy thử
 
-Công nghệ dự kiến: Angular, Node.js/Express và MySQL. Frontend khai báo `pnpm@12.8.1`; trong `src/frontend/` có thể chạy `pnpm install` rồi `pnpm start` theo README của frontend. Backend khai báo `pnpm@12.16.1` và Express nhưng chưa có lệnh chạy ứng dụng trong `package.json`; chưa có hướng dẫn chạy hệ thống hoàn chỉnh được xác minh. Không giả định MySQL hoặc Docker đã được cấu hình.
+Xem [hướng dẫn chạy khung sườn](src/README.md) để khởi động Angular và Express ở chế độ demo, thử các màn hình danh mục, người dùng và ticket, và xem các bước chuẩn bị MySQL.
 
 ## Dành cho AI
 
