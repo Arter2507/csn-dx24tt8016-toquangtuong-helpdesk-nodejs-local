@@ -15,6 +15,10 @@ export class WorkspaceService {
     return this.http.get<ApiResponse<Row[]>>('/api/v1/' + resource, { params });
   }
 
+  find(resource: Resource, id: string) {
+    return this.http.get<ApiResponse<Row>>('/api/v1/' + resource + '/' + encodeURIComponent(id));
+  }
+
   save(resource: Resource, id: number | null, input: Record<string, Value>) {
     const url = '/api/v1/' + resource;
     return id === null ? this.http.post(url, input) : this.http.patch(url + '/' + id, input);

@@ -1,6 +1,14 @@
-<h2>{{ isTicket ? 'Quản lý ticket' : 'Quản lý người dùng' }}</h2>
+<div class="page-heading">
+  <div><p class="eyebrow">{{ isTicket ? 'Hỗ trợ kỹ thuật' : 'Quản trị' }}</p>
+    <h1>{{ mode() === 'list' ? (isTicket ? 'Yêu cầu hỗ trợ' : 'Người dùng') : mode() === 'create' ? (isTicket ? 'Tạo yêu cầu' : 'Thêm người dùng') : 'Chỉnh sửa #' + id() }}</h1>
+  </div>
+  @if (mode() === 'list') { <a class="primary" [routerLink]="['/', resource(), 'new']"><i class="bi bi-plus-lg" aria-hidden="true"></i> Thêm mới</a> }
+  @else { <a [routerLink]="['/', resource()]">Về danh sách</a> }
+</div>
 @if (busy) { <p role="status">Đang xử lý…</p> }
 @if (error) { <p role="alert" class="error">{{ error }}</p> }
+@if (mode() === 'list') {
+<section class="panel">
 <form (ngSubmit)="load(1)">
   <label>Tìm kiếm <input name="search" [(ngModel)]="search"></label>
   <label>Bộ lọc
@@ -12,21 +20,21 @@
   <label>Thứ tự <select name="order" [(ngModel)]="order"><option value="asc">Tăng</option><option value="desc">Giảm</option></select></label>
   <button [disabled]="busy">Tìm</button>
 </form>
-<table>
+<div class="table-scroll"><table>
   <thead><tr><th>ID</th><th>{{ isTicket ? 'Tiêu đề' : 'Họ tên' }}</th><th>{{ isTicket ? 'Trạng thái' : 'Vai trò' }}</th><th>Thao tác</th></tr></thead>
   <tbody>
     @for (row of rows; track row.id) {
       <tr><td>{{ row.id }}</td><td>{{ row[displayField] }}</td><td>{{ row[isTicket ? 'status' : 'role'] }}</td>
-        <td><button type="button" [disabled]="busy" (click)="edit(row)">{{ row['status'] === 'CLOSED' ? 'Xem' : 'Xem / sửa' }}</button></td></tr>
+        <td><a [routerLink]="['/', resource(), row.id, 'edit']">{{ row['status'] === 'CLOSED' ? 'Xem' : 'Xem / sửa' }}</a></td></tr>
     } @empty { <tr><td colspan="4">Không có dữ liệu</td></tr> }
   </tbody>
-</table>
+</table></div>
 <p>Trang {{ page }} / {{ totalPages || 1 }}</p>
 <button type="button" [disabled]="busy || page <= 1" (click)="load(page - 1)">Trước</button>
 <button type="button" [disabled]="busy || page >= totalPages" (click)="load(page + 1)">Sau</button>
-@if (fields.length) {
-  <h3>{{ editing ? 'Chi tiết #' + editing.id : 'Thêm mới' }}</h3>
-  <form #editor="ngForm" (ngSubmit)="save()">
+</section>
+} @else if (fields.length && (mode() === 'create' || editing)) {
+  <form class="panel editor" #editor="ngForm" (ngSubmit)="save()">
     @for (field of visibleFields; track field.key) {
       <label>{{ field.label }}
         @switch (field.kind) {
@@ -41,6 +49,6 @@
       </label>
     }
     <button [disabled]="busy || editor.invalid || editing?.['status'] === 'CLOSED'">Lưu</button>
-    <button type="button" [disabled]="busy" (click)="reset()">Hủy</button>
+    <a [routerLink]="['/', resource()]">Hủy</a>
   </form>
 }

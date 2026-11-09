@@ -1,0 +1,68 @@
+# Bản đồ mã nguồn frontend
+
+Đường dẫn trong bảng tính từ thư mục frontend. Xem [hướng dẫn chạy](../README.md) và [bản đồ backend](../backend/readme.map).
+
+## Tra theo việc cần làm
+
+| Việc cần làm | Bắt đầu ở đâu |
+| --- | --- |
+| Đổi header, sidebar hoặc dropdown | src/app/shell.html và src/app/shell.ts. |
+| Thêm đường dẫn hoặc trang trống | src/app/app.routes.ts đăng ký route, src/app/pages.ts chứa mẫu trang trống. |
+| Đổi dashboard và số liệu | src/app/pages.ts lấy tổng từ API danh sách. |
+| Sửa bảng, bộ lọc hoặc form danh mục | src/app/app.html. Trạng thái và thao tác nằm trong src/app/app.ts. |
+| Đổi API hoặc kiểu dữ liệu danh mục | src/app/features/categories/services/category.service.ts và interfaces/category.ts trong cùng feature. |
+| Sửa form người dùng hoặc ticket | src/app/features/workspace/workspace.ts khai báo trường và chuẩn bị dữ liệu. workspace.html dựng bảng, bộ lọc và form. |
+| Đổi lựa chọn người gửi, kỹ thuật viên hoặc danh mục của ticket | ticketFields trong src/app/features/workspace/workspace.ts lấy danh sách từ API người dùng và danh mục. |
+| Đổi yêu cầu HTTP cho người dùng hoặc ticket | src/app/features/workspace/workspace.service.ts. |
+| Sửa lỗi Angular không gọi được backend | proxy.conf.json đặt đích cho /api, angular.json nạp proxy khi chạy dev server, src/app/app.config.ts đăng ký HttpClient. |
+| Đổi giao diện hoặc tài nguyên | src/styles.css cho toàn ứng dụng, src/app/app.css cho màn hình quản lý, public/ cho tài nguyên tĩnh. |
+
+## Thư mục và file
+
+| Đường dẫn | Trách nhiệm |
+| --- | --- |
+| readme.map | Bản đồ đang đọc. |
+| README.md | Hướng dẫn Angular CLI đi kèm dự án. |
+| package.json | Dependencies và lệnh start, build, test. |
+| pnpm-lock.yaml | Phiên bản dependencies đã khóa cho pnpm. |
+| angular.json | Thiết lập Angular CLI cho build, dev server, test và tài nguyên tĩnh. |
+| proxy.conf.json | Chuyển /api đến Express trong môi trường phát triển. |
+| tsconfig.json | Cấu hình TypeScript chung. |
+| tsconfig.app.json | Cấu hình TypeScript cho ứng dụng. |
+| tsconfig.spec.json | Cấu hình TypeScript cho test. |
+| .editorconfig | Quy ước định dạng cho trình soạn thảo. |
+| .prettierrc | Cấu hình Prettier. |
+| .gitignore | Danh sách file sinh ra hoặc chỉ dùng cục bộ được Git bỏ qua. |
+| .vscode/ | Thiết lập dùng chung cho VS Code. |
+| .vscode/extensions.json | Danh sách extension đề xuất. |
+| .vscode/launch.json | Cấu hình khởi chạy và gỡ lỗi. |
+| .vscode/tasks.json | Tác vụ chạy từ VS Code. |
+| public/ | Tài nguyên được sao chép khi build. |
+| public/headset.svg | Favicon SVG từ Bootstrap Icons. |
+| src/ | Mã nguồn Angular. |
+| src/index.html | Khung HTML chứa app-root. |
+| src/main.ts | Khởi động Angular bằng Shell và appConfig. |
+| src/styles.css | CSS toàn cục, bố cục, dashboard và import Bootstrap Icons. |
+| src/app/ | Component gốc và tính năng. |
+| src/app/app.config.ts | Đăng ký HttpClient và Angular Router, nối tham số route vào component. |
+| src/app/app.routes.ts | Đường dẫn dashboard, danh sách, tạo, sửa và trang trống. |
+| src/app/shell.ts | Component gốc, nhóm menu và trạng thái sidebar trên màn hình nhỏ. |
+| src/app/shell.html | Header, dropdown, sidebar và router outlet. |
+| src/app/pages.ts | Dashboard đọc dữ liệu demo và mẫu trang trống. |
+| src/app/app.ts | Component cho danh sách, tạo và sửa danh mục. |
+| src/app/app.html | Bảng, bộ lọc và form danh mục. |
+| src/app/app.css | CSS màn hình quản lý, được dùng bởi App và Workspace. |
+| src/app/app.spec.ts | Kiểm thử App yêu cầu và hiển thị danh mục bằng HTTP giả lập. |
+| src/app/features/ | Mã chia theo tính năng. |
+| src/app/features/categories/ | Service và kiểu dữ liệu danh mục. Giao diện danh mục hiện nằm ở App. |
+| src/app/features/categories/interfaces/ | Các kiểu dữ liệu của danh mục và phản hồi API. |
+| src/app/features/categories/interfaces/category.ts | Kiểu danh mục, payload tạo/sửa, metadata phân trang và API response. |
+| src/app/features/categories/services/ | Mã gọi API danh mục. |
+| src/app/features/categories/services/category.service.ts | Gọi API danh sách, chi tiết, tạo và sửa danh mục. |
+| src/app/features/workspace/ | Thành phần dùng chung cho màn hình Người dùng và Ticket. |
+| src/app/features/workspace/workspace.ts | Quản lý trường form, lựa chọn, thao tác danh sách, tạo/sửa, trạng thái tải và lỗi. |
+| src/app/features/workspace/workspace.html | Bảng, tìm kiếm, lọc, phân trang và form dùng chung. |
+| src/app/features/workspace/workspace.service.ts | Gọi API danh sách, chi tiết, tạo và cập nhật người dùng hoặc ticket. |
+| src/app/features/workspace/workspace.types.ts | Kiểu dữ liệu dòng, tài nguyên và trường form. |
+
+Dữ liệu demo thay đổi qua API và mất khi khởi động lại backend. Cập nhật bản đồ này khi thêm, đổi tên hoặc chuyển trách nhiệm của file.

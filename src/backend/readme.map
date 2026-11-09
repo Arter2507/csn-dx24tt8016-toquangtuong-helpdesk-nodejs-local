@@ -1,0 +1,58 @@
+# Bản đồ mã nguồn backend
+
+Đường dẫn trong bảng tính từ thư mục backend. Xem [hướng dẫn chạy](../README.md) và [bản đồ frontend](../frontend/readme.map).
+
+## Tra theo việc cần làm
+
+| Việc cần làm | Bắt đầu ở đâu |
+| --- | --- |
+| Đổi cổng hoặc nguồn dữ liệu | .env.example → src/configs/env.js → src/server.js |
+| Thêm endpoint | src/app.js đăng ký router. Xem module categories để tham khảo cách tách route, controller, service và repository. |
+| Đổi quy tắc nhập danh mục | src/modules/categories/category.validator.js kiểm tra đầu vào, category.service.js xử lý nghiệp vụ. |
+| Đổi tìm kiếm hoặc phân trang danh mục | category.validator.js khai báo tham số, demo.repository.js và mysql.repository.js thực hiện truy vấn, category.service.js tạo metadata. |
+| Đổi vai trò hoặc vô hiệu hóa người dùng | src/modules/users/users.js. Tìm kiếm và lọc danh sách nằm trong src/shared/demo-resource.routes.js, với cấu hình tại src/app.js. |
+| Đổi phân công, mức ưu tiên hoặc chuyển trạng thái ticket | src/modules/tickets/tickets.js. Kiểm thử luồng và xung đột phiên bản ở test/workspace.test.js. |
+| Đổi định dạng lỗi | src/shared/errors.js → src/middlewares/error.js. Lỗi đầu vào được tạo ở src/middlewares/validate.js. |
+| Chuẩn bị schema MySQL | sql/categories.sql trước, sau đó sql/users-tickets.sql. Cấu hình kết nối ở src/database/pool.js. |
+
+## Thư mục và file
+
+| Đường dẫn | Trách nhiệm |
+| --- | --- |
+| .env.example | Mẫu cấu hình cổng, nguồn dữ liệu, MySQL và biến dự kiến cho JWT. |
+| package.json | Dependencies và lệnh start, dev, test. |
+| pnpm-lock.yaml | Phiên bản dependencies đã khóa cho pnpm. |
+| readme.map | Bản đồ đang đọc. |
+| sql/ | Các file SQL tạo bảng mẫu. |
+| sql/categories.sql | Bảng danh mục với mã duy nhất và cờ hoạt động. |
+| sql/users-tickets.sql | Bảng người dùng, vai trò, liên kết vai trò và ticket, kèm khóa ngoại. |
+| src/ | Mã chạy của Express. |
+| src/server.js | Điểm vào khi khởi động, kiểm tra chế độ dữ liệu và lắng nghe localhost. |
+| src/app.js | Tạo ứng dụng, gắn request ID, cấu hình JSON, đăng ký API và middleware cuối luồng. |
+| src/configs/ | Cấu hình ứng dụng. |
+| src/configs/env.js | Đọc biến môi trường và giá trị mặc định. |
+| src/database/ | Hạ tầng kết nối dữ liệu. |
+| src/database/pool.js | Tạo pool kết nối MySQL. |
+| src/middlewares/ | Xử lý dùng chung trong luồng HTTP. |
+| src/middlewares/validate.js | Chạy schema Zod và đưa dữ liệu hợp lệ vào req.validated. |
+| src/middlewares/error.js | Chuyển lỗi thành JSON và gắn requestId. |
+| src/modules/ | Mã chia theo nghiệp vụ. |
+| src/modules/categories/ | API và hai cách lưu trữ danh mục. |
+| src/modules/categories/category.routes.js | Gắn endpoint danh mục, validation và kiểm soát chế độ chạy. |
+| src/modules/categories/category.controller.js | Nhận dữ liệu đã kiểm tra, gọi service và trả HTTP response. |
+| src/modules/categories/category.service.js | Xử lý kết quả, lỗi trùng, lỗi không tìm thấy và metadata phân trang. |
+| src/modules/categories/category.validator.js | Schema ID, truy vấn danh sách, tạo và cập nhật. |
+| src/modules/categories/demo.repository.js | Lưu danh mục mẫu trong bộ nhớ. |
+| src/modules/categories/mysql.repository.js | Truy vấn danh mục bằng SQL tham số hóa. |
+| src/modules/users/ | Mã nghiệp vụ người dùng ở chế độ demo. |
+| src/modules/users/users.js | Dữ liệu mẫu, schema, tạo và cập nhật người dùng, kiểm tra email và quản trị viên cuối cùng. |
+| src/modules/tickets/ | Mã nghiệp vụ ticket ở chế độ demo. |
+| src/modules/tickets/tickets.js | Dữ liệu mẫu, schema, tạo, sửa, phân công và kiểm tra chuyển trạng thái, phiên bản. |
+| src/shared/ | Mã dùng chung giữa các module. |
+| src/shared/demo-resource.routes.js | Route danh sách, chi tiết, tạo và sửa dùng chung cho người dùng và ticket, kèm tìm kiếm, lọc, sắp xếp và phân trang. |
+| src/shared/errors.js | Kiểu AppError chứa HTTP status, mã lỗi, thông báo và chi tiết. |
+| test/ | Kiểm thử API qua HTTP. |
+| test/categories.test.js | Tạo, lọc, sửa danh mục và kiểm tra lỗi. |
+| test/workspace.test.js | Tạo người dùng, tạo và phân công ticket, từ chối cập nhật phiên bản cũ. |
+
+Chế độ demo lưu trong bộ nhớ. API MySQL hiện bị chặn trong lúc chờ xác thực và phân quyền. Xem [thiết kế API](../../documents/markdown/api-contract-demo.md) và [thiết kế cơ sở dữ liệu](../../documents/markdown/database-demo.md) trước khi mở rộng. Cập nhật bản đồ này khi thêm, đổi tên hoặc chuyển trách nhiệm của file.

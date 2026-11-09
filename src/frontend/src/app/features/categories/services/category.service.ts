@@ -11,6 +11,7 @@ export class CategoryService {
     if (isActive) params = params.set('isActive', isActive);
     return this.http.get<ApiResponse<Category[]>>(this.url, { params });
   }
+  find(id: string) { return this.http.get<ApiResponse<Category>>(this.url + '/' + encodeURIComponent(id)); }
   create(value: CategoryInput) { return this.http.post<ApiResponse<Category>>(this.url, value); }
   update(id: number, value: CategoryUpdate) { return this.http.patch<ApiResponse<Category>>(this.url + '/' + id, value); }
 }

@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, inject, input, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CategoryService } from '../categories/services/category.service';
 import { WorkspaceService } from './workspace.service';
@@ -11,12 +12,15 @@ const options = (values: string[]) => values.map(value => ({ value, label: value
 
 @Component({
   selector: 'app-workspace',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './workspace.html',
   styleUrl: '../../app.css',
 })
 export class Workspace implements OnInit {
   readonly resource = input.required<Resource>();
+  readonly mode = input<'list' | 'create' | 'edit'>('list');
+  readonly id = input<string>();
+  private readonly router = inject(Router);
   private readonly service = inject(WorkspaceService);
   private readonly categories = inject(CategoryService);
   private readonly view = inject(ChangeDetectorRef);
@@ -42,6 +46,10 @@ export class Workspace implements OnInit {
   async ngOnInit() {
     this.busy = true;
     try {
+      if (this.mode() === 'list') {
+        await this.fetchRows();
+        return;
+      }
       this.fields = this.isTicket ? await this.ticketFields() : [
         { key: 'fullName', label: 'Họ tên' },
         { key: 'email', label: 'Email' },
@@ -50,7 +58,10 @@ export class Workspace implements OnInit {
           options: [{ value: true, label: 'Có' }, { value: false, label: 'Không' }] }
       ];
       this.reset();
-      await this.fetchRows();
+      if (this.mode() === 'edit') {
+        const { data } = await firstValueFrom(this.service.find(this.resource(), this.id() ?? ''));
+        this.edit(data);
+      }
     } catch (error) { this.showError(error); }
     finally { this.busy = false; this.view.markForCheck(); }
   }
@@ -119,9 +130,7 @@ export class Workspace implements OnInit {
     if (this.isTicket && this.editing) payload['version'] = this.editing['version'];
     try {
       await firstValueFrom(this.service.save(this.resource(), this.editing?.id ?? null, payload));
-      this.reset();
-      this.page = 1;
-      await this.fetchRows();
+      await this.router.navigate(['/', this.resource()]);
     } catch (error) { this.showError(error); }
     finally { this.busy = false; this.view.markForCheck(); }
   }

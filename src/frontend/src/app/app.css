@@ -1,1 +1,11 @@
-main { max-width: 1000px; margin: 2rem auto; padding: 0 1rem; } section { margin: 1.5rem 0; } form { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; } label { display: grid; gap: .3rem; } input, select, button { font: inherit; padding: .45rem; } table { width: 100%; border-collapse: collapse; } th, td { padding: .6rem; border-bottom: 1px solid #ddd; text-align: left; } .error { color: #a10000; }
+form { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; }
+label { display: grid; gap: .35rem; font-weight: 600; }
+input, select, textarea { min-width: 0; max-width: 100%; padding: .55rem .65rem; border: 1px solid var(--line); border-radius: .45rem; background: white; }
+.editor { display: grid; max-width: 44rem; justify-items: start; }
+.editor label { width: 100%; }
+.editor textarea { min-height: 8rem; resize: vertical; }
+.table-scroll { overflow-x: auto; margin-top: 1rem; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: .8rem; border-bottom: 1px solid var(--line); text-align: left; }
+th { background: var(--background); font-size: .85rem; white-space: nowrap; }
+.error { color: #a3212b; }
