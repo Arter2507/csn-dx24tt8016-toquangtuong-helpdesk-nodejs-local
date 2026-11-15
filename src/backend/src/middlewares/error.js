@@ -1,5 +1,6 @@
 import { AppError } from '../shared/errors.js';
 export function errorHandler(err, req, res, next) {
+  if (res.headersSent) return next(err);
   const malformed = err instanceof SyntaxError && err.status === 400;
   const known = err instanceof AppError;
   res.status(malformed ? 400 : known ? err.status : 500).json({ success: false, error: {

@@ -1,5 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { EMPTY, expand, map, reduce } from 'rxjs';
 import { ApiResponse, Category, CategoryInput, CategoryUpdate } from '../interfaces/category';
 
 @Injectable({ providedIn: 'root' })
@@ -11,6 +12,17 @@ export class CategoryService {
     if (isActive) params = params.set('isActive', isActive);
     return this.http.get<ApiResponse<Category[]>>(this.url, { params });
   }
+  listAll(isActive = '') {
+    const load = (page: number) => this.list('', page, 'name', 'asc', isActive);
+    return load(1).pipe(
+      expand(response => response.meta && response.meta.page < response.meta.totalPages
+        ? load(response.meta.page + 1)
+        : EMPTY),
+      map(response => response.data),
+      reduce((rows, page) => [...rows, ...page], [] as Category[]),
+    );
+  }
+
   find(id: string) { return this.http.get<ApiResponse<Category>>(this.url + '/' + encodeURIComponent(id)); }
   create(value: CategoryInput) { return this.http.post<ApiResponse<Category>>(this.url, value); }
   update(id: number, value: CategoryUpdate) { return this.http.patch<ApiResponse<Category>>(this.url + '/' + id, value); }

@@ -47,7 +47,7 @@
 | src/modules/users/ | Mã nghiệp vụ người dùng ở chế độ demo. |
 | src/modules/users/users.js | Dữ liệu mẫu, schema, tạo và cập nhật người dùng, kiểm tra email và quản trị viên cuối cùng. |
 | src/modules/tickets/ | Mã nghiệp vụ ticket ở chế độ demo. |
-| src/modules/tickets/tickets.js | Dữ liệu mẫu, schema, tạo, sửa, phân công và kiểm tra chuyển trạng thái, phiên bản. |
+| src/modules/tickets/tickets.js | Dữ liệu demo, mã và thời gian ticket, lọc loại/ưu tiên, phân công, trạng thái và phiên bản. |
 | src/shared/ | Mã dùng chung giữa các module. |
 | src/shared/demo-resource.routes.js | Route danh sách, chi tiết, tạo và sửa dùng chung cho người dùng và ticket, kèm tìm kiếm, lọc, sắp xếp và phân trang. |
 | src/shared/errors.js | Kiểu AppError chứa HTTP status, mã lỗi, thông báo và chi tiết. |

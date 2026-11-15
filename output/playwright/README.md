@@ -1,5 +1,7 @@
 # Báo cáo kiểm thử Helpdesk
 
+## Kết quả trước đợt thiết kế Phase -1
+
 Ngày 10/11/2026. Playwright chạy trên Microsoft Edge với viewport desktop 1440 × 900 và mobile mô phỏng 390 × 844. Kết quả **4/4 ca đạt**.
 
 | Ca kiểm thử | Bằng chứng |
@@ -18,10 +20,20 @@ Ngày 10/11/2026. Playwright chạy trên Microsoft Edge với viewport desktop 
 
 Quan sát ảnh ở 390 px cho thấy nhãn tài khoản xuống hai dòng. Sidebar mở phía trên nội dung và đẩy dashboard xuống. Bảng điều khiển hiển thị số ticket cao hơn trong ảnh mobile vì ảnh chụp sau ca tạo ticket.
 
+## Kiểm thử giao diện Phase -1
+
+Ngày 14/11/2026, 5/5 ca đạt trên Microsoft Edge khi chạy với `npx playwright test --timeout 60000` và API demo.
+
+Bộ test hiện kiểm tra chế độ sáng/tối và thanh bên sau khi tải lại, gửi và chỉnh sửa ticket, tìm theo mã, lọc ưu tiên, quản lý danh mục, bộ lọc báo cáo và xuất CSV. Ca responsive kiểm tra các trang chính ở 320, 390 và 768 px, và tổng quan với cỡ chữ 200%.
+
+## Kiểm thử tinh chỉnh giao diện 15/11/2026
+
+Angular build thành công. Kết quả gồm 2/2 kiểm thử Angular, 3/3 kiểm thử API và 5/5 ca Playwright. Kiểm tra thêm kéo thả ảnh, tải lại tệp, timeline sau khi đổi trạng thái, mở ticket từ bảng trong ngày và cuộn nội dung với thanh bên đứng yên. Form không tràn ngang ở 320, 390, 768 và 1440 px trên Edge.
+
 ## Chạy lại
 
 1. Khởi chạy Express ở cổng 3000 với DATA_SOURCE=demo và Angular ở cổng 4200. Giữ biến PORT của backend trong terminal riêng để Angular không lấy cổng 3000.
-2. Trong thư mục này, chạy `npm ci` rồi `npx playwright test`. Máy cần có Microsoft Edge.
+2. Trong thư mục này, chạy `npm ci` rồi `npx playwright test`. Máy cần có Microsoft Edge. Đặt biến `HELPDESK_SCREENSHOTS` thành đường dẫn thư mục ảnh chụp nếu cần lưu ảnh của lần chạy mới ở vị trí khác.
 3. Chạy `npx playwright show-report report` để mở báo cáo HTML. Script ở [helpdesk.spec.mjs](helpdesk.spec.mjs), cấu hình ở [playwright.config.mjs](playwright.config.mjs).
 
 Bộ test tạo ticket mẫu trong bộ nhớ, được xóa khi khởi động lại backend. Kết quả áp dụng cho chế độ demo và viewport mô phỏng. MySQL, phân quyền và thiết bị thật chưa được kiểm thử.

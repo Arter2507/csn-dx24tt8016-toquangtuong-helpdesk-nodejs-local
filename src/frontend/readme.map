@@ -8,14 +8,16 @@
 | --- | --- |
 | Đổi header, sidebar hoặc dropdown | src/app/shell.html và src/app/shell.ts. |
 | Thêm đường dẫn hoặc trang trống | src/app/app.routes.ts đăng ký route, src/app/pages.ts chứa mẫu trang trống. |
-| Đổi dashboard và số liệu | src/app/pages.ts lấy tổng từ API danh sách. |
+| Đổi dashboard và số liệu | src/app/dashboard.html hiển thị KPI và biểu đồ. Dashboard trong src/app/pages.ts tổng hợp từ API ticket. |
+| Đổi dashboard chuyên viên hoặc người gửi | src/app/role-dashboard.ts và src/app/role-dashboard.html. |
+| Đổi báo cáo, bộ lọc hoặc xuất CSV | src/app/reports.html và Reports trong src/app/pages.ts. |
 | Sửa bảng, bộ lọc hoặc form danh mục | src/app/app.html. Trạng thái và thao tác nằm trong src/app/app.ts. |
 | Đổi API hoặc kiểu dữ liệu danh mục | src/app/features/categories/services/category.service.ts và interfaces/category.ts trong cùng feature. |
 | Sửa form người dùng hoặc ticket | src/app/features/workspace/workspace.ts khai báo trường và chuẩn bị dữ liệu. workspace.html dựng bảng, bộ lọc và form. |
 | Đổi lựa chọn người gửi, kỹ thuật viên hoặc danh mục của ticket | ticketFields trong src/app/features/workspace/workspace.ts lấy danh sách từ API người dùng và danh mục. |
 | Đổi yêu cầu HTTP cho người dùng hoặc ticket | src/app/features/workspace/workspace.service.ts. |
 | Sửa lỗi Angular không gọi được backend | proxy.conf.json đặt đích cho /api, angular.json nạp proxy khi chạy dev server, src/app/app.config.ts đăng ký HttpClient. |
-| Đổi giao diện hoặc tài nguyên | src/styles.css cho toàn ứng dụng, src/app/app.css cho màn hình quản lý, public/ cho tài nguyên tĩnh. |
+| Đổi giao diện hoặc tài nguyên | src/styles.css chứa token sáng/tối và các kiểu dùng chung. public/ chứa tài nguyên tĩnh. |
 
 ## Thư mục và file
 
@@ -38,20 +40,22 @@
 | .vscode/launch.json | Cấu hình khởi chạy và gỡ lỗi. |
 | .vscode/tasks.json | Tác vụ chạy từ VS Code. |
 | public/ | Tài nguyên được sao chép khi build. |
-| public/headset.svg | Favicon SVG từ Bootstrap Icons. |
+| public/fonts/ | Font Chivo cục bộ và giấy phép SIL OFL. |
+| public/mascot/cat-support.webp | Mascot cho logo Trạm Mèo, favicon và khối chào. |
 | src/ | Mã nguồn Angular. |
 | src/index.html | Khung HTML chứa app-root. |
 | src/main.ts | Khởi động Angular bằng Shell và appConfig. |
-| src/styles.css | CSS toàn cục, bố cục, dashboard và import Bootstrap Icons. |
+| src/styles.css | Token và CSS toàn cục cho bố cục, bảng, form và biểu đồ. |
 | src/app/ | Component gốc và tính năng. |
 | src/app/app.config.ts | Đăng ký HttpClient và Angular Router, nối tham số route vào component. |
-| src/app/app.routes.ts | Đường dẫn dashboard, danh sách, tạo, sửa và trang trống. |
-| src/app/shell.ts | Component gốc, nhóm menu và trạng thái sidebar trên màn hình nhỏ. |
+| src/app/app.routes.ts | Đường dẫn tổng quan, báo cáo, danh sách, tạo, sửa và trang trống. |
+| src/app/shell.ts | Component gốc, tìm nhanh, trạng thái sidebar và chế độ màu. |
 | src/app/shell.html | Header, dropdown, sidebar và router outlet. |
-| src/app/pages.ts | Dashboard đọc dữ liệu demo và mẫu trang trống. |
+| src/app/pages.ts | Tổng hợp dữ liệu demo cho tổng quan, báo cáo và mẫu trang trống. |
+| src/app/dashboard.html | Khối chào, KPI, biểu đồ theo ngày/trạng thái và bảng yêu cầu gần đây. |
+| src/app/reports.html | Bộ lọc, KPI, biểu đồ và bảng tổng hợp báo cáo. |
 | src/app/app.ts | Component cho danh sách, tạo và sửa danh mục. |
 | src/app/app.html | Bảng, bộ lọc và form danh mục. |
-| src/app/app.css | CSS màn hình quản lý, được dùng bởi App và Workspace. |
 | src/app/app.spec.ts | Kiểm thử App yêu cầu và hiển thị danh mục bằng HTTP giả lập. |
 | src/app/features/ | Mã chia theo tính năng. |
 | src/app/features/categories/ | Service và kiểu dữ liệu danh mục. Giao diện danh mục hiện nằm ở App. |
@@ -63,6 +67,7 @@
 | src/app/features/workspace/workspace.ts | Quản lý trường form, lựa chọn, thao tác danh sách, tạo/sửa, trạng thái tải và lỗi. |
 | src/app/features/workspace/workspace.html | Bảng, tìm kiếm, lọc, phân trang và form dùng chung. |
 | src/app/features/workspace/workspace.service.ts | Gọi API danh sách, chi tiết, tạo và cập nhật người dùng hoặc ticket. |
+| src/app/features/workspace/workspace-labels.ts | Nhãn tiếng Việt, màu và icon của trạng thái, ưu tiên và vai trò. |
 | src/app/features/workspace/workspace.types.ts | Kiểu dữ liệu dòng, tài nguyên và trường form. |
 
 Dữ liệu demo thay đổi qua API và mất khi khởi động lại backend. Cập nhật bản đồ này khi thêm, đổi tên hoặc chuyển trách nhiệm của file.

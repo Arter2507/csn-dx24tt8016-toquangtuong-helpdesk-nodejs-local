@@ -1,36 +1,91 @@
 <div class="page-heading">
-  <div><p class="eyebrow">Quản trị</p><h1>{{ mode() === 'list' ? 'Danh mục' : mode() === 'create' ? 'Thêm danh mục' : 'Sửa danh mục #' + id() }}</h1></div>
-  @if (mode() === 'list') { <a class="primary" routerLink="/categories/new"><i class="bi bi-plus-lg" aria-hidden="true"></i> Thêm danh mục</a> }
-  @else { <a routerLink="/categories">Về danh sách</a> }
+  <div>
+    <h1>{{ mode() === 'list' ? 'Danh mục' : mode() === 'create' ? 'Thêm danh mục' : 'Chỉnh sửa danh mục' }}</h1>
+    @if (mode() === 'list') { <p>Quản lý các loại yêu cầu hỗ trợ và trạng thái sử dụng.</p> }
+  </div>
+  <div class="heading-actions">
+    @if (editingId !== null) { <span class="badge">{{ code }}</span> }
+    <span class="badge" data-tone="neutral">Dữ liệu demo</span>
+    @if (mode() === 'list') {
+      <a class="primary" routerLink="/categories/new"><i class="bi bi-plus-lg" aria-hidden="true"></i> Thêm danh mục</a>
+    } @else {
+      <a class="text-button" routerLink="/categories"><i class="bi bi-arrow-left" aria-hidden="true"></i> Về danh sách</a>
+    }
+  </div>
 </div>
-@if (error) { <p role="alert" class="error">{{ error }}</p> }
-@if (loading) { <p role="status">Đang tải…</p> }
+@if (notice) { <p class="notice success" role="status"><i class="bi bi-check-circle" aria-hidden="true"></i> {{ notice }}</p> }
+@if (error) {
+  <div role="alert" class="notice error">{{ error }}
+    @if (mode() === 'list') { <button class="text-button" type="button" (click)="load()">Thử lại</button> }
+  </div>
+}
 @if (mode() === 'list') {
   <section class="panel">
-    <form (ngSubmit)="filter()">
-      <label>Tìm kiếm <input name="search" [(ngModel)]="search"></label>
-      <label>Trạng thái <select name="filterActive" [(ngModel)]="isActive"><option value="">Tất cả</option><option value="true">Hoạt động</option><option value="false">Ngừng hoạt động</option></select></label>
-      <label>Sắp xếp <select name="sortBy" [(ngModel)]="sortBy"><option value="id">Mã số</option><option value="code">Mã</option><option value="name">Tên</option></select></label>
-      <label>Thứ tự <select name="sortOrder" [(ngModel)]="sortOrder"><option value="asc">Tăng</option><option value="desc">Giảm</option></select></label>
-      <button [disabled]="loading">Tìm</button>
+    <form class="toolbar" (ngSubmit)="filter()">
+      <label class="field search-field">Tìm kiếm <input type="search" name="search" maxlength="100" placeholder="Mã hoặc tên danh mục" [(ngModel)]="search"></label>
+      <label class="field">Trạng thái <select name="filterActive" [(ngModel)]="isActive"><option value="">Tất cả</option><option value="true">Hoạt động</option><option value="false">Ngừng hoạt động</option></select></label>
+      <label class="field">Sắp xếp <select name="sortBy" [(ngModel)]="sortBy"><option value="id">Mã số</option><option value="code">Mã</option><option value="name">Tên</option></select></label>
+      <label class="field">Thứ tự <select name="sortOrder" [(ngModel)]="sortOrder"><option value="asc">Tăng</option><option value="desc">Giảm</option></select></label>
+      <div class="toolbar-actions">
+        <button class="primary" type="submit" [disabled]="loading"><i class="bi bi-search" aria-hidden="true"></i> Tìm</button>
+        <button class="text-button" type="button" [disabled]="loading" (click)="clearFilters()">Xóa bộ lọc</button>
+      </div>
     </form>
-    @if (!loading) {
-      <div class="table-scroll"><table>
-        <thead><tr><th>Mã</th><th>Tên</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-        <tbody>@for (row of categories; track row.id) {
-          <tr><td>{{ row.code }}</td><td>{{ row.name }}</td><td>{{ row.isActive ? 'Hoạt động' : 'Ngừng hoạt động' }}</td><td><a [routerLink]="['/categories', row.id, 'edit']">Sửa</a></td></tr>
-        } @empty { <tr><td colspan="4">Không có dữ liệu</td></tr> }</tbody>
-      </table></div>
-      <p>Trang {{ page }} / {{ meta?.totalPages || 1 }} · {{ meta?.totalItems || 0 }} kết quả</p>
-      <button type="button" [disabled]="page <= 1" (click)="page = page - 1; load()">Trước</button>
-      <button type="button" [disabled]="!meta || page >= meta.totalPages" (click)="page = page + 1; load()">Sau</button>
+    @if (loading) { <div class="empty-data" role="status"><p>Đang tải danh mục…</p></div> }
+    @else if (!error) {
+      @if (applied.search || applied.active) {
+        <div class="applied-filters" aria-label="Bộ lọc đã áp dụng">
+          @if (applied.search) { <span class="badge">Tìm “{{ applied.search }}”</span> }
+          @if (applied.active) { <span class="badge">{{ applied.active === 'true' ? 'Hoạt động' : 'Ngừng hoạt động' }}</span> }
+        </div>
+      }
+      @if (categories.length) {
+        <div class="table-scroll" role="region" aria-label="Danh sách danh mục" tabindex="0">
+          <table>
+            <thead><tr><th scope="col">Mã</th><th scope="col">Tên</th><th scope="col">Trạng thái</th><th scope="col">Thao tác</th></tr></thead>
+            <tbody>@for (row of categories; track row.id) {
+              <tr><td><span class="badge">{{ row.code }}</span></td><td>{{ row.name }}</td>
+                <td><span class="badge badge-dot" [attr.data-tone]="row.isActive ? 'success' : 'neutral'">{{ row.isActive ? 'Hoạt động' : 'Ngừng hoạt động' }}</span></td>
+                <td><a class="text-button" [routerLink]="['/categories', row.id, 'edit']">Sửa</a></td>
+              </tr>
+            }</tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <p role="status">{{ meta?.totalItems ?? 0 }} kết quả</p>
+          <div class="pager">
+            <button class="secondary" type="button" [disabled]="page <= 1" (click)="page = page - 1; load()" aria-label="Trang trước"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+            <span>Trang {{ page }} / {{ meta?.totalPages || 1 }}</span>
+            <button class="secondary" type="button" [disabled]="!meta || page >= meta.totalPages" (click)="page = page + 1; load()" aria-label="Trang sau"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+          </div>
+        </div>
+      } @else {
+        <div class="empty-data" role="status"><i class="bi bi-inbox" aria-hidden="true"></i>
+          <p>{{ applied.search || applied.active ? 'Không tìm thấy danh mục phù hợp.' : 'Chưa có danh mục.' }}</p>
+        </div>
+      }
     }
   </section>
+} @else if (loading) {
+  <p class="panel notice" role="status">Đang tải biểu mẫu…</p>
 } @else if (mode() === 'create' || editingId !== null) {
-  <form class="panel editor" (ngSubmit)="save()" #form="ngForm">
-    <label>Mã <input name="code" [(ngModel)]="code" required maxlength="30" pattern="[A-Z0-9_]+" [disabled]="editingId !== null"></label>
-    <label>Tên <input name="name" [(ngModel)]="name" required maxlength="100"></label>
-    @if (editingId !== null) { <label><input type="checkbox" name="active" [(ngModel)]="active"> Hoạt động</label> }
-    <button [disabled]="form.invalid || saving">{{ saving ? 'Đang lưu…' : 'Lưu' }}</button><a routerLink="/categories">Hủy</a>
+  <form class="panel editor" (ngSubmit)="save(form)" #form="ngForm">
+    <div class="editor-heading"><h2>Thông tin danh mục</h2><p>Các trường có dấu * là bắt buộc.</p></div>
+    @let codeError = codeInput.invalid && (codeInput.touched || form.submitted);
+    <div class="field"><label for="category-code">Mã @if (editingId === null) { <span class="required" aria-hidden="true">*</span> }</label>
+      <input id="category-code" #codeInput="ngModel" name="code" [(ngModel)]="code" required maxlength="30" pattern="[A-Z0-9_]+" placeholder="Ví dụ NETWORK" [disabled]="editingId !== null"
+        [attr.aria-invalid]="codeError ? 'true' : null" [attr.aria-describedby]="codeError ? 'code-error' : null">
+      @if (codeError) { <small id="code-error" class="field-error">Nhập mã gồm chữ in hoa, chữ số hoặc dấu gạch dưới.</small> }
+    </div>
+    @let nameError = nameInput.invalid && (nameInput.touched || form.submitted);
+    <div class="field"><label for="category-name">Tên <span class="required" aria-hidden="true">*</span></label>
+      <input id="category-name" #nameInput="ngModel" name="name" [(ngModel)]="name" required maxlength="100" placeholder="Tên danh mục"
+        [attr.aria-invalid]="nameError ? 'true' : null" [attr.aria-describedby]="nameError ? 'name-error' : null">
+      @if (nameError) { <small id="name-error" class="field-error">Vui lòng nhập tên danh mục.</small> }
+    </div>
+    @if (editingId !== null) { <label class="field wide checkbox-field"><input type="checkbox" name="active" [(ngModel)]="active"> Hoạt động</label> }
+    <div class="form-actions"><a class="secondary" routerLink="/categories">Hủy</a>
+      <button class="primary" type="submit" [disabled]="saving">{{ saving ? 'Đang lưu…' : editingId === null ? 'Thêm danh mục' : 'Lưu thay đổi' }}</button>
+    </div>
   </form>
 }

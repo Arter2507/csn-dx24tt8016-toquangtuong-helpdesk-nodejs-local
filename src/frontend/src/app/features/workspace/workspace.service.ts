@@ -1,7 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { EMPTY, expand, map, reduce } from 'rxjs';
 import { ApiResponse } from '../categories/interfaces/category';
-import { Resource, Row, Value } from './workspace.types';
+import { Attachment, Resource, Row, TicketEvent, Value } from './workspace.types';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {
@@ -15,12 +16,30 @@ export class WorkspaceService {
     return this.http.get<ApiResponse<Row[]>>('/api/v1/' + resource, { params });
   }
 
-  find(resource: Resource, id: string) {
-    return this.http.get<ApiResponse<Row>>('/api/v1/' + resource + '/' + encodeURIComponent(id));
+  listAll(resource: Resource) {
+    const load = (page: number) => this.list(resource, { page, pageSize: 100 });
+    return load(1).pipe(
+      expand(response => response.meta && response.meta.page < response.meta.totalPages
+        ? load(response.meta.page + 1)
+        : EMPTY),
+      map(response => response.data),
+      reduce((rows, page) => [...rows, ...page], [] as Row[]),
+    );
   }
 
-  save(resource: Resource, id: number | null, input: Record<string, Value>) {
+  find(resource: Resource, id: string) {
+    return this.http.get<ApiResponse<Row & { attachments?: Attachment[]; history?: TicketEvent[] }>>('/api/v1/' + resource + '/' + encodeURIComponent(id));
+  }
+
+  save(resource: Resource, id: number | null, input: Record<string, Value>, files: File[] = [], removed: string[] = []) {
+    let body: Record<string, Value> | FormData = input;
+    if (files.length || removed.length) {
+      const form = new FormData();
+      form.append('ticket', JSON.stringify(removed.length ? { ...input, removeAttachments: removed } : input));
+      for (const file of files) form.append('attachments', file);
+      body = form;
+    }
     const url = '/api/v1/' + resource;
-    return id === null ? this.http.post(url, input) : this.http.patch(url + '/' + id, input);
+    return id === null ? this.http.post<ApiResponse<Row>>(url, body) : this.http.patch<ApiResponse<Row>>(url + '/' + id, body);
   }
 }

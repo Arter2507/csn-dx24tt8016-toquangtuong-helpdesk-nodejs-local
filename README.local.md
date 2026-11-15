@@ -1,41 +1,76 @@
-# Tổng quan làm việc local
+# Trạm Mèo
 
-Đây là không gian phát triển của đồ án **Website quản lý yêu cầu hỗ trợ kỹ thuật** của Tô Quang Tường, lớp DX24TT8016, giảng viên hướng dẫn TS. Nguyễn Nhứt Lam. Mục tiêu và thông tin chính thức nằm trong [README.md](README.md); yêu cầu, biểu mẫu và kế hoạch gốc nằm trong `documents/`. Chức năng dự kiến gồm tiếp nhận, phân loại, ưu tiên, phân công, cập nhật trạng thái, tìm kiếm và thống kê yêu cầu.
+**Có sự cố, có Mèo.** · **v0.2.0 demo**
 
-## Sơ đồ
+Trạm Mèo là website quản lý yêu cầu hỗ trợ kỹ thuật của Tô Quang Tường, lớp DX24TT8016, dưới sự hướng dẫn của TS. Nguyễn Nhứt Lam. Nhánh `local` là nơi phát triển và cộng tác. Xem [giới thiệu đồ án](README.md).
 
-```text
-Dự án gốc/                    Repository báo cáo cá nhân (master)
-├── .gitignore                Bỏ qua local/
-├── docker/, progress-report/, setup/, soft/, src/, thesis/, README.md
-└── local/                    Repository phát triển riêng (nhánh local)
-    ├── .ai/rules/            Quy tắc làm việc của các mô hình AI (trên repo -local)
-    ├── documents/            Quy định, biểu mẫu, rubric và kế hoạch (trên repo -local)
-    ├── docker/               Tệp Docker nếu sử dụng
-    ├── progress-report/      Báo cáo tiến độ
-    ├── setup/                Cài đặt, dữ liệu thử và triển khai
-    ├── soft/                 Phần mềm liên quan
-    ├── src/backend/          Node.js / Express và SQL mẫu
-    ├── src/frontend/         Angular
-    ├── thesis/               Tài liệu đồ án và tham khảo
-    ├── README.md             Giới thiệu chia sẻ cùng mã nguồn
-    └── README.local.md       Hướng dẫn cộng tác trên repo -local
+## Chạy bản demo trên Windows
+
+Cần **PowerShell 7**, **Node.js** và **pnpm**. Bản hiện tại đã chạy với Node 26.13.0. Angular CLI chấp nhận Node 22 từ 22.22.3, Node 24 từ 24.15.0, hoặc Node từ 26.0.0. Phiên bản pnpm được khai báo trong từng `package.json`. Bản demo chạy trên localhost và không cần MySQL.
+
+Nếu đã có workspace, vào thư mục `local/` chứa file này. Nếu là lần đầu, clone trực tiếp repo cộng tác:
+
+```powershell
+git clone --branch local https://github.com/Arter2507/csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local.git
+Set-Location .\csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local
 ```
 
-Các thư mục rỗng có `.gitkeep` để xuất hiện trong Git. `documents/` gồm `docx/` (mẫu báo cáo), `pdf/` (quy định và rubric), `xlsx/` (đề tài và kế hoạch). Đọc tài liệu gốc khi thực hiện phần liên quan.
+Mở **hai terminal** tại thư mục chứa file này. Có thể xem phiên bản công cụ bằng `node --version` và `pnpm --version`.
 
-## Quy trình
+### Terminal 1 — API Express
 
-1. Mở terminal trong `local/`, đọc `.ai/rules/working-rules.md`, kiểm tra `git status --short --branch` và `git remote -v`. Làm việc trên nhánh `local`.
-2. Repository `-local` công khai là nơi cộng tác, nhận pull request; kiểm tra nội dung trước khi commit/push. Đồng bộ cả `documents/`, `.ai/` và `README.local.md`; không commit secrets, dependencies hay sản phẩm build.
-3. Khi cần báo cáo hoặc nộp bài, chỉ sau khi chủ dự án duyệt và yêu cầu push mới đồng bộ các thư mục chia sẻ và `README.md` sang dự án gốc, xem diff, merge và push `master`; không đưa `documents/`, `.ai/` hay `README.local.md` vào repository gốc. Không tự xóa hoặc ghi đè dữ liệu chưa kiểm tra.
-4. File lớn phù hợp được quản lý bằng Git LFS theo `.gitattributes`; cài Git LFS trên máy cộng tác và kiểm tra hạn mức lưu trữ/băng thông.
+```powershell
+Set-Location .\src\backend
+pnpm install --frozen-lockfile
+$env:DATA_SOURCE = 'demo'
+$env:PORT = '3000'
+pnpm dev
+```
 
-## Môi trường và chạy thử
+Đợi log báo API chạy ở cổng `3000`. Hai biến môi trường trên đủ để chạy demo.
 
-Xem [hướng dẫn chạy khung sườn](src/README.md) để khởi động Angular và Express ở chế độ demo, thử các màn hình danh mục, người dùng và ticket, và xem các bước chuẩn bị MySQL.
+### Terminal 2 — Giao diện Angular
 
-## Dành cho AI
+```powershell
+Set-Location .\src\frontend
+pnpm install --frozen-lockfile
+Remove-Item Env:PORT -ErrorAction SilentlyContinue
+pnpm start --host 127.0.0.1 --port 4200
+```
 
-Đọc `.ai/rules/working-rules.md` trước mọi thay đổi, cùng `README.md` và các tài liệu liên quan trong `documents/`. `.ai/` là nơi chứa skill và quy chuẩn làm việc nội bộ; chỉ sử dụng skill thực sự tồn tại và phù hợp. Cập nhật tài liệu theo tình trạng đã kiểm chứng.
+Đợi Angular build xong rồi mở [http://127.0.0.1:4200/](http://127.0.0.1:4200/). Angular chuyển `/api` đến Express ở `127.0.0.1:3000`.
 
+- Nếu pnpm báo `ERR_PNPM_IGNORED_BUILDS` ở frontend, chạy `pnpm approve-builds`, chọn `@parcel/watcher` và `esbuild`, rồi chạy lại lệnh cài đặt. Cấu hình của repo đã ghi hai lựa chọn này.
+- Nếu giao diện báo không tải được dữ liệu, mở [API danh mục](http://127.0.0.1:3000/api/v1/categories). Nếu có xung đột cổng, kiểm tra bằng `Get-NetTCPConnection -LocalPort 3000,4200 -State Listen -ErrorAction SilentlyContinue`.
+- Dừng từng máy chủ bằng **Ctrl+C**. Khởi động lại Express sẽ đặt lại ticket, lịch sử và tệp đính kèm demo. Ghi chú nhanh và chế độ màu được lưu trên trình duyệt.
+
+## Tiến độ đến 15/11/2026
+
+| Hạng mục | Đã có trong bản demo |
+| --- | --- |
+| [Quản trị](http://127.0.0.1:4200/) | KPI toàn hệ thống, biểu đồ theo ngày và trạng thái, hàng đợi chưa phân công và lối vào báo cáo. |
+| [Chuyên viên kỹ thuật](http://127.0.0.1:4200/dashboard/technician) | Công việc theo ngày cập nhật, lịch tuần tương tác, ghi chú nhanh và lối tắt đến việc được giao. |
+| [Người dùng](http://127.0.0.1:4200/dashboard/user) | Yêu cầu đã gửi hôm nay hoặc tuần này, tối đa 5 yêu cầu còn mở có ưu tiên cao nhất, và mục chờ xác nhận. |
+| Ticket | Tạo, tìm kiếm, lọc, phân trang, phân công và chuyển trạng thái. Form có kéo thả tệp, timeline và bảng yêu cầu trong ngày theo giờ Việt Nam. |
+| Người dùng và danh mục | Tìm kiếm, lọc, tạo, sửa và ngừng hoạt động qua API demo. |
+| Báo cáo | Lọc theo ngày tạo, loại và trạng thái, kèm biểu đồ, bảng tổng hợp và xuất CSV. |
+| Giao diện Phase -1 | Tên và logo Trạm Mèo, mascot mèo đeo tai nghe, font Chivo có tiếng Việt, sáng/tối, sidebar thu gọn, breadcrumb, dropdown và scrollbar theo chủ đề. |
+
+### Thử một luồng từ đầu đến cuối
+
+1. Vào **Không gian người dùng → Tạo yêu cầu**. Chọn loại và mức ưu tiên. Có thể kéo thả tối đa 5 tệp PNG, JPEG, GIF, WebP hoặc PDF với tổng dung lượng 50 MB.
+2. Vào **Tổng quan → Xem yêu cầu chưa phân công**, mở ticket vừa tạo, chọn **Kỹ thuật viên mẫu** và chuyển sang **Đang xử lý**. Vào dashboard chuyên viên để kiểm tra công việc hôm nay và lịch tuần.
+3. Từ **Chuyên viên kỹ thuật**, chọn **Sang góc nhìn người gửi**. Dashboard dùng cùng tài khoản **Kỹ thuật viên mẫu**, hiển thị ticket do tài khoản này gửi. Tạo yêu cầu tại đây sẽ dùng sẵn đúng người gửi.
+4. Chọn **Xem tiến độ** để kiểm tra timeline hoặc tải lại tệp đính kèm. Vào **Báo cáo**, áp dụng bộ lọc và xuất CSV. Một phiên demo mới bắt đầu với danh sách ticket trống.
+
+### Kiểm thử và phạm vi
+
+Angular build thành công, **2/2** bài kiểm thử Angular, **3/3** bài kiểm thử API và **5/5** ca hồi quy Playwright đã đạt trong đợt kiểm tra ngày 15/11/2026. Kiểm tra bổ sung trên Edge xác nhận luồng chuyển giữa hai góc nhìn, đúng người gửi khi tạo ticket và giao diện ở 320, 390, 768 px. Xem [hướng dẫn chạy lại kiểm thử](output/playwright/README.md).
+
+Đăng nhập, phân quyền thực tế, lưu dữ liệu MySQL cho người dùng và ticket, lưu tệp dài hạn, thông báo, hồ sơ và sao lưu vẫn đang phát triển. Các dashboard hiện dùng tài khoản demo và dữ liệu trong phiên Express.
+
+## Tài liệu và cộng tác
+
+- [Thiết kế Phase -1](documents/Phase-1-Design-UI/), [hướng dẫn kỹ thuật](src/README.md), [bản đồ frontend](src/frontend/readme.map) và [bản đồ backend](src/backend/readme.map).
+- Làm việc trên nhánh `local` của repo cộng tác. Repo gốc và nhánh `master` dành cho báo cáo và nộp bài. [Quy tắc làm việc](.ai/rules/working-rules.md) · [Quy tắc mã nguồn](.ai/rules/source-code.md).
+- Giữ `.env`, thông tin kết nối, dependencies và sản phẩm build ngoài Git. Dùng Git LFS cho tệp được khai báo trong `.gitattributes`. Nếu tài liệu chỉ hiện nội dung pointer sau khi clone, cài Git LFS và chạy `git lfs pull`.
