@@ -1,11 +1,14 @@
+import { Loading } from './loading';
+import { Translate, I18n, errorKey } from './i18n';
 import { ChangeDetectorRef, Component, ElementRef, inject, input, OnInit } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Category, PageMeta } from './features/categories/interfaces/category';
 import { CategoryService } from './features/categories/services/category.service';
 import { Router, RouterLink } from '@angular/router';
-@Component({ selector: 'app-categories', imports: [FormsModule, RouterLink], templateUrl: './app.html' })
+@Component({ selector: 'app-categories', imports: [Translate, Loading, FormsModule, RouterLink], templateUrl: './app.html' })
 export class App implements OnInit {
+  readonly i18n = inject(I18n);
   private readonly service = inject(CategoryService);
   private readonly router = inject(Router);
   private readonly view = inject(ChangeDetectorRef);
@@ -15,6 +18,7 @@ export class App implements OnInit {
   categories: Category[] = []; meta: PageMeta | null = null;
   search = ''; page = 1; sortBy = 'id'; sortOrder = 'asc'; isActive = '';
   code = ''; name = ''; active = true; editingId: number | null = null;
+  statusError = '';
   loading = false; saving = false; error = ''; notice = '';
   applied = { search: '', active: '', sortBy: 'id', sortOrder: 'asc' };
   ngOnInit() {
@@ -35,6 +39,23 @@ export class App implements OnInit {
       error: err => { this.error = this.message(err); this.loading = false; this.view.markForCheck(); }
     });
   }
+  toggleCategory(row: Category) {
+    if (this.saving) return;
+    this.saving = true;
+    this.notice = this.statusError = '';
+    const isActive = !row.isActive;
+    this.service.update(row.id, { isActive }).subscribe({
+      next: () => {
+        this.saving = false;
+        this.notice = isActive ? 'category_activated' : 'category_deactivated';
+        this.page = 1;
+        this.load();
+        this.view.markForCheck();
+      },
+      error: error => { this.saving = false; this.statusError = this.message(error); this.view.markForCheck(); },
+    });
+  }
+
   filter() {
     this.applied = { search: this.search.trim(), active: this.isActive, sortBy: this.sortBy, sortOrder: this.sortOrder };
     this.page = 1;
@@ -59,11 +80,11 @@ export class App implements OnInit {
     request.subscribe({
       next: () => {
         this.saving = false;
-        const notice = this.editingId === null ? 'Đã thêm danh mục.' : 'Đã cập nhật danh mục.';
+        const notice = this.editingId === null ? 'category_added' : 'category_updated';
         void this.router.navigateByUrl('/categories', { info: { notice } });
       },
       error: err => { this.saving = false; this.error = this.message(err); this.view.markForCheck(); }
     });
   }
-  private message(err: HttpErrorResponse) { return err.error?.error?.message || 'Không kết nối được API'; }
+  private message(err: HttpErrorResponse) { return errorKey(err); }
 }

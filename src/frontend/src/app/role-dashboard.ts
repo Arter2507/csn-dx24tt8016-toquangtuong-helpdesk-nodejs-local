@@ -1,3 +1,5 @@
+import { Loading } from './loading';
+import { Translate, I18n } from './i18n';
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -8,7 +10,7 @@ import { WorkspaceService } from './features/workspace/workspace.service';
 import { Row } from './features/workspace/workspace.types';
 
 const vietnamDay = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
-const weekdayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+const weekdayNames = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const dateKey = (row: Row, field: string) => {
   const date = new Date(String(row[field] ?? ''));
   return Number.isFinite(date.getTime()) ? vietnamDay.format(date) : '';
@@ -24,11 +26,12 @@ const newest = (a: Row, b: Row) =>
   String(b['updatedAt'] ?? '').localeCompare(String(a['updatedAt'] ?? '')) || b.id - a.id;
 
 @Component({
-  imports: [RouterLink, NgTemplateOutlet],
+  imports: [Translate, Loading, RouterLink, NgTemplateOutlet],
   templateUrl: './role-dashboard.html',
 })
 export class RoleDashboard {
   readonly role = input.required<'technician' | 'user'>();
+  readonly i18n = inject(I18n);
   private readonly workspace = inject(WorkspaceService);
   private readonly destroy = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
@@ -85,7 +88,7 @@ export class RoleDashboard {
       this.requesterId.set(params.get('account') === String(this.technicianId) ? this.technicianId : 1);
     });
     try { this.note.set(localStorage.getItem('tram-meo:notes:' + this.technicianId) ?? ''); }
-    catch { this.noteFeedback.set('Trình duyệt đang chặn lưu ghi chú.'); }
+    catch { this.noteFeedback.set('your_browser_is_blocking_note_storage'); }
     this.load();
   }
 
@@ -113,7 +116,7 @@ export class RoleDashboard {
     try {
       localStorage.setItem('tram-meo:notes:' + this.technicianId, this.note());
       this.noteChanged.set(false);
-      this.noteFeedback.set('Đã lưu trên trình duyệt này.');
-    } catch { this.noteFeedback.set('Không thể lưu trên trình duyệt này.'); }
+      this.noteFeedback.set('saved_in_this_browser');
+    } catch { this.noteFeedback.set('we_couldnt_save_your_note_in_this_browser'); }
   }
 }

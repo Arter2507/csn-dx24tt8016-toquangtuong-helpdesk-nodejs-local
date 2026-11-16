@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { validate } from '../middlewares/validate.js';
+import { archiveRoute, archiveRows } from './archive.js';
 import { AppError } from './errors.js';
 import { idSchema, listSchema } from '../modules/categories/category.validator.js';
 
 export function demoResourceRoutes({
-  rows, input, updateInput, create, update, searchable, filters, queryFields = {}, receive = (req, res, next) => next()
+  rows, input, updateInput, create, update, searchable, filters, archive = false, queryFields = {}, receive = (req, res, next) => next()
 }) {
   const router = Router();
   const day = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
@@ -14,14 +15,15 @@ export function demoResourceRoutes({
     filter: z.enum(filters.values).optional()
   }).omit({ isActive: true }).extend(queryFields);
   function find(id) {
-    const row = rows.find(item => item.id === id);
+    const row = rows.find(item => item.id === id && !item.archivedAt);
     if (!row) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy dữ liệu');
     return row;
   }
+  if (archive) archiveRoute(router, ids => archiveRows(rows, ids));
   router.get('/', validate(querySchema, 'query'), (req, res) => {
     const { search, page, pageSize, sortBy, sortOrder, filter, createdOn, assigneeId, ...criteria } = req.validated.query;
     const keyword = search.toLocaleLowerCase();
-    const matches = rows.filter(row => (!filter || String(row[filters.field]) === filter) &&
+    const matches = rows.filter(row => !row.archivedAt && (!filter || String(row[filters.field]) === filter) &&
       (assigneeId === undefined || (row.assigneeId ?? 0) === assigneeId) &&
       (!createdOn || (row.createdAt && day.format(new Date(row.createdAt)) === createdOn)) &&
       Object.entries(criteria).every(([field, value]) => value === undefined || row[field] === value) &&

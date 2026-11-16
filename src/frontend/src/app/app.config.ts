@@ -1,7 +1,20 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
+import { Preferences } from './preferences';
+import { trackProgress } from './loading';
 import { routes } from './app.routes';
 export const appConfig: ApplicationConfig = {
-  providers: [provideBrowserGlobalErrorListeners(), provideHttpClient(), provideRouter(routes, withComponentInputBinding())],
+  providers: [provideBrowserGlobalErrorListeners(), provideHttpClient(withInterceptors([trackProgress])), provideRouter(routes, withComponentInputBinding(), withViewTransitions({
+    skipInitialTransition: true,
+    onViewTransitionCreated: ({ transition, from, to }) => {
+      const preferences = inject(Preferences);
+      const previous = from.firstChild ?? from;
+      const next = to.firstChild ?? to;
+      if (preferences.reducedMotion() || matchMedia('(prefers-reduced-motion: reduce)').matches ||
+          (previous.routeConfig === next.routeConfig && previous.url.map(segment => segment.path).join('/') === next.url.map(segment => segment.path).join('/'))) {
+        transition.skipTransition();
+      }
+    },
+  }))],
 };

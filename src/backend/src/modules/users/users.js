@@ -7,7 +7,10 @@ const fields = {
   role: z.enum(roles)
 };
 export const userInput = z.object(fields).strict();
-export const userUpdate = z.object({ ...fields, isActive: z.boolean() }).strict();
+export const userUpdate = z.union([
+  z.object({ ...fields, isActive: z.boolean() }).strict(),
+  z.object({ isActive: z.boolean() }).strict(),
+]);
 export const users = [
   { id: 1, fullName: 'Người gửi mẫu', email: 'user@example.test', role: 'USER', isActive: true },
   { id: 2, fullName: 'Kỹ thuật viên mẫu', email: 'tech@example.test', role: 'TECHNICIAN', isActive: true },
@@ -25,10 +28,11 @@ export function createUser(input) {
   return user;
 }
 export function updateUser(user, input) {
-  checkEmail(input.email, user.id);
-  if (user.role === 'ADMIN' && (input.role !== 'ADMIN' || !input.isActive) &&
+  const next = { ...user, ...input };
+  checkEmail(next.email, user.id);
+  if (user.role === 'ADMIN' && user.isActive && (next.role !== 'ADMIN' || !next.isActive) &&
       !users.some(other => other.id !== user.id && other.isActive && other.role === 'ADMIN')) {
-    throw new AppError(409, 'CONFLICT', 'Cần giữ ít nhất một quản trị viên hoạt động');
+    throw new AppError(409, 'LAST_ADMIN', 'Cần giữ ít nhất một quản trị viên hoạt động');
   }
   return Object.assign(user, input);
 }

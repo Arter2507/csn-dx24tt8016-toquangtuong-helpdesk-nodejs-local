@@ -30,6 +30,14 @@ Bộ test hiện kiểm tra chế độ sáng/tối và thanh bên sau khi tải
 
 Angular build thành công. Kết quả gồm 2/2 kiểm thử Angular, 3/3 kiểm thử API và 5/5 ca Playwright. Kiểm tra thêm kéo thả ảnh, tải lại tệp, timeline sau khi đổi trạng thái, mở ticket từ bảng trong ngày và cuộn nội dung với thanh bên đứng yên. Form không tràn ngang ở 320, 390, 768 và 1440 px trên Edge.
 
+## Kiểm thử tài khoản và đa ngôn ngữ 16/11/2026
+
+Angular build thành công. Kết quả gồm 2/2 kiểm thử Angular, 4/4 kiểm thử API và 5/5 ca hồi quy Playwright. Trên Edge, đã kiểm tra hiệu ứng chuyển trang, trạng thái tải khi API chậm, đổi Việt–Anh sau khi tải lại, lưu hồ sơ, thông báo đã đọc, xóa từng dòng hoặc nhiều dòng và tải bản sao JSON. Bốn trang mới không tràn ngang ở 320 và 768 px.
+
+## Kiểm thử thao tác bảng và sidebar 16/11/2026
+
+Angular build thành công. Kết quả gồm 2/2 kiểm thử Angular, 5/5 kiểm thử API và 5/5 ca hồi quy Playwright. Đã kiểm tra xóa mềm từng yêu cầu hoặc nhiều yêu cầu, xác nhận/hủy xóa, bật/ngưng sử dụng người dùng và danh mục, bảo vệ quản trị viên hoạt động cuối cùng và animation sidebar desktop/mobile. API giữ liên kết của yêu cầu đã có khi danh mục hoặc kỹ thuật viên ngưng sử dụng.
+
 ## Chạy lại
 
 1. Khởi chạy Express ở cổng 3000 với DATA_SOURCE=demo và Angular ở cổng 4200. Giữ biến PORT của backend trong terminal riêng để Angular không lấy cổng 3000.

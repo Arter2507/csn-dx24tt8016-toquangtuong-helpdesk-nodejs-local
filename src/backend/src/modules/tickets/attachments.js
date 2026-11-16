@@ -95,7 +95,7 @@ export async function prepareAttachments(existing, files, removed = []) {
 }
 
 export function sendAttachment(tickets, req, res, next) {
-  const ticket = tickets.find(item => item.id === Number(req.params.ticketId));
+  const ticket = tickets.find(item => item.id === Number(req.params.ticketId) && !item.archivedAt);
   const file = ticket?.attachments?.find(item => item.id === req.params.attachmentId);
   if (!file || !directory) return next(new AppError(404, 'NOT_FOUND', 'Không tìm thấy tệp đính kèm.'));
   res.set({ 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', 'Content-Type': file.type });

@@ -10,6 +10,9 @@
 | Thêm đường dẫn hoặc trang trống | src/app/app.routes.ts đăng ký route, src/app/pages.ts chứa mẫu trang trống. |
 | Đổi dashboard và số liệu | src/app/dashboard.html hiển thị KPI và biểu đồ. Dashboard trong src/app/pages.ts tổng hợp từ API ticket. |
 | Đổi dashboard chuyên viên hoặc người gửi | src/app/role-dashboard.ts và src/app/role-dashboard.html. |
+| Đổi hồ sơ, thông báo, cài đặt hoặc sao lưu | src/app/account-pages.ts và src/app/account-pages.html. |
+| Sửa nội dung tiếng Việt hoặc tiếng Anh | src/app/messages.json. |
+| Sửa thao tác chọn và xóa nhiều dòng | src/app/bulk-actions.ts. |
 | Đổi báo cáo, bộ lọc hoặc xuất CSV | src/app/reports.html và Reports trong src/app/pages.ts. |
 | Sửa bảng, bộ lọc hoặc form danh mục | src/app/app.html. Trạng thái và thao tác nằm trong src/app/app.ts. |
 | Đổi API hoặc kiểu dữ liệu danh mục | src/app/features/categories/services/category.service.ts và interfaces/category.ts trong cùng feature. |

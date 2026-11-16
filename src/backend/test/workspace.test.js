@@ -85,6 +85,8 @@ test('ticket attachments and status history are saved together', async () => {
     assert.deepEqual(saved.history.map(event => event.status), ['NEW', 'IN_PROGRESS']);
     assert.deepEqual(saved.attachments.map(file => file.name), ['Ảnh mới.png']);
     assert.equal((await fetch(imageUrl)).status, 404);
+    assert.equal(saved.archivedAttachments[0].id, ticket.attachments[0].id);
+    assert.ok(saved.archivedAttachments[0].archivedAt);
 
     const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
     const list = await fetch(api + '?createdOn=' + today).then(res => res.json());
@@ -98,6 +100,84 @@ test('ticket attachments and status history are saved together', async () => {
     const otherDay = await fetch(api + '?createdOn=2000-01-01').then(res => res.json());
     assert.equal(otherDay.meta.totalItems, 0);
   } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('bulk delete validates the whole selection and keeps archived data in backup', async () => {
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const api = 'http://127.0.0.1:' + server.address().port + '/api/v1';
+  const post = (path, data) => fetch(api + path, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+  });
+  try {
+    const first = await post('/tickets', { title: 'Lỗi máy in', description: 'Không in được', categoryId: 3, requesterId: 1 }).then(r => r.json());
+    const second = await post('/tickets', { title: 'Hỗ trợ mạng', description: 'Mất kết nối', categoryId: 3, requesterId: 1 }).then(r => r.json());
+    const ids = [first.data.id, second.data.id];
+    assert.equal((await post('/tickets/archive', { ids: [ids[0], 99999] })).status, 404);
+    assert.equal((await fetch(api + '/tickets/' + ids[0])).status, 200);
+    assert.equal((await post('/users/archive', { ids: [3] })).status, 404);
+    assert.equal((await post('/categories/archive', { ids: [3, 4] })).status, 404);
+    assert.equal((await fetch(api + '/categories/4')).status, 200);
+
+    const removed = await post('/tickets/archive', { ids, duplicate: true });
+    assert.equal(removed.status, 422);
+    const result = await post('/tickets/archive', { ids: [...ids, ids[0]] }).then(r => r.json());
+    assert.equal(result.data.count, 2);
+    assert.equal((await post('/tickets/archive', { ids }).then(r => r.json())).data.count, 0);
+    assert.equal((await fetch(api + '/tickets/' + ids[0])).status, 404);
+    assert.ok(!(await fetch(api + '/tickets').then(r => r.json())).data.some(row => ids.includes(row.id)));
+
+    const user = await post('/users', { fullName: 'Tài khoản thử', email: 'archive-test@example.test', role: 'USER' }).then(r => r.json());
+    const patch = (path, data) => fetch(api + path, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+    });
+    assert.equal((await patch('/users/3', { isActive: false })).status, 409);
+    const path = '/users/' + user.data.id;
+    assert.equal((await patch(path, { isActive: false })).status, 200);
+    const { data: inactive } = await fetch(api + path).then(r => r.json());
+    assert.equal(inactive.isActive, false);
+    assert.equal(inactive.email, user.data.email);
+    assert.equal((await patch('/categories/4', { isActive: false })).status, 200);
+    const { data: backup } = await fetch(api + '/backups/snapshot').then(r => r.json());
+    assert.equal(backup.tickets.filter(row => ids.includes(row.id) && row.archivedAt).length, 2);
+    assert.equal(backup.users.find(row => row.id === user.data.id).email, user.data.email);
+    assert.equal(backup.categories.find(row => row.id === 4).isActive, false);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});
+
+test('inactive categories and accounts remain visible on existing requests', async () => {
+  const server = app.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const api = 'http://127.0.0.1:' + server.address().port + '/api/v1';
+  const send = (path, method, data) => fetch(api + path, {
+    method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+  });
+  const submission = { title: 'Kiểm tra liên kết', description: 'Duy trì dữ liệu đang dùng', categoryId: 3, requesterId: 1 };
+  const update = { title: submission.title, description: submission.description, categoryId: 3, assigneeId: 2, priority: 'MEDIUM' };
+  try {
+    const created = await send('/tickets', 'POST', submission).then(r => r.json());
+    const path = '/tickets/' + created.data.id;
+    assert.equal((await send(path, 'PATCH', { ...update, version: 1, status: 'IN_PROGRESS' })).status, 200);
+    assert.equal((await send('/users/2', 'PATCH', { isActive: false })).status, 200);
+    assert.equal((await send('/categories/3', 'PATCH', { isActive: false })).status, 200);
+    assert.equal((await send('/tickets', 'POST', submission)).status, 422);
+    const another = await send('/tickets', 'POST', { ...submission, categoryId: 1 }).then(r => r.json());
+    assert.equal((await send('/tickets/' + another.data.id, 'PATCH', {
+      ...update, categoryId: 1, version: 1, status: 'IN_PROGRESS',
+    })).status, 422);
+    const response = await send(path, 'PATCH', { ...update, version: 2, status: 'RESOLVED' });
+    assert.equal(response.status, 200);
+    const { data: saved } = await response.json();
+    assert.equal(saved.categoryId, 3);
+    assert.equal(saved.assigneeId, 2);
+    assert.equal(saved.status, 'RESOLVED');
+  } finally {
+    await send('/users/2', 'PATCH', { isActive: true });
+    await send('/categories/3', 'PATCH', { isActive: true });
     await new Promise(resolve => server.close(resolve));
   }
 });

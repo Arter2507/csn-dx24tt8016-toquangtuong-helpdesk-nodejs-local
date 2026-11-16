@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { AppError } from '../../shared/errors.js';
 import { demoRepository } from '../categories/demo.repository.js';
 import { users } from '../users/users.js';
-import { discardAttachments, prepareAttachments } from './attachments.js';
+import { prepareAttachments } from './attachments.js';
 export const statuses = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 const fields = {
   title: z.string().trim().min(1).max(200),
@@ -32,15 +32,15 @@ export const ticketUpdate = z.object({
 }).strict();
 export const tickets = [];
 const transitions = { NEW: ['IN_PROGRESS'], IN_PROGRESS: ['RESOLVED'], RESOLVED: ['CLOSED', 'IN_PROGRESS'], CLOSED: [] };
-async function checkCategory(id) {
-  if (!(await demoRepository.find(id))?.isActive) throw new AppError(422, 'INVALID_CATEGORY', 'Danh mục không hoạt động');
+function checkCategory(id) {
+  if (!demoRepository.isActive(id)) throw new AppError(422, 'INVALID_CATEGORY', 'Danh mục không hoạt động');
 }
 export async function createTicket(input, files = []) {
-  await checkCategory(input.categoryId);
+  const attachments = await prepareAttachments([], files);
+  checkCategory(input.categoryId);
   if (!users.some(user => user.id === input.requesterId && user.isActive)) {
     throw new AppError(422, 'INVALID_REQUESTER', 'Người gửi không hoạt động');
   }
-  const attachments = await prepareAttachments([], files);
   const id = tickets.length + 1;
   const now = new Date().toISOString();
   const ticket = {
@@ -53,21 +53,24 @@ export async function createTicket(input, files = []) {
 }
 export async function updateTicket(ticket, input, files = []) {
   const { version, removeAttachments = [], ...changes } = input;
-  await checkCategory(input.categoryId);
   const attachments = await prepareAttachments(ticket.attachments ?? [], files, removeAttachments);
-  if (ticket.version !== version || ticket.status === 'CLOSED' ||
+  if (input.categoryId !== ticket.categoryId) checkCategory(input.categoryId);
+  if (ticket.archivedAt || ticket.version !== version || ticket.status === 'CLOSED' ||
       (ticket.status !== input.status && !transitions[ticket.status].includes(input.status))) {
     throw new AppError(409, 'CONFLICT', 'Phiên bản hoặc chuyển trạng thái không hợp lệ');
   }
-  if ((input.assigneeId !== null && !users.some(user => user.id === input.assigneeId && user.isActive && user.role === 'TECHNICIAN')) ||
+  if ((input.assigneeId !== null && input.assigneeId !== ticket.assigneeId && !users.some(user => user.id === input.assigneeId && user.isActive && user.role === 'TECHNICIAN')) ||
       (input.status !== 'NEW' && input.assigneeId === null)) {
     throw new AppError(422, 'INVALID_ASSIGNEE', 'Chọn kỹ thuật viên đang hoạt động');
   }
   const now = new Date().toISOString();
   const history = ticket.history ?? [{ status: 'NEW', at: ticket.createdAt }];
-  const updated = { ...ticket, ...changes, attachments, version: version + 1, updatedAt: now,
+  const archivedAttachments = (ticket.attachments ?? [])
+    .filter(file => removeAttachments.includes(file.id)).map(file => ({ ...file, archivedAt: now }));
+  const updated = { ...ticket, ...changes, attachments,
+    archivedAttachments: [...(ticket.archivedAttachments ?? []), ...archivedAttachments],
+    version: version + 1, updatedAt: now,
     history: ticket.status === input.status ? history : [...history, { status: input.status, at: now }] };
   Object.assign(ticket, updated);
-  await discardAttachments(removeAttachments);
   return updated;
 }

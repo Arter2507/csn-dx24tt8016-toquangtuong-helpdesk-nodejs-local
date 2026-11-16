@@ -1,3 +1,5 @@
+import { Loading } from './loading';
+import { Translate, I18n } from './i18n';
 import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -29,13 +31,14 @@ function summarize(tickets: Row[]) {
 
 @Component({
   selector: 'helpdesk-stat-cards',
+  imports: [Translate],
   template: `
     <div class="stats">
       @for (card of cards(); track card.label) {
         <div class="panel stat">
           <span class="stat-label"><span class="stat-icon" [attr.data-tone]="card.tone">
             <i class="bi" [class]="card.icon" aria-hidden="true"></i>
-          </span>{{ card.label }}</span>
+          </span>{{ (card.label) | t }}</span>
           <strong>{{ card.count }}</strong>
         </div>
       }
@@ -49,31 +52,32 @@ class StatCards {
     const tickets = this.tickets();
     const statuses = summarize(tickets);
     const cards = this.report() ? [statuses[3], statuses[1], statuses[2]] : statuses.slice(0, 3);
-    return [{ label: 'Tổng yêu cầu', count: tickets.length, tone: 'primary', icon: 'bi-clipboard-data' }, ...cards];
+    return [{ label: 'total_requests', count: tickets.length, tone: 'primary', icon: 'bi-clipboard-data' }, ...cards];
   });
 }
 
 @Component({
   selector: 'helpdesk-status-chart',
+  imports: [Translate],
   template: `
     <section class="panel">
-      <h2>Trạng thái yêu cầu</h2>
-      <p class="section-note">{{ period() }} · Số yêu cầu</p>
+      <h2>{{ 'request_status' | t }}</h2>
+      <p class="section-note">{{ (period()) | t }} {{ 'request_count' | t }}</p>
       @if (tickets().length) {
         <div class="donut-layout">
           <div class="donut" aria-hidden="true" [style.--donut]="gradient()">
-            <div class="donut-center"><strong>{{ tickets().length }}</strong><span>Tổng yêu cầu</span></div>
+            <div class="donut-center"><strong>{{ tickets().length }}</strong><span>{{ 'total_requests' | t }}</span></div>
           </div>
-          <ul class="chart-legend" aria-label="Số yêu cầu theo trạng thái">
+          <ul class="chart-legend" [attr.aria-label]="('request_count_by_status' | t)">
             @for (entry of entries(); track entry.value) {
               <li><span class="legend-dot" [style.--segment]="'var(--ds-chart-' + entry.color + ')'" aria-hidden="true"></span>
-                <span>{{ entry.label }}</span><strong>{{ entry.count }}</strong>
+                <span>{{ (entry.label) | t }}</span><strong>{{ entry.count }}</strong>
               </li>
             }
           </ul>
         </div>
       } @else {
-        <div class="empty-data"><i class="bi bi-pie-chart" aria-hidden="true"></i><p>Chưa có dữ liệu trạng thái.</p></div>
+        <div class="empty-data"><i class="bi bi-pie-chart" aria-hidden="true"></i><p>{{ 'no_status_data_yet' | t }}</p></div>
       }
     </section>
   `,
@@ -97,7 +101,7 @@ class StatusChart {
 }
 
 @Component({
-  imports: [RouterLink, StatCards, StatusChart],
+  imports: [Translate, Loading, RouterLink, StatCards, StatusChart],
   templateUrl: './dashboard.html',
 })
 export class Dashboard {
@@ -138,10 +142,11 @@ export class Dashboard {
 }
 
 @Component({
-  imports: [FormsModule, StatCards, StatusChart],
+  imports: [Translate, Loading, FormsModule, StatCards, StatusChart],
   templateUrl: './reports.html',
 })
 export class Reports {
+  readonly i18n = inject(I18n);
   private readonly workspace = inject(WorkspaceService);
   private readonly categoryService = inject(CategoryService);
   private readonly destroy = inject(DestroyRef);
@@ -150,10 +155,10 @@ export class Reports {
   readonly categories = signal<Category[]>([]);
   readonly statuses = ticketStatuses;
   readonly periods = [
-    { value: 0, label: 'Tất cả thời gian' },
-    { value: 7, label: '7 ngày gần đây' },
-    { value: 30, label: '30 ngày gần đây' },
-    { value: 90, label: '90 ngày gần đây' },
+    { value: 0, label: 'all_time' },
+    { value: 7, label: 'last_7_days' },
+    { value: 30, label: 'last_30_days' },
+    { value: 90, label: 'last_90_days' },
   ];
   days = 0;
   categoryId = 0;
@@ -163,9 +168,9 @@ export class Reports {
   readonly scope = computed(() => {
     const { categoryId, status } = this.applied();
     return [
-      this.period(),
-      this.categories().find(category => category.id === categoryId)?.name,
-      this.statuses.find(item => item.value === status)?.label,
+      this.i18n.text(this.period()),
+      this.categoryName(categoryId, ''),
+      this.i18n.text(this.statuses.find(item => item.value === status)?.label),
     ].filter(Boolean).join(' · ');
   });
   readonly filtered = computed(() => {
@@ -185,7 +190,7 @@ export class Reports {
     }
     return [...grouped].map(([id, rows]) => ({
       id,
-      name: this.categories().find(category => category.id === id)?.name ?? 'Danh mục #' + id,
+      name: this.categoryName(id, this.i18n.text('category_2') + id),
       total: rows.length,
       closed: rows.filter(row => row['status'] === 'CLOSED').length,
       progress: rows.filter(row => row['status'] === 'IN_PROGRESS').length,
@@ -204,6 +209,11 @@ export class Reports {
       });
   }
 
+  private categoryName(id: number, fallback: string) {
+    const category = this.categories().find(row => row.id === id);
+    return category ? this.i18n.category(category) : fallback;
+  }
+
   apply() { this.applied.set({ days: this.days, categoryId: this.categoryId, status: this.status }); }
 
   clearFilters() {
@@ -215,7 +225,7 @@ export class Reports {
   exportReport() {
     const csvCell = (value: string) => '"' + (/^\s*[=+@-]|^[\t\r\n]/.test(value) ? "'" : '') + value.replaceAll('"', '""') + '"';
     const rows = this.summary().map(row => [csvCell(row.name), row.total, row.closed, row.progress].join(','));
-    const file = new Blob(['\uFEFFLoại yêu cầu,Số lượng,Đã đóng,Đang xử lý\r\n', rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const file = new Blob(['\uFEFF' + ['request_category', 'count', 'closed', 'in_progress'].map(key => csvCell(this.i18n.text(key))).join(',') + '\r\n', rows.join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(file);
     const link = document.createElement('a');
     link.href = url;
@@ -226,11 +236,11 @@ export class Reports {
 }
 
 @Component({
-  imports: [RouterLink],
+  imports: [Translate, RouterLink],
   template: `
-    <div class="page-heading"><div><h1>{{ title }}</h1></div></div>
-    <section class="panel empty-page"><i class="bi" [class]="icon" aria-hidden="true"></i><h2>{{ message }}</h2>
-      <a class="secondary" routerLink="/">Về tổng quan</a>
+    <div class="page-heading"><div><h1>{{ (title) | t }}</h1></div></div>
+    <section class="panel empty-page"><i class="bi" [class]="icon" aria-hidden="true"></i><h2>{{ (message) | t }}</h2>
+      <a class="secondary" routerLink="/">{{ 'back_to_overview' | t }}</a>
     </section>
   `,
 })
@@ -238,5 +248,5 @@ export class BlankPage {
   private readonly data = inject(ActivatedRoute).snapshot.data;
   readonly title = this.data['title'];
   readonly icon = this.data['icon'] ?? 'bi-folder2-open';
-  readonly message = this.data['message'] ?? 'Tính năng đang được phát triển.';
+  readonly message = this.data['message'] ?? 'feature_pending';
 }

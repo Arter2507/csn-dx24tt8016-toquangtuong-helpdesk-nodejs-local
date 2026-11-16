@@ -1,12 +1,14 @@
+import { Translate, I18n } from './i18n';
 import { Component, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Title } from '@angular/platform-browser';
+import { Preferences } from './preferences';
+import { NetworkProgress } from './loading';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-type Theme = 'light' | 'dark';
-
 @Component({
   selector: 'app-root',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [Translate, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './shell.html',
 })
 export class Shell {
@@ -14,20 +16,28 @@ export class Shell {
   private readonly router = inject(Router);
   readonly menuOpen = signal(false);
   readonly collapsed = signal(localStorage.getItem('helpdesk.sidebar') === 'collapsed');
-  readonly theme = signal<Theme>(localStorage.getItem('helpdesk.theme') === 'dark' ? 'dark' : 'light');
+  readonly preferences = inject(Preferences);
+  readonly i18n = inject(I18n);
+  readonly progress = inject(NetworkProgress);
+  readonly navigating = this.router.currentNavigation;
+  readonly theme = this.preferences.theme;
+  private readonly title = inject(Title);
+  private readonly pageLabel = signal('overview');
+  readonly accountParams = signal<{ account: number } | null>(null);
   readonly groups = [
-    { label: 'Không gian làm việc', links: [
-      { path: '/', label: 'Tổng quan', icon: 'bi-grid-1x2' },
-      { path: '/dashboard/technician', label: 'Chuyên viên kỹ thuật', icon: 'bi-tools' },
-      { path: '/dashboard/user', label: 'Không gian người dùng', icon: 'bi-person' },
-      { path: '/tickets', label: 'Yêu cầu hỗ trợ', icon: 'bi-ticket-perforated' },
-      { path: '/notifications', label: 'Thông báo', icon: 'bi-bell' },
+    { label: 'workspace', links: [
+      { path: '/', label: 'overview', icon: 'bi-grid-1x2' },
+      { path: '/dashboard/technician', label: 'technician', icon: 'bi-tools' },
+      { path: '/dashboard/user', label: 'requester_workspace', icon: 'bi-person' },
+      { path: '/tickets', label: 'support_requests', icon: 'bi-ticket-perforated' },
+      { path: '/notifications', label: 'notifications', icon: 'bi-bell' },
     ] },
-    { label: 'Quản trị', links: [
-      { path: '/users', label: 'Người dùng', icon: 'bi-people' },
-      { path: '/categories', label: 'Danh mục', icon: 'bi-tags' },
-      { path: '/reports', label: 'Báo cáo', icon: 'bi-bar-chart' },
-      { path: '/backup', label: 'Sao lưu', icon: 'bi-database' },
+    { label: 'administration', links: [
+      { path: '/users', label: 'users', icon: 'bi-people' },
+      { path: '/categories', label: 'categories', icon: 'bi-tags' },
+      { path: '/reports', label: 'reports', icon: 'bi-bar-chart' },
+      { path: '/backup', label: 'backups_2', icon: 'bi-database' },
+      { path: '/settings', label: 'settings', icon: 'bi-gear' },
     ] },
   ];
 
@@ -45,21 +55,22 @@ export class Shell {
       }
       const route = this.router.routerState.snapshot.root.firstChild;
       const section = this.groups.flatMap(group => group.links).find(link => link.path === '/' + route?.url[0]?.path);
+      const account = Number(route?.queryParamMap.get('account') ?? route?.queryParamMap.get('requesterId') ??
+        route?.queryParamMap.get('assigneeId') ?? (route?.data['role'] === 'technician' ? 2 : route?.data['role'] === 'user' ? 1 : 0));
+      this.accountParams.set(account > 0 ? { account } : null);
       const mode = route?.data['mode'];
-      let current = route?.data['crumb'] ?? section?.label ?? route?.data['title'] ?? 'Tổng quan';
-      if (mode === 'create') current = section?.path === '/tickets' ? 'Tạo yêu cầu' : section?.path === '/users' ? 'Thêm người dùng' : 'Thêm danh mục';
-      if (mode === 'edit') current = 'Chỉnh sửa';
-      if (mode === 'view') current = 'Chi tiết';
-      this.crumbs.set(path === '/' ? [{ label: 'Tổng quan' }] : [
-        { label: 'Tổng quan', path: '/' },
+      let current = route?.data['crumb'] ?? section?.label ?? route?.data['title'] ?? 'overview';
+      if (mode === 'create') current = section?.path === '/tickets' ? 'new_request' : section?.path === '/users' ? 'add_user' : 'add_category';
+      if (mode === 'edit') current = 'edit_2';
+      if (mode === 'view') current = 'details';
+      this.pageLabel.set(current);
+      this.crumbs.set(path === '/' ? [{ label: 'overview' }] : [
+        { label: 'overview', path: '/' },
         ...(section && (mode === 'create' || mode === 'edit' || mode === 'view') ? [section] : []),
         { label: current },
       ]);
     });
-    effect(() => {
-      document.documentElement.dataset['theme'] = this.theme();
-      localStorage.setItem('helpdesk.theme', this.theme());
-    });
+    effect(() => this.title.setTitle(this.i18n.text('browser_title', { page: this.i18n.text(this.pageLabel()) })));
     effect(() => localStorage.setItem('helpdesk.sidebar', this.collapsed() ? 'collapsed' : 'expanded'));
   }
 

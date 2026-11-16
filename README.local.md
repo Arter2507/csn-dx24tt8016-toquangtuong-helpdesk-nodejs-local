@@ -44,7 +44,7 @@ pnpm start --host 127.0.0.1 --port 4200
 - Nếu giao diện báo không tải được dữ liệu, mở [API danh mục](http://127.0.0.1:3000/api/v1/categories). Nếu có xung đột cổng, kiểm tra bằng `Get-NetTCPConnection -LocalPort 3000,4200 -State Listen -ErrorAction SilentlyContinue`.
 - Dừng từng máy chủ bằng **Ctrl+C**. Khởi động lại Express sẽ đặt lại ticket, lịch sử và tệp đính kèm demo. Ghi chú nhanh và chế độ màu được lưu trên trình duyệt.
 
-## Tiến độ đến 15/11/2026
+## Tiến độ đến 16/11/2026
 
 | Hạng mục | Đã có trong bản demo |
 | --- | --- |
@@ -52,9 +52,12 @@ pnpm start --host 127.0.0.1 --port 4200
 | [Chuyên viên kỹ thuật](http://127.0.0.1:4200/dashboard/technician) | Công việc theo ngày cập nhật, lịch tuần tương tác, ghi chú nhanh và lối tắt đến việc được giao. |
 | [Người dùng](http://127.0.0.1:4200/dashboard/user) | Yêu cầu đã gửi hôm nay hoặc tuần này, tối đa 5 yêu cầu còn mở có ưu tiên cao nhất, và mục chờ xác nhận. |
 | Ticket | Tạo, tìm kiếm, lọc, phân trang, phân công và chuyển trạng thái. Form có kéo thả tệp, timeline và bảng yêu cầu trong ngày theo giờ Việt Nam. |
-| Người dùng và danh mục | Tìm kiếm, lọc, tạo, sửa và ngừng hoạt động qua API demo. |
+| Người dùng và danh mục | Tìm kiếm, lọc, tạo, sửa, bật hoặc ngưng sử dụng ngay trên bảng. Yêu cầu cũ giữ liên kết dữ liệu. |
 | Báo cáo | Lọc theo ngày tạo, loại và trạng thái, kèm biểu đồ, bảng tổng hợp và xuất CSV. |
-| Giao diện Phase -1 | Tên và logo Trạm Mèo, mascot mèo đeo tai nghe, font Chivo có tiếng Việt, sáng/tối, sidebar thu gọn, breadcrumb, dropdown và scrollbar theo chủ đề. |
+| Hồ sơ và thông báo | Cập nhật tên/email tài khoản demo, xem thay đổi mới nhất của yêu cầu, lọc và đánh dấu đã đọc. |
+| Cài đặt và ngôn ngữ | Đổi giữa tiếng Việt và tiếng Anh, sáng/tối, giảm chuyển động và chọn tài khoản demo mặc định. Bản dịch nằm trong [messages.json](src/frontend/src/app/messages.json). |
+| Xóa mềm và sao lưu | Xóa từng yêu cầu bằng nút trong cột thao tác hoặc chọn nhiều yêu cầu để xóa. Dữ liệu lưu trữ vẫn có trong bản sao JSON. |
+| Giao diện Phase -1 | Tên và logo Trạm Mèo, mascot mèo đeo tai nghe, font Chivo có tiếng Việt, sáng/tối, sidebar thu gọn, breadcrumb, dropdown và scrollbar theo chủ đề, hiệu ứng chuyển trang, trạng thái tải và animation đóng/mở sidebar. |
 
 ### Thử một luồng từ đầu đến cuối
 
@@ -65,12 +68,13 @@ pnpm start --host 127.0.0.1 --port 4200
 
 ### Kiểm thử và phạm vi
 
-Angular build thành công, **2/2** bài kiểm thử Angular, **3/3** bài kiểm thử API và **5/5** ca hồi quy Playwright đã đạt trong đợt kiểm tra ngày 15/11/2026. Kiểm tra bổ sung trên Edge xác nhận luồng chuyển giữa hai góc nhìn, đúng người gửi khi tạo ticket và giao diện ở 320, 390, 768 px. Xem [hướng dẫn chạy lại kiểm thử](output/playwright/README.md).
+Ngày 16/11/2026, Angular build thành công, **2/2** bài kiểm thử Angular, **5/5** bài kiểm thử API và **5/5** ca hồi quy Playwright đạt. Kiểm tra bổ sung trên Edge bao gồm chuyển trang, phản hồi khi tải chậm, đổi ngôn ngữ, lưu hồ sơ, đánh dấu đã đọc, tải bản sao, xóa từng yêu cầu hoặc nhiều yêu cầu, bật/ngưng sử dụng và animation sidebar desktop/mobile. Xem [hướng dẫn chạy lại kiểm thử](output/playwright/README.md).
 
-Đăng nhập, phân quyền thực tế, lưu dữ liệu MySQL cho người dùng và ticket, lưu tệp dài hạn, thông báo, hồ sơ và sao lưu vẫn đang phát triển. Các dashboard hiện dùng tài khoản demo và dữ liệu trong phiên Express.
+Đăng nhập, phân quyền thực tế, lưu dữ liệu MySQL cho người dùng và ticket, lưu tệp dài hạn, gửi thông báo ra ngoài ứng dụng và phục hồi dữ liệu vẫn đang phát triển. Bản sao JSON ghi thông tin tệp đính kèm, không chứa nội dung ảnh/PDF. Các dashboard hiện dùng tài khoản demo và dữ liệu trong phiên Express.
 
 ## Tài liệu và cộng tác
 
+- [Tổng hợp chức năng, tiến độ và phân công hai người](documents/markdown/tram-meo-tien-do-va-phan-cong.md).
 - [Thiết kế Phase -1](documents/Phase-1-Design-UI/), [hướng dẫn kỹ thuật](src/README.md), [bản đồ frontend](src/frontend/readme.map) và [bản đồ backend](src/backend/readme.map).
 - Làm việc trên nhánh `local` của repo cộng tác. Repo gốc và nhánh `master` dành cho báo cáo và nộp bài. [Quy tắc làm việc](.ai/rules/working-rules.md) · [Quy tắc mã nguồn](.ai/rules/source-code.md).
 - Giữ `.env`, thông tin kết nối, dependencies và sản phẩm build ngoài Git. Dùng Git LFS cho tệp được khai báo trong `.gitattributes`. Nếu tài liệu chỉ hiện nội dung pointer sau khi clone, cài Git LFS và chạy `git lfs pull`.

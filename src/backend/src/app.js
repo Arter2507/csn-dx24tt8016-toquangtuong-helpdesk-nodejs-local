@@ -26,7 +26,12 @@ app.get('/api/v1/tickets/:ticketId/attachments/:attachmentId', demoOnly, (req, r
 app.use('/api/v1/tickets', demoOnly, demoResourceRoutes({
   rows: tickets, input: ticketInput, updateInput: ticketUpdate, create: createTicket, update: updateTicket,
   searchable: ['title', 'description'], filters: { field: 'status', values: statuses },
-  queryFields: ticketListFields, receive: receiveTicket
+  queryFields: ticketListFields, receive: receiveTicket, archive: true
 }), discardFailedUpload);
+app.get('/api/v1/backups/snapshot', demoOnly, (req, res) => {
+  res.set('Cache-Control', 'no-store').json({ success: true, data: {
+    version: 1, createdAt: new Date().toISOString(), users, tickets, categories: demoRepository.snapshot(),
+  }, meta: null });
+});
 app.use((req, res, next) => next(new AppError(404, 'NOT_FOUND', 'Không tìm thấy API')));
 app.use(errorHandler);

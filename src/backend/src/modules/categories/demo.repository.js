@@ -6,6 +6,8 @@ let rows = [
 ];
 let nextId = 5;
 export const demoRepository = {
+  snapshot: () => rows,
+  isActive: id => rows.some(row => row.id === id && row.isActive),
   async list(q) {
     const keyword = q.search.toLocaleLowerCase();
     const filtered = rows.filter(r => (r.code.toLocaleLowerCase().includes(keyword) || r.name.toLocaleLowerCase().includes(keyword)) && (q.isActive === undefined || r.isActive === (q.isActive === 'true')));

@@ -1,32 +1,32 @@
 <div class="page-heading">
-  <div><h1>Tổng quan hỗ trợ</h1><p>Quản trị · Theo dõi việc tiếp nhận, phân công và xử lý yêu cầu.</p></div>
+  <div><h1>{{ 'support_overview' | t }}</h1><p>{{ 'admin_track_incoming_requests_assignments_and_progress' | t }}</p></div>
   <div class="heading-actions">
-    <span class="badge">Dữ liệu demo</span>
-    <a class="primary" routerLink="/tickets/new"><i class="bi bi-plus-lg" aria-hidden="true"></i> Tạo yêu cầu</a>
+    <span class="badge">{{ 'demo_data' | t }}</span>
+    <a class="primary" routerLink="/tickets/new"><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'new_request' | t }}</a>
   </div>
 </div>
 @if (error()) {
-  <div class="notice error" role="alert">Không thể tải dữ liệu tổng quan. <button class="secondary" (click)="load()">Thử lại</button></div>
+  <div class="notice error" role="alert">{{ 'we_couldnt_load_the_overview' | t }} <button class="secondary" (click)="load()">{{ 'try_again' | t }}</button></div>
 } @else if (tickets(); as rows) {
   <div class="stack">
     <div class="overview-grid">
       <section class="panel welcome">
-        <div><h2>Xin chào!</h2><p>Đây là tình hình hỗ trợ kỹ thuật trong không gian demo.</p></div>
+        <div><h2>{{ 'hello' | t }}</h2><p>{{ 'heres_whats_happening_in_your_demo_workspace' | t }}</p></div>
         <img src="mascot/cat-support.webp" width="320" height="300" alt="">
       </section>
       <helpdesk-stat-cards [tickets]="rows" />
     </div>
     <section class="panel admin-shortcuts">
-      <div><h2><i class="bi bi-inboxes" aria-hidden="true"></i> Hàng đợi phân công</h2><p class="muted">{{ unassigned() }} yêu cầu mới chưa có chuyên viên.</p></div>
+      <div><h2><i class="bi bi-inboxes" aria-hidden="true"></i> {{ 'assignment_queue' | t }}</h2><p class="muted">{{ unassigned() }} {{ 'new_requests_waiting_for_someone_to_pick_them_up' | t }}</p></div>
       <div class="heading-actions">
-        <a class="secondary" routerLink="/tickets" [queryParams]="{ assigneeId: 0, status: 'NEW' }">Xem yêu cầu chưa phân công</a>
-        <a class="text-button" routerLink="/reports"><i class="bi bi-bar-chart" aria-hidden="true"></i> Báo cáo</a>
+        <a class="secondary" routerLink="/tickets" [queryParams]="{ assigneeId: 0, status: 'NEW' }">{{ 'view_unassigned_requests' | t }}</a>
+        <a class="text-button" routerLink="/reports"><i class="bi bi-bar-chart" aria-hidden="true"></i> {{ 'reports' | t }}</a>
       </div>
     </section>
     <div class="charts">
       <section class="panel">
-        <h2>Yêu cầu theo ngày</h2>
-        <p class="section-note">7 ngày gần nhất · Theo ngày tạo · Số yêu cầu</p>
+        <h2>{{ 'requests_by_day' | t }}</h2>
+        <p class="section-note">{{ 'last_7_days_by_date_added_request_count' | t }}</p>
         @if (hasTrend()) {
           <ul class="chart-columns">
             @for (day of trend(); track day.date) {
@@ -37,34 +37,34 @@
             }
           </ul>
         } @else {
-          <div class="empty-data"><i class="bi bi-bar-chart" aria-hidden="true"></i><p>Chưa có yêu cầu trong kỳ này.</p></div>
+          <div class="empty-data"><i class="bi bi-bar-chart" aria-hidden="true"></i><p>{{ 'no_requests_in_this_period' | t }}</p></div>
         }
       </section>
-      <helpdesk-status-chart [tickets]="rows" period="Tất cả thời gian" />
+      <helpdesk-status-chart [tickets]="rows" period="all_time" />
     </div>
     <section class="panel">
-      <div class="section-heading"><h2>Yêu cầu gần đây</h2><a class="text-button" routerLink="/tickets">Xem tất cả <i class="bi bi-chevron-right" aria-hidden="true"></i></a></div>
+      <div class="section-heading"><h2>{{ 'recent_requests' | t }}</h2><a class="text-button" routerLink="/tickets">{{ 'see_all' | t }} <i class="bi bi-chevron-right" aria-hidden="true"></i></a></div>
       @if (recent().length) {
-        <div class="table-scroll" role="region" aria-label="Yêu cầu gần đây" tabindex="0">
+        <div class="table-scroll" role="region" [attr.aria-label]="('recent_requests' | t)" tabindex="0">
           <table class="recent-table">
-            <thead><tr><th scope="col">Mã</th><th scope="col">Tiêu đề</th><th scope="col">Ưu tiên</th><th scope="col">Trạng thái</th></tr></thead>
+            <thead><tr><th scope="col">{{ 'code' | t }}</th><th scope="col">{{ 'title' | t }}</th><th scope="col">{{ 'priority' | t }}</th><th scope="col">{{ 'status' | t }}</th></tr></thead>
             <tbody>
               @for (row of recent(); track row.id) {
                 <tr>
                   <td><a class="badge" [routerLink]="['/tickets', row.id, 'edit']">{{ row['code'] ?? '#' + row.id }}</a></td>
                   <td>{{ row['title'] }}</td>
-                  <td><span class="badge" [attr.data-tone]="priority(row['priority'])?.tone"><i class="bi" [class]="priority(row['priority'])?.icon ?? ''" aria-hidden="true"></i>{{ priority(row['priority'])?.label }}</span></td>
-                  <td><span class="badge badge-dot" [attr.data-tone]="status(row['status'])?.tone">{{ status(row['status'])?.label }}</span></td>
+                  <td><span class="badge" [attr.data-tone]="priority(row['priority'])?.tone"><i class="bi" [class]="priority(row['priority'])?.icon ?? ''" aria-hidden="true"></i>{{ (priority(row['priority'])?.label) | t }}</span></td>
+                  <td><span class="badge badge-dot" [attr.data-tone]="status(row['status'])?.tone">{{ (status(row['status'])?.label) | t }}</span></td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
       } @else {
-        <div class="empty-data"><i class="bi bi-inbox" aria-hidden="true"></i><p>Bạn chưa có yêu cầu hỗ trợ nào.</p></div>
+        <div class="empty-data"><i class="bi bi-inbox" aria-hidden="true"></i><p>{{ 'you_havent_sent_any_support_requests_yet' | t }}</p></div>
       }
     </section>
   </div>
 } @else {
-  <p class="panel notice" role="status">Đang tải dữ liệu tổng quan…</p>
+  <app-loading />
 }

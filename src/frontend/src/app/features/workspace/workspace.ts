@@ -1,5 +1,8 @@
+import { BulkActions, RowSelection } from '../../bulk-actions';
+import { Loading } from '../../loading';
+import { Translate, I18n, errorKey } from '../../i18n';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectorRef, Component, DestroyRef, ElementRef, inject, input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, ElementRef, inject, input, OnInit, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -16,7 +19,7 @@ const FILE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'appli
 
 @Component({
   selector: 'app-workspace',
-  imports: [FormsModule, RouterLink, DatePipe],
+  imports: [Translate, Loading, BulkActions, FormsModule, RouterLink, DatePipe],
   templateUrl: './workspace.html',
 })
 export class Workspace implements OnInit {
@@ -25,6 +28,8 @@ export class Workspace implements OnInit {
   readonly id = input<string>();
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  readonly i18n = inject(I18n);
+  readonly selection = new RowSelection();
   private readonly service = inject(WorkspaceService);
   private readonly categories = inject(CategoryService);
   private readonly view = inject(ChangeDetectorRef);
@@ -55,7 +60,7 @@ export class Workspace implements OnInit {
   form: Record<string, Value> = {};
   editing: Row | null = null;
   categoryOptions: Category[] = [];
-  categoryNames = new Map<number, string>();
+
   accountNames = new Map<number, string>();
   search = '';
   filter = '';
@@ -71,8 +76,14 @@ export class Workspace implements OnInit {
   saving = false;
   error = '';
   notice = '';
+  noticeCode = '';
   noticeTicket: number | null = null;
 
+  get rowIds() { return this.rows.map(row => row.id); }
+  readonly bulk = viewChild(BulkActions);
+  statusSaving = false;
+  statusError = '';
+  get canDelete() { return this.isTicket && !this.requesterId && !(Number(this.assigneeId) > 0); }
   get isTicket() { return this.resource() === 'tickets'; }
   get filters() { return this.isTicket ? ticketStatuses : userRoles; }
   get displayField() { return this.isTicket ? 'title' : 'fullName'; }
@@ -83,9 +94,10 @@ export class Workspace implements OnInit {
   get startRow() { return (this.page - 1) * this.pageSize + 1; }
 
   ngOnInit() {
-    const result = this.router.lastSuccessfulNavigation()?.extras.info as { notice?: string; ticketId?: number } | undefined;
+    const result = this.router.lastSuccessfulNavigation()?.extras.info as { notice?: string; ticketId?: number; code?: string } | undefined;
     this.notice = result?.notice ?? '';
     this.noticeTicket = result?.ticketId ?? null;
+    this.noticeCode = result?.code ?? '';
     if (this.mode() === 'list') {
       this.order = this.isTicket ? 'recent' : 'asc';
       this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(params => {
@@ -122,11 +134,11 @@ export class Workspace implements OnInit {
     try {
       const row = id ? (await firstValueFrom(this.service.find(this.resource(), id))).data : null;
       const fields: Field[] = this.isTicket ? await this.ticketFields(row) : [
-        { key: 'fullName', label: 'Họ tên', placeholder: 'Nhập họ tên', maxLength: 150 },
-        { key: 'email', label: 'Email', kind: 'email', placeholder: 'name@example.com', maxLength: 254 },
-        { key: 'role', label: 'Vai trò', kind: 'select', options: userRoles },
-        ...(row ? [{ key: 'isActive', label: 'Trạng thái tài khoản', kind: 'select' as const,
-          options: [{ value: true, label: 'Hoạt động' }, { value: false, label: 'Ngừng hoạt động' }] }] : []),
+        { key: 'fullName', label: 'full_name', placeholder: 'enter_a_full_name', maxLength: 150 },
+        { key: 'email', label: 'email', kind: 'email', placeholder: 'name@example.com', maxLength: 254 },
+        { key: 'role', label: 'role', kind: 'select', options: userRoles },
+        ...(row ? [{ key: 'isActive', label: 'account_status', kind: 'select' as const,
+          options: [{ value: true, label: 'in_use' }, { value: false, label: 'not_in_use' }] }] : []),
       ];
       if (request !== this.request || this.destroy.destroyed) return;
       this.editing = row;
@@ -137,7 +149,10 @@ export class Workspace implements OnInit {
         field.key, row ? row[field.key] : field.key === 'priority' ? 'MEDIUM' : field.key === 'categoryId' ? null : field.options?.[0]?.value ?? '',
       ]));
       const requesters = fields.find(field => field.key === 'requesterId')?.options;
-      if (requesters?.some(option => option.value === Number(this.requesterId))) this.form['requesterId'] = Number(this.requesterId);
+      if (requesters && this.requesterId) {
+        this.form['requesterId'] = requesters.some(option => option.value === Number(this.requesterId)) ? Number(this.requesterId) : null;
+        if (this.form['requesterId'] === null) this.error = 'api_INVALID_REQUESTER';
+      }
     } catch (error) {
       if (request === this.request) this.showError(error);
     } finally {
@@ -179,16 +194,16 @@ export class Workspace implements OnInit {
     if (!files.length || this.readOnly || this.saving) return;
     this.fileError = '';
     if (files.some(file => !FILE_TYPES.includes(file.type) || !file.size)) {
-      this.fileError = 'Chỉ chọn ảnh PNG, JPEG, GIF, WebP hoặc PDF hợp lệ.';
+      this.fileError = 'choose_a_valid_png_jpeg_gif_webp_or_pdf';
       return;
     }
     const next = [...this.attachments, ...this.files, ...files];
     if (next.length > MAX_FILES) {
-      this.fileError = 'Mỗi yêu cầu chỉ được đính kèm tối đa 5 tệp.';
+      this.fileError = 'you_can_attach_up_to_5_files_to_a_request';
       return;
     }
     if (next.reduce((total, file) => total + file.size, 0) > MAX_BYTES) {
-      this.fileError = 'Tổng dung lượng đính kèm tối đa 50 MB.';
+      this.fileError = 'attachments_can_be_up_to_50_mb_in_total';
       return;
     }
     this.files = [...this.files, ...files];
@@ -211,29 +226,29 @@ export class Workspace implements OnInit {
     }));
     this.optionsLoaded = true;
     this.categoryOptions = categories;
-    this.categoryNames = new Map(categories.map(row => [row.id, row.name]));
-    this.accountNames = new Map(users.map(row => [row.id, String(row['fullName'])]));
+
+    this.accountNames = new Map(users.map(row => [row.id, this.i18n.personKey(row)]));
     return users;
   }
 
   private async ticketFields(row: Row | null): Promise<Field[]> {
     const accounts = await this.loadOptions();
-    const accountOptions = (rows: Row[]) => rows.map(row => ({ value: row.id, label: String(row['fullName']) }));
+    const accountOptions = (rows: Row[]) => rows.map(row => ({ value: row.id, label: this.i18n.personKey(row) }));
     const active = accounts.filter(user => user['isActive']);
     const categories = this.categoryOptions.filter(category => category.isActive || category.id === row?.['categoryId']);
     const assignees = accounts.filter(user => (user['isActive'] && user['role'] === 'TECHNICIAN') || user.id === row?.['assigneeId']);
     return [
-      { key: 'title', label: 'Tiêu đề yêu cầu', placeholder: 'Nhập tiêu đề sự cố', maxLength: 200, wide: true },
-      { key: 'categoryId', label: 'Loại yêu cầu', kind: 'select', options: [
-        { value: null, label: 'Chọn loại yêu cầu' }, ...categories.map(row => ({ value: row.id, label: row.name })),
+      { key: 'title', label: 'request_title', placeholder: 'enter_a_brief_title', maxLength: 200, wide: true },
+      { key: 'categoryId', label: 'request_category', kind: 'select', options: [
+        { value: null, label: 'choose_a_category' }, ...categories.map(row => ({ value: row.id, label: row.name })),
       ] },
-      { key: 'priority', label: 'Mức ưu tiên', kind: 'select', options: ticketPriorities },
-      { key: 'description', label: 'Mô tả sự cố', kind: 'textarea', placeholder: 'Mô tả chi tiết vấn đề bạn gặp phải', maxLength: 10000, wide: true },
+      { key: 'priority', label: 'priority_level', kind: 'select', options: ticketPriorities },
+      { key: 'description', label: 'describe_the_issue', kind: 'textarea', placeholder: 'tell_us_what_happened_and_what_youve_already_tried', maxLength: 10000, wide: true },
       ...(row ? [
-        { key: 'assigneeId', label: 'Kỹ thuật viên', kind: 'select' as const, optional: true,
-          options: [{ value: null, label: 'Chưa phân công' }, ...accountOptions(assignees)] },
-        { key: 'status', label: 'Trạng thái', kind: 'select' as const, options: ticketStatuses },
-      ] : [{ key: 'requesterId', label: 'Người gửi mẫu', kind: 'select' as const, options: accountOptions(active) }]),
+        { key: 'assigneeId', label: 'technician_2', kind: 'select' as const, optional: true,
+          options: [{ value: null, label: 'unassigned' }, ...accountOptions(assignees)] },
+        { key: 'status', label: 'status', kind: 'select' as const, options: ticketStatuses },
+      ] : [{ key: 'requesterId', label: 'demo_requester', kind: 'select' as const, options: accountOptions(active.filter(user => !this.requesterId || user.id === Number(this.requesterId))) }]),
     ];
   }
 
@@ -255,6 +270,7 @@ export class Workspace implements OnInit {
   }
 
   async load(page: number) {
+    this.selection.clear();
     const request = ++this.request;
     this.busy = true;
     this.error = '';
@@ -284,6 +300,33 @@ export class Workspace implements OnInit {
     }
   }
 
+  async toggleUser(row: Row) {
+    if (this.isTicket || this.statusSaving) return;
+    this.statusSaving = true;
+    this.statusError = this.notice = '';
+    this.noticeTicket = null;
+    try {
+      const isActive = !row['isActive'];
+      await firstValueFrom(this.service.save('users', row.id, { isActive }));
+      if (this.destroy.destroyed) return;
+      this.notice = isActive ? 'user_activated' : 'user_deactivated';
+      await this.load(this.page);
+    } catch (error) { this.statusError = errorKey(error); }
+    finally {
+      this.statusSaving = false;
+      if (!this.destroy.destroyed) this.view.markForCheck();
+    }
+  }
+
+  categoryName(id: number) {
+    const category = this.categoryOptions.find(row => row.id === id);
+    return category ? this.i18n.category(category) : '—';
+  }
+
+  fieldLabel(field: Field, value: Value, fallback: string) {
+    return field.key === 'categoryId' && typeof value === 'number' ? this.categoryName(value) : this.i18n.text(fallback);
+  }
+
   status(value: unknown) { return ticketStatuses.find(item => item.value === value); }
   priority(value: unknown) { return ticketPriorities.find(item => item.value === value); }
   role(value: unknown) { return userRoles.find(item => item.value === value)?.label; }
@@ -302,15 +345,14 @@ export class Workspace implements OnInit {
     try {
       const { data } = await firstValueFrom(this.service.save(this.resource(), this.editing?.id ?? null, payload, this.files, this.removed));
       const notice = this.isTicket
-        ? (this.editing ? 'Đã cập nhật yêu cầu ' : 'Đã gửi yêu cầu ') + (data['code'] ?? '#' + data.id) + '.'
-        : this.editing ? 'Đã cập nhật người dùng.' : 'Đã thêm người dùng.';
-      await this.router.navigate(['/', this.resource()], { queryParams: this.scope, info: { notice, ticketId: this.isTicket ? data.id : null } });
+        ? (this.editing ? 'updated_request' : 'sent_request')
+        : this.editing ? 'user_updated' : 'user_added';
+      await this.router.navigate(['/', this.resource()], { queryParams: this.scope, info: { notice, ticketId: this.isTicket ? data.id : null, code: data['code'] ?? '#' + data.id } });
     } catch (error) { this.showError(error); }
     finally { this.saving = false; this.view.markForCheck(); }
   }
 
   private showError(error: unknown) {
-    const response = error as { error?: { error?: { message?: string } } };
-    this.error = response?.error?.error?.message ?? 'Không tải hoặc lưu được dữ liệu. Vui lòng thử lại.';
+    this.error = errorKey(error);
   }
 }

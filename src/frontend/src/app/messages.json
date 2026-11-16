@@ -1,0 +1,1402 @@
+{
+  "categories": {
+    "vi": "Danh mục",
+    "en": "Categories"
+  },
+  "add_category": {
+    "vi": "Thêm danh mục",
+    "en": "Add category"
+  },
+  "edit_category": {
+    "vi": "Chỉnh sửa danh mục",
+    "en": "Edit category"
+  },
+  "manage_request_categories_and_their_availability": {
+    "vi": "Quản lý các loại yêu cầu hỗ trợ và trạng thái sử dụng.",
+    "en": "Manage request categories and their availability."
+  },
+  "demo_data": {
+    "vi": "Dữ liệu demo",
+    "en": "Demo data"
+  },
+  "back_to_list": {
+    "vi": "Về danh sách",
+    "en": "Back to list"
+  },
+  "try_again": {
+    "vi": "Thử lại",
+    "en": "Try again"
+  },
+  "search": {
+    "vi": "Tìm kiếm",
+    "en": "Search"
+  },
+  "category_code_or_name": {
+    "vi": "Mã hoặc tên danh mục",
+    "en": "Category code or name"
+  },
+  "status": {
+    "vi": "Trạng thái",
+    "en": "Status"
+  },
+  "all": {
+    "vi": "Tất cả",
+    "en": "All"
+  },
+  "active": {
+    "vi": "Hoạt động",
+    "en": "Active"
+  },
+  "inactive": {
+    "vi": "Ngừng hoạt động",
+    "en": "Inactive"
+  },
+  "sort_by": {
+    "vi": "Sắp xếp",
+    "en": "Sort by"
+  },
+  "id": {
+    "vi": "Mã số",
+    "en": "ID"
+  },
+  "code": {
+    "vi": "Mã",
+    "en": "Code"
+  },
+  "name": {
+    "vi": "Tên",
+    "en": "Name"
+  },
+  "sort_order": {
+    "vi": "Thứ tự",
+    "en": "Sort order"
+  },
+  "ascending": {
+    "vi": "Tăng",
+    "en": "Ascending"
+  },
+  "descending": {
+    "vi": "Giảm",
+    "en": "Descending"
+  },
+  "search_2": {
+    "vi": "Tìm",
+    "en": "Search"
+  },
+  "clear_filters": {
+    "vi": "Xóa bộ lọc",
+    "en": "Clear filters"
+  },
+  "loading_categories": {
+    "vi": "Đang tải danh mục…",
+    "en": "Loading categories…"
+  },
+  "active_filters": {
+    "vi": "Bộ lọc đã áp dụng",
+    "en": "Active filters"
+  },
+  "search_3": {
+    "vi": "Tìm “",
+    "en": "Search “"
+  },
+  "category_list": {
+    "vi": "Danh sách danh mục",
+    "en": "Category list"
+  },
+  "actions": {
+    "vi": "Thao tác",
+    "en": "Actions"
+  },
+  "edit": {
+    "vi": "Sửa",
+    "en": "Edit"
+  },
+  "results": {
+    "vi": "kết quả",
+    "en": "results"
+  },
+  "previous_page": {
+    "vi": "Trang trước",
+    "en": "Previous page"
+  },
+  "no_categories_match_your_search": {
+    "vi": "Không tìm thấy danh mục phù hợp.",
+    "en": "No categories match your search."
+  },
+  "no_categories_yet": {
+    "vi": "Chưa có danh mục.",
+    "en": "No categories yet."
+  },
+  "loading_the_form": {
+    "vi": "Đang tải biểu mẫu…",
+    "en": "Loading the form…"
+  },
+  "category_details": {
+    "vi": "Thông tin danh mục",
+    "en": "Category details"
+  },
+  "fields_marked_are_required": {
+    "vi": "Các trường có dấu * là bắt buộc.",
+    "en": "Fields marked * are required."
+  },
+  "for_example_network": {
+    "vi": "Ví dụ NETWORK",
+    "en": "For example, NETWORK"
+  },
+  "use_uppercase_letters_numbers_or_underscores": {
+    "vi": "Nhập mã gồm chữ in hoa, chữ số hoặc dấu gạch dưới.",
+    "en": "Use uppercase letters, numbers, or underscores."
+  },
+  "category_name": {
+    "vi": "Tên danh mục",
+    "en": "Category name"
+  },
+  "enter_a_category_name": {
+    "vi": "Vui lòng nhập tên danh mục.",
+    "en": "Enter a category name."
+  },
+  "cancel": {
+    "vi": "Hủy",
+    "en": "Cancel"
+  },
+  "saving": {
+    "vi": "Đang lưu…",
+    "en": "Saving…"
+  },
+  "save_changes": {
+    "vi": "Lưu thay đổi",
+    "en": "Save changes"
+  },
+  "support_overview": {
+    "vi": "Tổng quan hỗ trợ",
+    "en": "Support overview"
+  },
+  "admin_track_incoming_requests_assignments_and_progress": {
+    "vi": "Quản trị · Theo dõi việc tiếp nhận, phân công và xử lý yêu cầu.",
+    "en": "Admin · Track incoming requests, assignments, and progress."
+  },
+  "new_request": {
+    "vi": "Tạo yêu cầu",
+    "en": "New request"
+  },
+  "we_couldnt_load_the_overview": {
+    "vi": "Không thể tải dữ liệu tổng quan.",
+    "en": "We couldn’t load the overview."
+  },
+  "hello": {
+    "vi": "Xin chào!",
+    "en": "Hello!"
+  },
+  "heres_whats_happening_in_your_demo_workspace": {
+    "vi": "Đây là tình hình hỗ trợ kỹ thuật trong không gian demo.",
+    "en": "Here’s what’s happening in your demo workspace."
+  },
+  "assignment_queue": {
+    "vi": "Hàng đợi phân công",
+    "en": "Assignment queue"
+  },
+  "new_requests_waiting_for_someone_to_pick_them_up": {
+    "vi": "yêu cầu mới chưa có chuyên viên.",
+    "en": "new requests waiting for someone to pick them up."
+  },
+  "view_unassigned_requests": {
+    "vi": "Xem yêu cầu chưa phân công",
+    "en": "View unassigned requests"
+  },
+  "reports": {
+    "vi": "Báo cáo",
+    "en": "Reports"
+  },
+  "requests_by_day": {
+    "vi": "Yêu cầu theo ngày",
+    "en": "Requests by day"
+  },
+  "last_7_days_by_date_added_request_count": {
+    "vi": "7 ngày gần nhất · Theo ngày tạo · Số yêu cầu",
+    "en": "Last 7 days · By date added · Request count"
+  },
+  "no_requests_in_this_period": {
+    "vi": "Chưa có yêu cầu trong kỳ này.",
+    "en": "No requests in this period."
+  },
+  "recent_requests": {
+    "vi": "Yêu cầu gần đây",
+    "en": "Recent requests"
+  },
+  "see_all": {
+    "vi": "Xem tất cả",
+    "en": "See all"
+  },
+  "title": {
+    "vi": "Tiêu đề",
+    "en": "Title"
+  },
+  "priority": {
+    "vi": "Ưu tiên",
+    "en": "Priority"
+  },
+  "you_havent_sent_any_support_requests_yet": {
+    "vi": "Bạn chưa có yêu cầu hỗ trợ nào.",
+    "en": "You haven’t sent any support requests yet."
+  },
+  "loading_the_overview": {
+    "vi": "Đang tải dữ liệu tổng quan…",
+    "en": "Loading the overview…"
+  },
+  "reports_insights": {
+    "vi": "Báo cáo & thống kê",
+    "en": "Reports & insights"
+  },
+  "see_requests_by_category_date_and_status": {
+    "vi": "Phân tích số lượng yêu cầu theo loại, thời gian và trạng thái.",
+    "en": "See requests by category, date, and status."
+  },
+  "we_couldnt_load_the_report": {
+    "vi": "Không thể tải dữ liệu báo cáo.",
+    "en": "We couldn’t load the report."
+  },
+  "time_period": {
+    "vi": "Khoảng thời gian",
+    "en": "Time period"
+  },
+  "request_category": {
+    "vi": "Loại yêu cầu",
+    "en": "Request category"
+  },
+  "all_categories": {
+    "vi": "Tất cả loại",
+    "en": "All categories"
+  },
+  "all_statuses": {
+    "vi": "Tất cả trạng thái",
+    "en": "All statuses"
+  },
+  "apply": {
+    "vi": "Áp dụng",
+    "en": "Apply"
+  },
+  "download_csv": {
+    "vi": "Xuất CSV",
+    "en": "Download CSV"
+  },
+  "requests_by_category": {
+    "vi": "Số yêu cầu theo loại",
+    "en": "Requests by category"
+  },
+  "request_count": {
+    "vi": "· Số yêu cầu",
+    "en": "· Request count"
+  },
+  "no_requests_match_these_filters": {
+    "vi": "Không có yêu cầu phù hợp.",
+    "en": "No requests match these filters."
+  },
+  "category_summary": {
+    "vi": "Tổng hợp theo loại",
+    "en": "Category summary"
+  },
+  "requests": {
+    "vi": "yêu cầu",
+    "en": "requests"
+  },
+  "count": {
+    "vi": "Số lượng",
+    "en": "Count"
+  },
+  "closed": {
+    "vi": "Đã đóng",
+    "en": "Closed"
+  },
+  "in_progress": {
+    "vi": "Đang xử lý",
+    "en": "In progress"
+  },
+  "theres_no_data_for_these_filters": {
+    "vi": "Chưa có dữ liệu cho bộ lọc đã chọn.",
+    "en": "There’s no data for these filters."
+  },
+  "loading_the_report": {
+    "vi": "Đang tải báo cáo…",
+    "en": "Loading the report…"
+  },
+  "demo_workspace": {
+    "vi": "Không gian demo",
+    "en": "Demo workspace"
+  },
+  "technician_workspace": {
+    "vi": "Bàn làm việc kỹ thuật",
+    "en": "Technician workspace"
+  },
+  "my_support_requests": {
+    "vi": "Yêu cầu hỗ trợ của tôi",
+    "en": "My support requests"
+  },
+  "see_whats_assigned_to_you_your_week_and_recent_updates": {
+    "vi": "Theo dõi việc được giao, lịch tuần và các cập nhật cần xử lý.",
+    "en": "See what’s assigned to you, your week, and recent updates."
+  },
+  "send_requests_track_progress_and_see_what_needs_your_attention": {
+    "vi": "Gửi yêu cầu, theo dõi tiến độ và xem những việc cần chú ý.",
+    "en": "Send requests, track progress, and see what needs your attention."
+  },
+  "switch_to_requester_view": {
+    "vi": "Sang góc nhìn người gửi",
+    "en": "Switch to requester view"
+  },
+  "we_couldnt_load_your_data": {
+    "vi": "Không thể tải dữ liệu.",
+    "en": "We couldn’t load your data."
+  },
+  "demo_account": {
+    "vi": "Tài khoản demo",
+    "en": "Demo account"
+  },
+  "technician": {
+    "vi": "Chuyên viên kỹ thuật",
+    "en": "Technician"
+  },
+  "requester": {
+    "vi": "Người gửi yêu cầu",
+    "en": "Requester"
+  },
+  "back_to_technician_workspace": {
+    "vi": "Trở về bàn kỹ thuật",
+    "en": "Back to technician workspace"
+  },
+  "view_demo_requester": {
+    "vi": "Xem người gửi mẫu",
+    "en": "View demo requester"
+  },
+  "view_the_technician_as_a_requester": {
+    "vi": "Xem tài khoản kiêm kỹ thuật",
+    "en": "View the technician as a requester"
+  },
+  "assigned_to_you": {
+    "vi": "Được phân công",
+    "en": "Assigned to you"
+  },
+  "total_requests_sent": {
+    "vi": "Tổng yêu cầu đã gửi",
+    "en": "Total requests sent"
+  },
+  "waiting_for_you_to_review": {
+    "vi": "Chờ xác nhận",
+    "en": "Waiting for you to review"
+  },
+  "todays_tasks": {
+    "vi": "Công việc hôm nay",
+    "en": "Today’s tasks"
+  },
+  "tasks_on": {
+    "vi": "Công việc ngày ",
+    "en": "Tasks on "
+  },
+  "assigned_requests_updated_on_the_selected_day": {
+    "vi": "Yêu cầu được giao có cập nhật trong ngày đã chọn.",
+    "en": "Assigned requests updated on the selected day."
+  },
+  "see_all_my_assignments": {
+    "vi": "Xem toàn bộ việc được giao",
+    "en": "See all my assignments"
+  },
+  "weekly_calendar": {
+    "vi": "Lịch tuần",
+    "en": "Weekly calendar"
+  },
+  "previous_week": {
+    "vi": "Tuần trước",
+    "en": "Previous week"
+  },
+  "today": {
+    "vi": "Hôm nay",
+    "en": "Today"
+  },
+  "next_week": {
+    "vi": "Tuần sau",
+    "en": "Next week"
+  },
+  "requests_by_last_update": {
+    "vi": "· Số yêu cầu theo ngày cập nhật",
+    "en": "· Requests by last update"
+  },
+  "requests_2": {
+    "vi": " yêu cầu",
+    "en": " requests"
+  },
+  "quick_note": {
+    "vi": "Ghi chú nhanh",
+    "en": "Quick note"
+  },
+  "your_note_is_saved_in_this_browser": {
+    "vi": "Ghi chú cá nhân lưu trên trình duyệt này.",
+    "en": "Your note is saved in this browser."
+  },
+  "jot_down_a_troubleshooting_step_or_a_handover_note": {
+    "vi": "Ghi lại bước kiểm tra hoặc việc cần bàn giao…",
+    "en": "Jot down a troubleshooting step or a handover note…"
+  },
+  "unsaved_changes": {
+    "vi": "Có thay đổi chưa lưu",
+    "en": "Unsaved changes"
+  },
+  "save_note": {
+    "vi": "Lưu ghi chú",
+    "en": "Save note"
+  },
+  "quick_links": {
+    "vi": "Truy cập nhanh",
+    "en": "Quick links"
+  },
+  "my_assignments": {
+    "vi": "Việc được giao",
+    "en": "My assignments"
+  },
+  "work_in_progress": {
+    "vi": "Việc đang xử lý",
+    "en": "Work in progress"
+  },
+  "send_my_own_request": {
+    "vi": "Gửi yêu cầu của tôi",
+    "en": "Send my own request"
+  },
+  "sent_requests": {
+    "vi": "Yêu cầu đã gửi",
+    "en": "Sent requests"
+  },
+  "request_period": {
+    "vi": "Khoảng thời gian yêu cầu",
+    "en": "Request period"
+  },
+  "this_week": {
+    "vi": "Tuần này",
+    "en": "This week"
+  },
+  "from": {
+    "vi": "Từ",
+    "en": "From"
+  },
+  "to": {
+    "vi": "đến",
+    "en": "to"
+  },
+  "up_to_8_recent_requests": {
+    "vi": "· Tối đa 8 yêu cầu gần nhất",
+    "en": "· Up to 8 recent requests"
+  },
+  "see_all_my_requests": {
+    "vi": "Xem tất cả yêu cầu của tôi",
+    "en": "See all my requests"
+  },
+  "5_priority_requests": {
+    "vi": "5 yêu cầu ưu tiên",
+    "en": "5 priority requests"
+  },
+  "open_requests_ordered_by_priority_and_then_most_recent_update": {
+    "vi": "Yêu cầu còn mở, xếp theo mức độ ưu tiên rồi lần cập nhật gần nhất.",
+    "en": "Open requests, ordered by priority and then most recent update."
+  },
+  "ready_for_you_to_review": {
+    "vi": "Kết quả chờ bạn xem",
+    "en": "Ready for you to review"
+  },
+  "a_technician_has_updated": {
+    "vi": "Chuyên viên đã cập nhật kết quả cho ",
+    "en": "A technician has updated "
+  },
+  "of_your_requests": {
+    "vi": " yêu cầu của bạn.",
+    "en": " of your requests."
+  },
+  "when_a_technician_finishes_the_request_will_appear_under_waiting_for_you_to": {
+    "vi": "Khi chuyên viên cập nhật kết quả, yêu cầu sẽ xuất hiện ở mục Chờ xác nhận.",
+    "en": "When a technician finishes, the request will appear under Waiting for you to review."
+  },
+  "see_requests_to_review": {
+    "vi": "Xem yêu cầu chờ xác nhận",
+    "en": "See requests to review"
+  },
+  "loading": {
+    "vi": "Đang tải dữ liệu…",
+    "en": "Loading…"
+  },
+  "skip_to_content": {
+    "vi": "Đến nội dung",
+    "en": "Skip to content"
+  },
+  "tr_m_m_o": {
+    "vi": "Trạm Mèo",
+    "en": "Trạm Mèo"
+  },
+  "tech_trouble_m_o_can_help": {
+    "vi": "Có sự cố, có Mèo.",
+    "en": "Tech trouble? Mèo can help."
+  },
+  "quick_request_search": {
+    "vi": "Tìm nhanh yêu cầu",
+    "en": "Quick request search"
+  },
+  "find_a_request": {
+    "vi": "Tìm nhanh yêu cầu…",
+    "en": "Find a request…"
+  },
+  "find_a_request_2": {
+    "vi": "Tìm yêu cầu",
+    "en": "Find a request"
+  },
+  "notifications": {
+    "vi": "Thông báo",
+    "en": "Notifications"
+  },
+  "profile": {
+    "vi": "Hồ sơ",
+    "en": "Profile"
+  },
+  "main_navigation": {
+    "vi": "Điều hướng chính",
+    "en": "Main navigation"
+  },
+  "color_theme": {
+    "vi": "Chế độ màu",
+    "en": "Color theme"
+  },
+  "light_theme": {
+    "vi": "Giao diện sáng",
+    "en": "Light theme"
+  },
+  "dark_theme": {
+    "vi": "Giao diện tối",
+    "en": "Dark theme"
+  },
+  "expand_sidebar": {
+    "vi": "Mở rộng thanh bên",
+    "en": "Expand sidebar"
+  },
+  "collapse_sidebar": {
+    "vi": "Thu gọn thanh bên",
+    "en": "Collapse sidebar"
+  },
+  "breadcrumbs": {
+    "vi": "Đường dẫn trang",
+    "en": "Breadcrumbs"
+  },
+  "support_requests": {
+    "vi": "Yêu cầu hỗ trợ",
+    "en": "Support requests"
+  },
+  "users": {
+    "vi": "Người dùng",
+    "en": "Users"
+  },
+  "create_a_support_request": {
+    "vi": "Tạo yêu cầu hỗ trợ",
+    "en": "Create a support request"
+  },
+  "add_user": {
+    "vi": "Thêm người dùng",
+    "en": "Add user"
+  },
+  "request_details": {
+    "vi": "Chi tiết yêu cầu",
+    "en": "Request details"
+  },
+  "edit_request": {
+    "vi": "Chỉnh sửa yêu cầu",
+    "en": "Edit request"
+  },
+  "edit_user": {
+    "vi": "Chỉnh sửa người dùng",
+    "en": "Edit user"
+  },
+  "track_and_handle_technical_support_requests": {
+    "vi": "Theo dõi và xử lý các yêu cầu hỗ trợ kỹ thuật.",
+    "en": "Track and handle technical support requests."
+  },
+  "manage_accounts_roles_and_access": {
+    "vi": "Quản lý tài khoản, vai trò và trạng thái hoạt động.",
+    "en": "Manage accounts, roles, and access."
+  },
+  "view_progress": {
+    "vi": "Xem tiến độ",
+    "en": "View progress"
+  },
+  "requester_2": {
+    "vi": "Người gửi: ",
+    "en": "Requester: "
+  },
+  "unassigned_requests": {
+    "vi": "Yêu cầu chưa phân công",
+    "en": "Unassigned requests"
+  },
+  "assigned_to": {
+    "vi": "Phụ trách: ",
+    "en": "Assigned to: "
+  },
+  "see_all_requests": {
+    "vi": "Xem tất cả yêu cầu",
+    "en": "See all requests"
+  },
+  "code_title_or_description": {
+    "vi": "Mã, tiêu đề hoặc mô tả",
+    "en": "Code, title, or description"
+  },
+  "name_or_email": {
+    "vi": "Họ tên hoặc email",
+    "en": "Name or email"
+  },
+  "role": {
+    "vi": "Vai trò",
+    "en": "Role"
+  },
+  "newest_first": {
+    "vi": "Mới nhất",
+    "en": "Newest first"
+  },
+  "a_to_z": {
+    "vi": "A đến Z",
+    "en": "A to Z"
+  },
+  "z_to_a": {
+    "vi": "Z đến A",
+    "en": "Z to A"
+  },
+  "loading_the_list": {
+    "vi": "Đang tải danh sách…",
+    "en": "Loading the list…"
+  },
+  "scroll_sideways_to_see_the_other_columns": {
+    "vi": "Cuộn ngang để xem các cột còn lại.",
+    "en": "Scroll sideways to see the other columns."
+  },
+  "request_list": {
+    "vi": "Danh sách yêu cầu",
+    "en": "Request list"
+  },
+  "user_list": {
+    "vi": "Danh sách người dùng",
+    "en": "User list"
+  },
+  "full_name": {
+    "vi": "Họ tên",
+    "en": "Full name"
+  },
+  "category": {
+    "vi": "Loại",
+    "en": "Category"
+  },
+  "assigned_to_2": {
+    "vi": "Phụ trách",
+    "en": "Assigned to"
+  },
+  "updated": {
+    "vi": "Cập nhật",
+    "en": "Updated"
+  },
+  "unassigned": {
+    "vi": "Chưa phân công",
+    "en": "Unassigned"
+  },
+  "showing": {
+    "vi": "Hiển thị",
+    "en": "Showing"
+  },
+  "no_matching_results": {
+    "vi": "Không tìm thấy kết quả phù hợp.",
+    "en": "No matching results."
+  },
+  "clear_search_and_filters": {
+    "vi": "Xóa tìm kiếm và bộ lọc",
+    "en": "Clear search and filters"
+  },
+  "no_support_requests_yet": {
+    "vi": "Chưa có yêu cầu hỗ trợ nào.",
+    "en": "No support requests yet."
+  },
+  "no_users_yet": {
+    "vi": "Chưa có người dùng nào.",
+    "en": "No users yet."
+  },
+  "request_information": {
+    "vi": "Thông tin yêu cầu",
+    "en": "Request information"
+  },
+  "account_information": {
+    "vi": "Thông tin tài khoản",
+    "en": "Account information"
+  },
+  "this_request_is_closed": {
+    "vi": "Yêu cầu đã đóng.",
+    "en": "This request is closed."
+  },
+  "see_the_request_and_its_progress": {
+    "vi": "Xem nội dung và tiến độ yêu cầu.",
+    "en": "See the request and its progress."
+  },
+  "enter_a_valid_email_address": {
+    "vi": "Nhập địa chỉ email hợp lệ.",
+    "en": "Enter a valid email address."
+  },
+  "enter_or_choose": {
+    "vi": "Vui lòng nhập hoặc chọn ",
+    "en": "Enter or choose "
+  },
+  "attachments": {
+    "vi": "Tệp đính kèm",
+    "en": "Attachments"
+  },
+  "optional": {
+    "vi": "· Không bắt buộc",
+    "en": "· Optional"
+  },
+  "choose_files": {
+    "vi": "Chọn tệp",
+    "en": "Choose files"
+  },
+  "or_drop_images_pdfs_here_up_to_5_files_50_mb_total": {
+    "vi": "Hoặc kéo thả ảnh/PDF vào đây · Tối đa 5 tệp, tổng 50 MB",
+    "en": "Or drop images/PDFs here · Up to 5 files, 50 MB total"
+  },
+  "remove": {
+    "vi": "Gỡ ",
+    "en": "Remove "
+  },
+  "no_attachments": {
+    "vi": "Không có tệp đính kèm.",
+    "en": "No attachments."
+  },
+  "go_back": {
+    "vi": "Quay lại",
+    "en": "Go back"
+  },
+  "send_request": {
+    "vi": "Gửi yêu cầu",
+    "en": "Send request"
+  },
+  "request_progress": {
+    "vi": "Tiến độ yêu cầu",
+    "en": "Request progress"
+  },
+  "what_happens_after_you_send_a_request": {
+    "vi": "Dự kiến sau khi gửi yêu cầu.",
+    "en": "What happens after you send a request."
+  },
+  "requests_created_today": {
+    "vi": "Yêu cầu tạo hôm nay",
+    "en": "Requests created today"
+  },
+  "see_the_list": {
+    "vi": "Xem danh sách",
+    "en": "See the list"
+  },
+  "loading_todays_requests": {
+    "vi": "Đang tải yêu cầu trong ngày…",
+    "en": "Loading today’s requests…"
+  },
+  "we_couldnt_load_todays_requests": {
+    "vi": "Không tải được yêu cầu trong ngày.",
+    "en": "We couldn’t load today’s requests."
+  },
+  "time_created": {
+    "vi": "Giờ tạo",
+    "en": "Time created"
+  },
+  "previous_page_of_todays_requests": {
+    "vi": "Trang trước của yêu cầu hôm nay",
+    "en": "Previous page of today’s requests"
+  },
+  "next_page_of_todays_requests": {
+    "vi": "Trang sau của yêu cầu hôm nay",
+    "en": "Next page of today’s requests"
+  },
+  "no_requests_were_created_today": {
+    "vi": "Hôm nay chưa có yêu cầu nào.",
+    "en": "No requests were created today."
+  },
+  "overview_tr_m_m_o": {
+    "vi": "Tổng quan · Trạm Mèo",
+    "en": "Overview · Trạm Mèo"
+  },
+  "technician_tr_m_m_o": {
+    "vi": "Chuyên viên kỹ thuật · Trạm Mèo",
+    "en": "Technician · Trạm Mèo"
+  },
+  "requester_workspace": {
+    "vi": "Không gian người dùng",
+    "en": "My requests"
+  },
+  "requester_workspace_tr_m_m_o": {
+    "vi": "Không gian người dùng · Trạm Mèo",
+    "en": "Requester workspace · Trạm Mèo"
+  },
+  "request_details_tr_m_m_o": {
+    "vi": "Chi tiết yêu cầu · Trạm Mèo",
+    "en": "Request details · Trạm Mèo"
+  },
+  "categories_tr_m_m_o": {
+    "vi": "Danh mục · Trạm Mèo",
+    "en": "Categories · Trạm Mèo"
+  },
+  "reports_insights_tr_m_m_o": {
+    "vi": "Báo cáo & thống kê · Trạm Mèo",
+    "en": "Reports & insights · Trạm Mèo"
+  },
+  "backups": {
+    "vi": "Sao lưu dữ liệu",
+    "en": "Backups"
+  },
+  "page_not_found": {
+    "vi": "Không tìm thấy trang",
+    "en": "Page not found"
+  },
+  "check_the_address_or_go_back_to_the_overview": {
+    "vi": "Kiểm tra lại đường dẫn hoặc quay về tổng quan.",
+    "en": "Check the address or go back to the overview."
+  },
+  "category_added": {
+    "vi": "Đã thêm danh mục.",
+    "en": "Category added."
+  },
+  "category_updated": {
+    "vi": "Đã cập nhật danh mục.",
+    "en": "Category updated."
+  },
+  "we_couldnt_reach_the_server": {
+    "vi": "Không kết nối được API",
+    "en": "We couldn’t reach the server."
+  },
+  "request_status": {
+    "vi": "Trạng thái yêu cầu",
+    "en": "Request status"
+  },
+  "total_requests": {
+    "vi": "Tổng yêu cầu",
+    "en": "Total requests"
+  },
+  "request_count_by_status": {
+    "vi": "Số yêu cầu theo trạng thái",
+    "en": "Request count by status"
+  },
+  "no_status_data_yet": {
+    "vi": "Chưa có dữ liệu trạng thái.",
+    "en": "No status data yet."
+  },
+  "back_to_overview": {
+    "vi": "Về tổng quan",
+    "en": "Back to overview"
+  },
+  "all_time": {
+    "vi": "Tất cả thời gian",
+    "en": "All time"
+  },
+  "last_7_days": {
+    "vi": "7 ngày gần đây",
+    "en": "Last 7 days"
+  },
+  "last_30_days": {
+    "vi": "30 ngày gần đây",
+    "en": "Last 30 days"
+  },
+  "last_90_days": {
+    "vi": "90 ngày gần đây",
+    "en": "Last 90 days"
+  },
+  "category_2": {
+    "vi": "Danh mục #",
+    "en": "Category #"
+  },
+  "mon": {
+    "vi": "Thứ 2",
+    "en": "Mon"
+  },
+  "tue": {
+    "vi": "Thứ 3",
+    "en": "Tue"
+  },
+  "wed": {
+    "vi": "Thứ 4",
+    "en": "Wed"
+  },
+  "thu": {
+    "vi": "Thứ 5",
+    "en": "Thu"
+  },
+  "fri": {
+    "vi": "Thứ 6",
+    "en": "Fri"
+  },
+  "sat": {
+    "vi": "Thứ 7",
+    "en": "Sat"
+  },
+  "your_browser_is_blocking_note_storage": {
+    "vi": "Trình duyệt đang chặn lưu ghi chú.",
+    "en": "Your browser is blocking note storage."
+  },
+  "saved_in_this_browser": {
+    "vi": "Đã lưu trên trình duyệt này.",
+    "en": "Saved in this browser."
+  },
+  "we_couldnt_save_your_note_in_this_browser": {
+    "vi": "Không thể lưu trên trình duyệt này.",
+    "en": "We couldn’t save your note in this browser."
+  },
+  "workspace": {
+    "vi": "Không gian làm việc",
+    "en": "Workspace"
+  },
+  "overview": {
+    "vi": "Tổng quan",
+    "en": "Overview"
+  },
+  "administration": {
+    "vi": "Quản trị",
+    "en": "Administration"
+  },
+  "backups_2": {
+    "vi": "Sao lưu",
+    "en": "Backups"
+  },
+  "edit_2": {
+    "vi": "Chỉnh sửa",
+    "en": "Edit"
+  },
+  "details": {
+    "vi": "Chi tiết",
+    "en": "Details"
+  },
+  "new": {
+    "vi": "Mới tiếp nhận",
+    "en": "New"
+  },
+  "low": {
+    "vi": "Thấp",
+    "en": "Low"
+  },
+  "medium": {
+    "vi": "Trung bình",
+    "en": "Medium"
+  },
+  "urgent": {
+    "vi": "Khẩn cấp",
+    "en": "Urgent"
+  },
+  "technician_2": {
+    "vi": "Kỹ thuật viên",
+    "en": "Technician"
+  },
+  "administrator": {
+    "vi": "Quản trị viên",
+    "en": "Administrator"
+  },
+  "enter_a_full_name": {
+    "vi": "Nhập họ tên",
+    "en": "Enter a full name"
+  },
+  "account_status": {
+    "vi": "Trạng thái tài khoản",
+    "en": "Account status"
+  },
+  "choose_a_valid_png_jpeg_gif_webp_or_pdf": {
+    "vi": "Chỉ chọn ảnh PNG, JPEG, GIF, WebP hoặc PDF hợp lệ.",
+    "en": "Choose a valid PNG, JPEG, GIF, WebP, or PDF."
+  },
+  "you_can_attach_up_to_5_files_to_a_request": {
+    "vi": "Mỗi yêu cầu chỉ được đính kèm tối đa 5 tệp.",
+    "en": "You can attach up to 5 files to a request."
+  },
+  "attachments_can_be_up_to_50_mb_in_total": {
+    "vi": "Tổng dung lượng đính kèm tối đa 50 MB.",
+    "en": "Attachments can be up to 50 MB in total."
+  },
+  "request_title": {
+    "vi": "Tiêu đề yêu cầu",
+    "en": "Request title"
+  },
+  "enter_a_brief_title": {
+    "vi": "Nhập tiêu đề sự cố",
+    "en": "Enter a brief title"
+  },
+  "choose_a_category": {
+    "vi": "Chọn loại yêu cầu",
+    "en": "Choose a category"
+  },
+  "priority_level": {
+    "vi": "Mức ưu tiên",
+    "en": "Priority level"
+  },
+  "describe_the_issue": {
+    "vi": "Mô tả sự cố",
+    "en": "Describe the issue"
+  },
+  "tell_us_what_happened_and_what_youve_already_tried": {
+    "vi": "Mô tả chi tiết vấn đề bạn gặp phải",
+    "en": "Tell us what happened and what you’ve already tried"
+  },
+  "demo_requester": {
+    "vi": "Người gửi mẫu",
+    "en": "Demo requester"
+  },
+  "updated_request": {
+    "vi": "Đã cập nhật yêu cầu {code}.",
+    "en": "Updated request {code}."
+  },
+  "sent_request": {
+    "vi": "Đã gửi yêu cầu {code}.",
+    "en": "Sent request {code}."
+  },
+  "user_updated": {
+    "vi": "Đã cập nhật người dùng.",
+    "en": "User updated."
+  },
+  "user_added": {
+    "vi": "Đã thêm người dùng.",
+    "en": "User added."
+  },
+  "we_couldnt_load_or_save_your_data_try_again": {
+    "vi": "Không tải hoặc lưu được dữ liệu. Vui lòng thử lại.",
+    "en": "We couldn’t load or save your data. Try again."
+  },
+  "page": {
+    "vi": "Trang",
+    "en": "Page"
+  },
+  "next_page": {
+    "vi": "Trang sau",
+    "en": "Next page"
+  },
+  "menu": {
+    "vi": "Menu",
+    "en": "Menu"
+  },
+  "email": {
+    "vi": "Email",
+    "en": "Email"
+  },
+  "sun": {
+    "vi": "CN",
+    "en": "Sun"
+  },
+  "high": {
+    "vi": "Cao",
+    "en": "High"
+  },
+  "settings": {
+    "vi": "Cài đặt",
+    "en": "Settings"
+  },
+  "none_of_your_assigned_requests_were_updated_on_this_day": {
+    "vi": "Không có yêu cầu được giao cập nhật trong ngày này.",
+    "en": "None of your assigned requests were updated on this day."
+  },
+  "you_havent_sent_a_request_in_this_period": {
+    "vi": "Bạn chưa gửi yêu cầu trong khoảng thời gian này.",
+    "en": "You haven’t sent a request in this period."
+  },
+  "you_have_no_open_requests": {
+    "vi": "Bạn không có yêu cầu nào đang mở.",
+    "en": "You have no open requests."
+  },
+  "api_RECORD_MISSING": {
+    "vi": "Một mục đã thay đổi hoặc không còn trong danh sách. Hãy tải lại trang.",
+    "en": "An item changed or is missing. Refresh and try again."
+  },
+  "api_NOT_FOUND": {
+    "vi": "Không tìm thấy mục này.",
+    "en": "We couldn’t find this item."
+  },
+  "api_LAST_ADMIN": {
+    "vi": "Cần giữ ít nhất một quản trị viên đang hoạt động.",
+    "en": "Keep at least one active administrator."
+  },
+  "api_VALIDATION_ERROR": {
+    "vi": "Hãy kiểm tra lại thông tin bạn vừa nhập.",
+    "en": "Check the information you entered."
+  },
+  "api_CONFLICT": {
+    "vi": "Dữ liệu bị trùng hoặc đã thay đổi. Hãy kiểm tra rồi thử lại.",
+    "en": "The data is duplicated or has changed. Check it and try again."
+  },
+  "api_INVALID_REQUESTER": {
+    "vi": "Chọn người gửi đang hoạt động.",
+    "en": "Choose an active requester."
+  },
+  "api_INVALID_CATEGORY": {
+    "vi": "Chọn danh mục đang hoạt động.",
+    "en": "Choose an active category."
+  },
+  "api_INVALID_ASSIGNEE": {
+    "vi": "Chọn kỹ thuật viên đang hoạt động.",
+    "en": "Choose an active technician."
+  },
+  "api_INVALID_UPLOAD": {
+    "vi": "Không thể nhận các tệp này. Bạn có thể chọn tối đa 5 tệp.",
+    "en": "We couldn’t accept these files. Choose up to 5."
+  },
+  "api_INVALID_FILE_TYPE": {
+    "vi": "Chọn ảnh PNG, JPEG, GIF, WebP hoặc PDF.",
+    "en": "Choose a PNG, JPEG, GIF, WebP, or PDF."
+  },
+  "api_ATTACHMENT_SIZE": {
+    "vi": "Tổng dung lượng tệp tối đa 50 MB.",
+    "en": "Attachments can be up to 50 MB in total."
+  },
+  "api_ATTACHMENT_COUNT": {
+    "vi": "Bạn có thể đính kèm tối đa 5 tệp.",
+    "en": "You can attach up to 5 files."
+  },
+  "api_AUTH_NOT_IMPLEMENTED": {
+    "vi": "Tính năng này hiện chỉ dùng được trong bản demo.",
+    "en": "This feature is currently available in the demo only."
+  },
+  "browser_title": {
+    "vi": "{page} · Trạm Mèo",
+    "en": "{page} · Trạm Mèo"
+  },
+  "language": {
+    "vi": "Ngôn ngữ",
+    "en": "Language"
+  },
+  "vietnamese": {
+    "vi": "Tiếng Việt",
+    "en": "Tiếng Việt"
+  },
+  "english": {
+    "vi": "English",
+    "en": "English"
+  },
+  "profile_intro": {
+    "vi": "Xem và cập nhật thông tin dùng để nhận hỗ trợ.",
+    "en": "View and update the details you use to get support."
+  },
+  "settings_intro": {
+    "vi": "Chọn cách Trạm Mèo hiển thị trên trình duyệt này.",
+    "en": "Choose how Trạm Mèo looks and feels in this browser."
+  },
+  "notifications_intro": {
+    "vi": "Xem cập nhật mới nhất về yêu cầu bạn gửi hoặc được giao.",
+    "en": "See the latest updates to requests you sent or were assigned."
+  },
+  "backup_intro": {
+    "vi": "Tải một bản sao để lưu lại dữ liệu demo hiện tại.",
+    "en": "Download a copy of the current demo data."
+  },
+  "language_description": {
+    "vi": "Giao diện đổi ngôn ngữ ngay và ghi nhớ lựa chọn của bạn.",
+    "en": "The interface updates immediately and remembers your choice."
+  },
+  "appearance_description": {
+    "vi": "Chọn màu nền và mức chuyển động phù hợp với bạn.",
+    "en": "Choose the colors and motion that suit you."
+  },
+  "reduce_motion": {
+    "vi": "Giảm chuyển động",
+    "en": "Reduce motion"
+  },
+  "account_preference": {
+    "vi": "Tài khoản mặc định khi mở hồ sơ hoặc thông báo.",
+    "en": "The default account for your profile and notifications."
+  },
+  "default_account": {
+    "vi": "Tài khoản mặc định",
+    "en": "Default account"
+  },
+  "choose_account": {
+    "vi": "Chọn tài khoản",
+    "en": "Choose an account"
+  },
+  "no_account": {
+    "vi": "Không có tài khoản đang hoạt động.",
+    "en": "There are no active accounts."
+  },
+  "profile_saved": {
+    "vi": "Đã lưu hồ sơ.",
+    "en": "Profile saved."
+  },
+  "recent_updates": {
+    "vi": "Cập nhật gần đây",
+    "en": "Recent updates"
+  },
+  "unread_count": {
+    "vi": "Chưa đọc · {count}",
+    "en": "Unread · {count}"
+  },
+  "unread_only": {
+    "vi": "Chỉ xem chưa đọc",
+    "en": "Show unread only"
+  },
+  "mark_all_read": {
+    "vi": "Đánh dấu tất cả đã đọc",
+    "en": "Mark all as read"
+  },
+  "mark_read": {
+    "vi": "Đánh dấu đã đọc",
+    "en": "Mark as read"
+  },
+  "no_unread_updates": {
+    "vi": "Bạn đã xem hết cập nhật.",
+    "en": "You’re all caught up."
+  },
+  "no_updates": {
+    "vi": "Chưa có cập nhật cho tài khoản này.",
+    "en": "No updates for this account yet."
+  },
+  "backup_new": {
+    "vi": "Tạo bản sao",
+    "en": "Create a backup"
+  },
+  "backup_scope": {
+    "vi": "Tệp JSON gồm tài khoản, danh mục, yêu cầu và lịch sử trong phiên demo, kể cả mục đã xóa khỏi danh sách. Tệp chỉ ghi thông tin đính kèm, nội dung ảnh và PDF vẫn ở phiên demo.",
+    "en": "The JSON file includes demo accounts, categories, requests and history, including items removed from lists. It records attachment details. The image and PDF files stay in the demo session."
+  },
+  "backup_download": {
+    "vi": "Tải bản sao JSON",
+    "en": "Download JSON backup"
+  },
+  "backup_preparing": {
+    "vi": "Đang chuẩn bị…",
+    "en": "Preparing…"
+  },
+  "backup_downloaded": {
+    "vi": "Đã gửi bản sao đến trình duyệt để tải xuống.",
+    "en": "Your browser has received the backup for download."
+  },
+  "backup_last": {
+    "vi": "Lần tải gần nhất",
+    "en": "Last download"
+  },
+  "backup_none": {
+    "vi": "Bạn chưa tải bản sao từ trình duyệt này.",
+    "en": "You haven’t downloaded a backup in this browser yet."
+  },
+  "backup_local": {
+    "vi": "Thời điểm tải được lưu trên trình duyệt này.",
+    "en": "The download time is saved in this browser."
+  },
+  "selected_count": {
+    "vi": "Đã chọn {count} mục",
+    "en": "Selected: {count}"
+  },
+  "select_page": {
+    "vi": "Chọn tất cả trên trang này",
+    "en": "Select all on this page"
+  },
+  "select_item": {
+    "vi": "Chọn {name}",
+    "en": "Select {name}"
+  },
+  "delete_selected": {
+    "vi": "Xóa mục đã chọn",
+    "en": "Delete selected"
+  },
+  "delete_action": {
+    "vi": "Xóa",
+    "en": "Delete"
+  },
+  "confirm_delete": {
+    "vi": "Xóa các mục đã chọn?",
+    "en": "Delete the selected items?"
+  },
+  "confirm_delete_body": {
+    "vi": "{count} mục sẽ được gỡ khỏi danh sách. Lịch sử vẫn được giữ trong bản sao dữ liệu demo.",
+    "en": "The selected items ({count}) will be removed from the list. Their history stays in the demo backup."
+  },
+  "items_removed": {
+    "vi": "Đã xóa {count} mục khỏi danh sách.",
+    "en": "Removed {count} items from the list."
+  },
+  "feature_pending": {
+    "vi": "Tính năng này đang được phát triển.",
+    "en": "This feature is in progress."
+  },
+  "software_category": {
+    "vi": "Phần mềm",
+    "en": "Software"
+  },
+  "hardware_category": {
+    "vi": "Phần cứng",
+    "en": "Hardware"
+  },
+  "network_category": {
+    "vi": "Mạng",
+    "en": "Network"
+  },
+  "account_category": {
+    "vi": "Tài khoản",
+    "en": "Accounts"
+  },
+  "requests_ready": {
+    "vi": "Chuyên viên đã cập nhật kết quả cho {count} yêu cầu của bạn.",
+    "en": "Requests ready for you to review: {count}."
+  },
+  "search_term": {
+    "vi": "Tìm “{term}”",
+    "en": "Search “{term}”"
+  },
+  "assigned_scope": {
+    "vi": "Phụ trách: {name}",
+    "en": "Assigned to: {name}"
+  },
+  "requester_scope": {
+    "vi": "Người gửi: {name}",
+    "en": "Requester: {name}"
+  },
+  "role_user": {
+    "vi": "Người dùng",
+    "en": "User"
+  },
+  "demo_person_1": {
+    "vi": "Người gửi mẫu",
+    "en": "Demo requester"
+  },
+  "demo_person_2": {
+    "vi": "Kỹ thuật viên mẫu",
+    "en": "Demo technician"
+  },
+  "demo_person_3": {
+    "vi": "Quản trị mẫu",
+    "en": "Demo administrator"
+  },
+  "item_removed": {
+    "vi": "Đã xóa 1 mục khỏi danh sách.",
+    "en": "Removed 1 item from the list."
+  },
+  "view_action": {
+    "vi": "Xem",
+    "en": "View"
+  },
+  "in_use": {
+    "vi": "Đang sử dụng",
+    "en": "Active"
+  },
+  "not_in_use": {
+    "vi": "Ngưng sử dụng",
+    "en": "Inactive"
+  },
+  "activate_action": {
+    "vi": "Bật sử dụng",
+    "en": "Activate"
+  },
+  "deactivate_action": {
+    "vi": "Ngưng sử dụng",
+    "en": "Deactivate"
+  },
+  "category_activated": {
+    "vi": "Đã bật sử dụng danh mục.",
+    "en": "Category activated."
+  },
+  "category_deactivated": {
+    "vi": "Đã ngưng sử dụng danh mục.",
+    "en": "Category deactivated."
+  },
+  "user_activated": {
+    "vi": "Đã bật sử dụng tài khoản.",
+    "en": "Account activated."
+  },
+  "user_deactivated": {
+    "vi": "Đã ngưng sử dụng tài khoản.",
+    "en": "Account deactivated."
+  },
+  "confirm_delete_one": {
+    "vi": "Xóa yêu cầu này?",
+    "en": "Delete this request?"
+  }
+}

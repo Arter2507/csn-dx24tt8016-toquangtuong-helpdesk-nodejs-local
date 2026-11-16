@@ -1,32 +1,32 @@
 <div class="page-heading">
-  <div><h1>Báo cáo & thống kê</h1><p>Phân tích số lượng yêu cầu theo loại, thời gian và trạng thái.</p></div>
-  <span class="badge">Dữ liệu demo</span>
+  <div><h1>{{ 'reports_insights' | t }}</h1><p>{{ 'see_requests_by_category_date_and_status' | t }}</p></div>
+  <span class="badge">{{ 'demo_data' | t }}</span>
 </div>
 @if (error()) {
-  <div class="notice error" role="alert">Không thể tải dữ liệu báo cáo. <button class="secondary" (click)="load()">Thử lại</button></div>
+  <div class="notice error" role="alert">{{ 'we_couldnt_load_the_report' | t }} <button class="secondary" (click)="load()">{{ 'try_again' | t }}</button></div>
 } @else if (tickets() !== null) {
   <div class="stack">
     <form class="panel toolbar report-toolbar" (ngSubmit)="apply()">
-      <label class="field">Khoảng thời gian
-        <select name="days" [(ngModel)]="days">@for (option of periods; track option.value) { <option [ngValue]="option.value">{{ option.label }}</option> }</select>
+      <label class="field">{{ 'time_period' | t }}
+        <select name="days" [(ngModel)]="days">@for (option of periods; track option.value) { <option [ngValue]="option.value">{{ (option.label) | t }}</option> }</select>
       </label>
-      <label class="field">Loại yêu cầu
-        <select name="categoryId" [(ngModel)]="categoryId"><option [ngValue]="0">Tất cả loại</option>@for (item of categories(); track item.id) { <option [ngValue]="item.id">{{ item.name }}</option> }</select>
+      <label class="field">{{ 'request_category' | t }}
+        <select name="categoryId" [(ngModel)]="categoryId"><option [ngValue]="0">{{ 'all_categories' | t }}</option>@for (item of categories(); track item.id) { <option [ngValue]="item.id">{{ i18n.category(item) }}</option> }</select>
       </label>
-      <label class="field">Trạng thái
-        <select name="status" [(ngModel)]="status"><option value="">Tất cả trạng thái</option>@for (item of statuses; track item.value) { <option [value]="item.value">{{ item.label }}</option> }</select>
+      <label class="field">{{ 'status' | t }}
+        <select name="status" [(ngModel)]="status"><option value="">{{ 'all_statuses' | t }}</option>@for (item of statuses; track item.value) { <option [value]="item.value">{{ (item.label) | t }}</option> }</select>
       </label>
       <div class="toolbar-actions">
-        <button class="primary" type="submit"><i class="bi bi-funnel" aria-hidden="true"></i> Áp dụng</button>
-        <button class="text-button" type="button" (click)="clearFilters()">Xóa bộ lọc</button>
-        <button class="secondary" type="button" [disabled]="!filtered().length" (click)="exportReport()"><i class="bi bi-download" aria-hidden="true"></i> Xuất CSV</button>
+        <button class="primary" type="submit"><i class="bi bi-funnel" aria-hidden="true"></i> {{ 'apply' | t }}</button>
+        <button class="text-button" type="button" (click)="clearFilters()">{{ 'clear_filters' | t }}</button>
+        <button class="secondary" type="button" [disabled]="!filtered().length" (click)="exportReport()"><i class="bi bi-download" aria-hidden="true"></i> {{ 'download_csv' | t }}</button>
       </div>
     </form>
     <helpdesk-stat-cards [tickets]="filtered()" [report]="true" />
     <div class="charts">
       <section class="panel">
-        <h2>Số yêu cầu theo loại</h2>
-        <p class="section-note">{{ period() }} · Số yêu cầu</p>
+        <h2>{{ 'requests_by_category' | t }}</h2>
+        <p class="section-note">{{ (period()) | t }} {{ 'request_count' | t }}</p>
         @if (summary().length) {
           <ul class="category-bars">
             @for (row of summary(); track row.id) {
@@ -36,26 +36,26 @@
             }
           </ul>
         } @else {
-          <div class="empty-data"><i class="bi bi-bar-chart" aria-hidden="true"></i><p>Không có yêu cầu phù hợp.</p></div>
+          <div class="empty-data"><i class="bi bi-bar-chart" aria-hidden="true"></i><p>{{ 'no_requests_match_these_filters' | t }}</p></div>
         }
       </section>
       <helpdesk-status-chart [tickets]="filtered()" [period]="period()" />
     </div>
     <section class="panel">
-      <h2>Tổng hợp theo loại</h2>
-      <p class="section-note" role="status">{{ scope() }} · {{ filtered().length }} yêu cầu</p>
+      <h2>{{ 'category_summary' | t }}</h2>
+      <p class="section-note" role="status">{{ scope() }} · {{ filtered().length }} {{ 'requests' | t }}</p>
       @if (summary().length) {
-        <div class="table-scroll" role="region" aria-label="Tổng hợp theo loại" tabindex="0">
+        <div class="table-scroll" role="region" [attr.aria-label]="('category_summary' | t)" tabindex="0">
           <table>
-            <thead><tr><th scope="col">Loại yêu cầu</th><th scope="col">Số lượng</th><th scope="col">Đã đóng</th><th scope="col">Đang xử lý</th></tr></thead>
+            <thead><tr><th scope="col">{{ 'request_category' | t }}</th><th scope="col">{{ 'count' | t }}</th><th scope="col">{{ 'closed' | t }}</th><th scope="col">{{ 'in_progress' | t }}</th></tr></thead>
             <tbody>@for (row of summary(); track row.id) {
               <tr><td>{{ row.name }}</td><td>{{ row.total }}</td><td><span class="badge" data-tone="success">{{ row.closed }}</span></td><td><span class="badge" data-tone="info">{{ row.progress }}</span></td></tr>
             }</tbody>
           </table>
         </div>
-      } @else { <p class="muted">Chưa có dữ liệu cho bộ lọc đã chọn.</p> }
+      } @else { <p class="muted">{{ 'theres_no_data_for_these_filters' | t }}</p> }
     </section>
   </div>
 } @else {
-  <p class="panel notice" role="status">Đang tải báo cáo…</p>
+  <app-loading />
 }

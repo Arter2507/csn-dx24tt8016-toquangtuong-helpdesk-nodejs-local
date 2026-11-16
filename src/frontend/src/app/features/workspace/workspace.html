@@ -1,24 +1,25 @@
 <div class="page-heading">
   <div>
-    <h1>{{ mode() === 'list' ? (isTicket ? 'Yêu cầu hỗ trợ' : 'Người dùng') : mode() === 'create' ? (isTicket ? 'Tạo yêu cầu hỗ trợ' : 'Thêm người dùng') : (isTicket ? (readOnly ? 'Chi tiết yêu cầu' : 'Chỉnh sửa yêu cầu') : 'Chỉnh sửa người dùng') }}</h1>
-    @if (mode() === 'list') { <p>{{ isTicket ? 'Theo dõi và xử lý các yêu cầu hỗ trợ kỹ thuật.' : 'Quản lý tài khoản, vai trò và trạng thái hoạt động.' }}</p> }
+    <h1>{{ mode() === 'list' ? (isTicket ? ('support_requests' | t) : ('users' | t)) : mode() === 'create' ? (isTicket ? ('create_a_support_request' | t) : ('add_user' | t)) : (isTicket ? (readOnly ? ('request_details' | t) : ('edit_request' | t)) : ('edit_user' | t)) }}</h1>
+    @if (mode() === 'list') { <p>{{ isTicket ? ('track_and_handle_technical_support_requests' | t) : ('manage_accounts_roles_and_access' | t) }}</p> }
   </div>
   <div class="heading-actions">
     @if (editing && isTicket) { <span class="badge">{{ editing['code'] ?? '#' + editing.id }}</span> }
-    <span class="badge" data-tone="neutral">Dữ liệu demo</span>
+    <span class="badge" data-tone="neutral">{{ 'demo_data' | t }}</span>
     @if (mode() === 'list') {
-      <a class="primary" [routerLink]="['/', resource(), 'new']" [queryParams]="isTicket && requesterId ? { requesterId } : null"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ isTicket ? 'Tạo yêu cầu' : 'Thêm người dùng' }}</a>
+      <a class="primary" [routerLink]="['/', resource(), 'new']" [queryParams]="isTicket && requesterId ? { requesterId } : null"><i class="bi bi-plus-lg" aria-hidden="true"></i>{{ isTicket ? ('new_request' | t) : ('add_user' | t) }}</a>
     } @else {
-      <a class="text-button" [routerLink]="['/', resource()]" [queryParams]="scope"><i class="bi bi-arrow-left" aria-hidden="true"></i> Về danh sách</a>
+      <a class="text-button" [routerLink]="['/', resource()]" [queryParams]="scope"><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ 'back_to_list' | t }}</a>
     }
   </div>
 </div>
-@if (notice) { <p class="notice success" role="status"><i class="bi bi-check-circle" aria-hidden="true"></i> <span>{{ notice }}</span>
-  @if (noticeTicket) { <a class="notice-link" [routerLink]="['/tickets', noticeTicket, requesterId ? 'view' : 'edit']" [queryParams]="scope">Xem tiến độ</a> }
+@if (notice) { <p class="notice success" role="status"><i class="bi bi-check-circle" aria-hidden="true"></i> <span>{{ notice | t:{code: noticeCode} }}</span>
+  @if (noticeTicket) { <a class="notice-link" [routerLink]="['/tickets', noticeTicket, requesterId ? 'view' : 'edit']" [queryParams]="scope">{{ 'view_progress' | t }}</a> }
 </p> }
+@if (statusError) { <p class="notice error" role="alert">{{ statusError | t }}</p> }
 @if (error) {
-  <div class="notice error" role="alert">{{ error }}
-    @if (mode() === 'list') { <button type="button" class="text-button" (click)="load(page)">Thử lại</button> }
+  <div class="notice error" role="alert">{{ (error) | t }}
+    @if (mode() === 'list') { <button type="button" class="text-button" (click)="load(page)">{{ 'try_again' | t }}</button> }
   </div>
 }
 
@@ -26,199 +27,222 @@
   <section class="panel">
     @if (isTicket && (requesterId || assigneeId)) {
       <p class="notice">
-        {{ requesterId ? 'Người gửi: ' + (accountNames.get(+requesterId) ?? '#' + requesterId) : assigneeId === '0' ? 'Yêu cầu chưa phân công' : 'Phụ trách: ' + (accountNames.get(+assigneeId) ?? '#' + assigneeId) }}
-        <a class="notice-link" routerLink="/tickets">Xem tất cả yêu cầu</a>
+        {{ requesterId ? ('requester_scope' | t:{name: ((accountNames.get(+requesterId) ?? '#' + requesterId) | t)}) : assigneeId === '0' ? ('unassigned_requests' | t) : ('assigned_scope' | t:{name: ((accountNames.get(+assigneeId) ?? '#' + assigneeId) | t)}) }}
+        <a class="notice-link" routerLink="/tickets">{{ 'see_all_requests' | t }}</a>
       </p>
     }
     <form class="toolbar" [class.ticket-toolbar]="isTicket" [class.users-toolbar]="!isTicket" (ngSubmit)="applyFilters()">
-      <label class="field search-field">Tìm kiếm
-        <input type="search" name="search" maxlength="100" [placeholder]="isTicket ? 'Mã, tiêu đề hoặc mô tả' : 'Họ tên hoặc email'" [(ngModel)]="search">
+      <label class="field search-field">{{ 'search' | t }}
+        <input type="search" name="search" maxlength="100" [placeholder]="isTicket ? ('code_title_or_description' | t) : ('name_or_email' | t)" [(ngModel)]="search">
       </label>
-      <label class="field">{{ isTicket ? 'Trạng thái' : 'Vai trò' }}
+      <label class="field">{{ isTicket ? ('status' | t) : ('role' | t) }}
         <select name="filter" [(ngModel)]="filter">
-          <option value="">Tất cả</option>
-          @for (item of filters; track item.value) { <option [value]="item.value">{{ item.label }}</option> }
+          <option value="">{{ 'all' | t }}</option>
+          @for (item of filters; track item.value) { <option [value]="item.value">{{ (item.label) | t }}</option> }
         </select>
       </label>
       @if (isTicket) {
-        <label class="field">Ưu tiên
+        <label class="field">{{ 'priority' | t }}
           <select name="priorityFilter" [(ngModel)]="priorityFilter">
-            <option value="">Tất cả</option>
-            @for (item of priorities; track item.value) { <option [value]="item.value">{{ item.label }}</option> }
+            <option value="">{{ 'all' | t }}</option>
+            @for (item of priorities; track item.value) { <option [value]="item.value">{{ (item.label) | t }}</option> }
           </select>
         </label>
-        <label class="field">Loại yêu cầu
+        <label class="field">{{ 'request_category' | t }}
           <select name="categoryFilter" [(ngModel)]="categoryFilter">
-            <option [ngValue]="0">Tất cả loại</option>
-            @for (item of categoryOptions; track item.id) { <option [ngValue]="item.id">{{ item.name }}</option> }
+            <option [ngValue]="0">{{ 'all_categories' | t }}</option>
+            @for (item of categoryOptions; track item.id) { <option [ngValue]="item.id">{{ i18n.category(item) }}</option> }
           </select>
         </label>
       }
-      <label class="field">Sắp xếp
+      <label class="field">{{ 'sort_by' | t }}
         <select name="order" [(ngModel)]="order">
-          @if (isTicket) { <option value="recent">Mới nhất</option> }
-          <option value="asc">A đến Z</option><option value="desc">Z đến A</option>
+          @if (isTicket) { <option value="recent">{{ 'newest_first' | t }}</option> }
+          <option value="asc">{{ 'a_to_z' | t }}</option><option value="desc">{{ 'z_to_a' | t }}</option>
         </select>
       </label>
       <div class="toolbar-actions">
-        <button class="primary" type="submit" [disabled]="busy"><i class="bi bi-search" aria-hidden="true"></i> Tìm</button>
-        <button class="text-button" type="button" [disabled]="busy" (click)="clearFilters()">Xóa bộ lọc</button>
+        <button class="primary" type="submit" [disabled]="busy"><i class="bi bi-search" aria-hidden="true"></i> {{ 'search_2' | t }}</button>
+        <button class="text-button" type="button" [disabled]="busy" (click)="clearFilters()">{{ 'clear_filters' | t }}</button>
       </div>
     </form>
-    @if (busy) { <div class="empty-data" role="status"><p>Đang tải danh sách…</p></div> }
+    @if (canDelete) { <app-bulk-actions [selection]="selection" (archived)="load(1)" /> }
+    @if (busy) { <app-loading /> }
     @else if (!error) {
       @if (applied.search || applied.filter || applied.priority || applied.categoryId) {
-        <div class="applied-filters" aria-label="Bộ lọc đã áp dụng">
-          @if (applied.search) { <span class="badge">Tìm “{{ applied.search }}”</span> }
-          @if (applied.filter) { <span class="badge">{{ isTicket ? status(applied.filter)?.label : role(applied.filter) }}</span> }
-          @if (applied.priority) { <span class="badge">{{ priority(applied.priority)?.label }}</span> }
-          @if (applied.categoryId) { <span class="badge">{{ categoryNames.get(applied.categoryId) }}</span> }
+        <div class="applied-filters" [attr.aria-label]="('active_filters' | t)">
+          @if (applied.search) { <span class="badge">{{ 'search_term' | t:{term: applied.search} }}</span> }
+          @if (applied.filter) { <span class="badge">{{ (isTicket ? status(applied.filter)?.label : role(applied.filter)) | t }}</span> }
+          @if (applied.priority) { <span class="badge">{{ (priority(applied.priority)?.label) | t }}</span> }
+          @if (applied.categoryId) { <span class="badge">{{ categoryName(applied.categoryId) }}</span> }
         </div>
       }
       @if (rows.length) {
-        @if (isTicket) { <p class="table-scroll-hint muted"><i class="bi bi-arrow-left-right" aria-hidden="true"></i> Cuộn ngang để xem các cột còn lại.</p> }
-        <div class="table-scroll" role="region" [attr.aria-label]="isTicket ? 'Danh sách yêu cầu' : 'Danh sách người dùng'" tabindex="0">
+        @if (isTicket) { <p class="table-scroll-hint muted"><i class="bi bi-arrow-left-right" aria-hidden="true"></i> {{ 'scroll_sideways_to_see_the_other_columns' | t }}</p> }
+        <div class="table-scroll" role="region" [attr.aria-label]="isTicket ? ('request_list' | t) : ('user_list' | t)" tabindex="0">
           <table [class.ticket-table]="isTicket">
             <thead><tr>
-              <th scope="col">Mã</th><th scope="col">{{ isTicket ? 'Tiêu đề' : 'Họ tên' }}</th>
-              @if (isTicket) { <th scope="col">Loại</th><th scope="col">Ưu tiên</th> }
-              @else { <th scope="col">Email</th><th scope="col">Vai trò</th> }
-              <th scope="col">Trạng thái</th>
-              @if (isTicket) { <th scope="col">Phụ trách</th><th scope="col">Cập nhật</th> }
-              <th scope="col">Thao tác</th>
+              @if (canDelete) { <th scope="col" class="selection-cell">
+                <input type="checkbox" [attr.aria-label]="'select_page' | t" [checked]="selection.ids().size === rowIds.length"
+                  [indeterminate]="selection.ids().size > 0 && selection.ids().size < rowIds.length"
+                  (change)="selection.set(rowIds, $any($event.target).checked)">
+              </th> }
+              <th scope="col">{{ 'code' | t }}</th><th scope="col">{{ isTicket ? ('title' | t) : ('full_name' | t) }}</th>
+              @if (isTicket) { <th scope="col">{{ 'category' | t }}</th><th scope="col">{{ 'priority' | t }}</th> }
+              @else { <th scope="col">{{ 'email' | t }}</th><th scope="col">{{ 'role' | t }}</th> }
+              <th scope="col">{{ 'status' | t }}</th>
+              @if (isTicket) { <th scope="col">{{ 'assigned_to_2' | t }}</th><th scope="col">{{ 'updated' | t }}</th> }
+              <th scope="col">{{ 'actions' | t }}</th>
             </tr></thead>
             <tbody>
               @for (row of rows; track row.id) {
                 <tr>
-                  <td><span class="badge">{{ row['code'] ?? '#' + row.id }}</span></td><td><strong>{{ row[displayField] }}</strong></td>
+                  @if (canDelete) { <td class="selection-cell">
+                    <input type="checkbox" [attr.aria-label]="'select_item' | t:{name: isTicket ? (row[displayField]?.toString() ?? row.id) : (i18n.personKey(row) | t)}"
+                      [checked]="selection.ids().has(row.id)" (change)="selection.set([row.id], $any($event.target).checked)">
+                  </td> }
+                  <td><span class="badge">{{ row['code'] ?? '#' + row.id }}</span></td><td class="title-cell"><strong>{{ isTicket ? row[displayField] : (i18n.personKey(row) | t) }}</strong></td>
                   @if (isTicket) {
-                    <td>{{ categoryNames.get(+(row['categoryId'] ?? 0)) ?? '—' }}</td>
-                    <td><span class="badge" [attr.data-tone]="priority(row['priority'])?.tone"><i class="bi" [class]="priority(row['priority'])?.icon ?? ''" aria-hidden="true"></i>{{ priority(row['priority'])?.label }}</span></td>
-                    <td><span class="badge badge-dot" [attr.data-tone]="status(row['status'])?.tone">{{ status(row['status'])?.label }}</span></td>
-                    <td>{{ accountNames.get(+(row['assigneeId'] ?? 0)) ?? 'Chưa phân công' }}</td>
+                    <td>{{ categoryName(+(row['categoryId'] ?? 0)) }}</td>
+                    <td><span class="badge" [attr.data-tone]="priority(row['priority'])?.tone"><i class="bi" [class]="priority(row['priority'])?.icon ?? ''" aria-hidden="true"></i>{{ (priority(row['priority'])?.label) | t }}</span></td>
+                    <td><span class="badge badge-dot" [attr.data-tone]="status(row['status'])?.tone">{{ (status(row['status'])?.label) | t }}</span></td>
+                    <td>{{ (accountNames.get(+(row['assigneeId'] ?? 0)) ?? 'unassigned') | t }}</td>
                     <td class="aux-cell">{{ row['updatedAt']?.toString() | date:'dd/MM/yyyy HH:mm':'+0700' }}</td>
                   } @else {
-                    <td>{{ row['email'] }}</td><td><span class="badge">{{ role(row['role']) }}</span></td>
-                    <td><span class="badge badge-dot" [attr.data-tone]="row['isActive'] ? 'success' : 'neutral'">{{ row['isActive'] ? 'Hoạt động' : 'Ngừng hoạt động' }}</span></td>
+                    <td>{{ row['email'] }}</td><td><span class="badge">{{ (role(row['role'])) | t }}</span></td>
+                    <td><span class="badge badge-dot" [attr.data-tone]="row['isActive'] ? 'success' : 'neutral'">{{ row['isActive'] ? ('in_use' | t) : ('not_in_use' | t) }}</span></td>
                   }
-                  <td class="aux-cell"><a class="text-button" [routerLink]="['/', resource(), row.id, requesterId ? 'view' : 'edit']" [queryParams]="scope">{{ requesterId || row['status'] === 'CLOSED' ? 'Xem' : 'Sửa' }}</a></td>
+                  <td class="aux-cell">
+                    <div class="row-actions">
+                      <a class="text-button" [routerLink]="['/', resource(), row.id, requesterId ? 'view' : 'edit']" [queryParams]="scope">
+                        {{ (requesterId || row['status'] === 'CLOSED' ? 'view_action' : 'edit') | t }}
+                      </a>
+                      @if (canDelete) {
+                        <button class="danger-button" type="button" [disabled]="bulk()?.busy()" (click)="bulk()?.ask([row.id])">{{ 'delete_action' | t }}</button>
+                      } @else if (!isTicket) {
+                        <button class="secondary" type="button" [disabled]="statusSaving" (click)="toggleUser(row)">
+                          {{ (row['isActive'] ? 'deactivate_action' : 'activate_action') | t }}
+                        </button>
+                      }
+                    </div>
+                  </td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
         <div class="pagination">
-          <p role="status">Hiển thị {{ startRow }}–{{ startRow + rows.length - 1 }} / {{ total }} kết quả</p>
+          <p role="status">{{ 'showing' | t }} {{ startRow }}–{{ startRow + rows.length - 1 }} / {{ total }} {{ 'results' | t }}</p>
           <div class="pager">
-            <button class="secondary" type="button" [disabled]="page <= 1" (click)="load(page - 1)" aria-label="Trang trước"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
-            <span>Trang {{ page }} / {{ totalPages }}</span>
-            <button class="secondary" type="button" [disabled]="page >= totalPages" (click)="load(page + 1)" aria-label="Trang sau"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+            <button class="secondary" type="button" [disabled]="page <= 1" (click)="load(page - 1)" [attr.aria-label]="('previous_page' | t)"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+            <span>{{ 'page' | t }} {{ page }} / {{ totalPages }}</span>
+            <button class="secondary" type="button" [disabled]="page >= totalPages" (click)="load(page + 1)" [attr.aria-label]="('next_page' | t)"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
           </div>
         </div>
       } @else {
         <div class="empty-data" role="status">
           <i class="bi bi-inbox" aria-hidden="true"></i>
           @if (applied.search || applied.filter || applied.priority || applied.categoryId) {
-            <p>Không tìm thấy kết quả phù hợp.</p><button class="text-button" type="button" (click)="clearFilters()">Xóa tìm kiếm và bộ lọc</button>
+            <p>{{ 'no_matching_results' | t }}</p><button class="text-button" type="button" (click)="clearFilters()">{{ 'clear_search_and_filters' | t }}</button>
           } @else {
-            <p>{{ isTicket ? 'Chưa có yêu cầu hỗ trợ nào.' : 'Chưa có người dùng nào.' }}</p>
+            <p>{{ isTicket ? ('no_support_requests_yet' | t) : ('no_users_yet' | t) }}</p>
           }
         </div>
       }
     }
   </section>
 } @else if (busy) {
-  <p class="panel notice" role="status">Đang tải biểu mẫu…</p>
+  <app-loading />
 } @else if (fields.length && (mode() === 'create' || editing)) {
   <div class="editor-layout" [class.ticket-editor-layout]="isTicket">
   <form class="panel editor" #editor="ngForm" (ngSubmit)="save(editor)">
     <div class="editor-heading">
-      <h2>{{ isTicket ? 'Thông tin yêu cầu' : 'Thông tin tài khoản' }}</h2>
-      <p>{{ closed ? 'Yêu cầu đã đóng.' : readOnly ? 'Xem nội dung và tiến độ yêu cầu.' : 'Các trường có dấu * là bắt buộc.' }}</p>
+      <h2>{{ isTicket ? ('request_information' | t) : ('account_information' | t) }}</h2>
+      <p>{{ closed ? ('this_request_is_closed' | t) : readOnly ? ('see_the_request_and_its_progress' | t) : ('fields_marked_are_required' | t) }}</p>
     </div>
     @for (field of fields; track field.key) {
       @let control = editor.controls[field.key];
       @let invalid = control?.invalid && (control?.touched || editor.submitted);
       <div class="field" [class.wide]="field.wide">
-        <label [attr.for]="field.key">{{ field.label }} @if (!field.optional && !readOnly) { <span class="required" aria-hidden="true">*</span> }</label>
+        <label [attr.for]="field.key">{{ (field.label) | t }} @if (!field.optional && !readOnly) { <span class="required" aria-hidden="true">*</span> }</label>
         @switch (field.kind) {
           @case ('select') {
             <select [id]="field.key" [name]="field.key" [(ngModel)]="form[field.key]" [disabled]="readOnly || saving || (field.key === 'requesterId' && fixedRequester)" [required]="!field.optional"
               [attr.aria-invalid]="invalid ? 'true' : null" [attr.aria-describedby]="invalid ? field.key + '-error' : null">
-              @for (option of field.options; track option.value) { <option [ngValue]="option.value">{{ option.label }}</option> }
+              @for (option of field.options; track option.value) { <option [ngValue]="option.value">{{ fieldLabel(field, option.value, option.label) }}</option> }
             </select>
           }
           @case ('textarea') {
-            <textarea required [id]="field.key" [name]="field.key" [(ngModel)]="form[field.key]" [readOnly]="readOnly || saving" [placeholder]="field.placeholder ?? ''" [maxlength]="field.maxLength ?? 10000"
+            <textarea required [id]="field.key" [name]="field.key" [(ngModel)]="form[field.key]" [readOnly]="readOnly || saving" [placeholder]="field.placeholder | t" [maxlength]="field.maxLength ?? 10000"
               [attr.aria-invalid]="invalid ? 'true' : null" [attr.aria-describedby]="invalid ? field.key + '-error' : null"></textarea>
           }
           @default {
             <input required [id]="field.key" [type]="field.kind === 'email' ? 'email' : 'text'" [email]="field.kind === 'email'"
-              [name]="field.key" [(ngModel)]="form[field.key]" [readOnly]="readOnly || saving" [placeholder]="field.placeholder ?? ''" [maxlength]="field.maxLength ?? 200"
+              [name]="field.key" [(ngModel)]="form[field.key]" [readOnly]="readOnly || saving" [placeholder]="field.placeholder | t" [maxlength]="field.maxLength ?? 200"
               [attr.aria-invalid]="invalid ? 'true' : null" [attr.aria-describedby]="invalid ? field.key + '-error' : null">
           }
         }
-        @if (invalid) { <small class="field-error" [id]="field.key + '-error'">{{ control?.hasError('email') ? 'Nhập địa chỉ email hợp lệ.' : 'Vui lòng nhập hoặc chọn ' + field.label.toLowerCase() + '.' }}</small> }
+        @if (invalid) { <small class="field-error" [id]="field.key + '-error'">{{ control?.hasError('email') ? ('enter_a_valid_email_address' | t) : ('enter_or_choose' | t) + (field.label | t).toLowerCase() + '.' }}</small> }
       </div>
     }
     @if (isTicket) {
       <section class="attachments field wide" aria-labelledby="attachment-title">
-        <h3 id="attachment-title">Tệp đính kèm @if (!readOnly) { <span class="muted">· Không bắt buộc</span> }</h3>
+        <h3 id="attachment-title">{{ 'attachments' | t }} @if (!readOnly) { <span class="muted">{{ 'optional' | t }}</span> }</h3>
         @if (!readOnly) {
           <div class="drop-zone" [class.dragging]="dragging"
             (dragover)="dragFiles($event)" (dragleave)="dragFiles($event)" (drop)="dragFiles($event)">
             <input #picker type="file" multiple [accept]="fileTypes" hidden (change)="pickFiles(picker)">
             <button class="secondary" type="button" [disabled]="saving" (click)="picker.click()" aria-describedby="attachment-help">
-              <i class="bi bi-paperclip" aria-hidden="true"></i> Chọn tệp
+              <i class="bi bi-paperclip" aria-hidden="true"></i> {{ 'choose_files' | t }}
             </button>
-            <span id="attachment-help">Hoặc kéo thả ảnh/PDF vào đây · Tối đa 5 tệp, tổng 50 MB</span>
+            <span id="attachment-help">{{ 'or_drop_images_pdfs_here_up_to_5_files_50_mb_total' | t }}</span>
           </div>
         }
-        @if (fileError) { <p class="field-error attachment-error" role="alert">{{ fileError }}</p> }
+        @if (fileError) { <p class="field-error attachment-error" role="alert">{{ (fileError) | t }}</p> }
         @if (attachments.length || files.length) {
           <ul class="attachment-list">
             @for (file of attachments; track file.id) {
               <li>
                 <i class="bi" [class]="file.type === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-image'" aria-hidden="true"></i>
                 <a [href]="'/api/v1/tickets/' + editing?.id + '/attachments/' + file.id">{{ file.name }}</a>
-                @if (!readOnly) { <button type="button" class="icon-button" [disabled]="saving" [attr.aria-label]="'Gỡ ' + file.name" (click)="removeAttachment(file.id)"><i class="bi bi-x-lg" aria-hidden="true"></i></button> }
+                @if (!readOnly) { <button type="button" class="icon-button" [disabled]="saving" [attr.aria-label]="('remove' | t) + file.name" (click)="removeAttachment(file.id)"><i class="bi bi-x-lg" aria-hidden="true"></i></button> }
               </li>
             }
             @for (file of files; track $index) {
               <li>
                 <i class="bi" [class]="file.type === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-image'" aria-hidden="true"></i>
                 <span>{{ file.name }}</span>
-                <button type="button" class="icon-button" [disabled]="saving" [attr.aria-label]="'Gỡ ' + file.name" (click)="removeFile($index)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                <button type="button" class="icon-button" [disabled]="saving" [attr.aria-label]="('remove' | t) + file.name" (click)="removeFile($index)"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
               </li>
             }
           </ul>
-        } @else if (readOnly) { <p class="muted">Không có tệp đính kèm.</p> }
+        } @else if (readOnly) { <p class="muted">{{ 'no_attachments' | t }}</p> }
       </section>
     }
     <div class="form-actions">
-      <a class="secondary" [routerLink]="['/', resource()]" [queryParams]="scope">{{ readOnly ? 'Quay lại' : 'Hủy' }}</a>
-      @if (!readOnly) { <button class="primary" type="submit" [disabled]="saving">{{ saving ? 'Đang lưu…' : editing ? 'Lưu thay đổi' : isTicket ? 'Gửi yêu cầu' : 'Thêm người dùng' }}</button> }
+      <a class="secondary" [routerLink]="['/', resource()]" [queryParams]="scope">{{ readOnly ? ('go_back' | t) : ('cancel' | t) }}</a>
+      @if (!readOnly) { <button class="primary" type="submit" [disabled]="saving">{{ saving ? ('saving' | t) : editing ? ('save_changes' | t) : isTicket ? ('send_request' | t) : ('add_user' | t) }}</button> }
     </div>
   </form>
   @if (isTicket) {
     <section class="panel ticket-timeline" aria-labelledby="timeline-title">
-      <h2 id="timeline-title"><i class="bi bi-diagram-2" aria-hidden="true"></i> Tiến độ yêu cầu</h2>
+      <h2 id="timeline-title"><i class="bi bi-diagram-2" aria-hidden="true"></i> {{ 'request_progress' | t }}</h2>
       @if (history.length) {
         <ol class="timeline">
           @for (event of history; track $index) {
             <li [class.current]="$last" [attr.aria-current]="$last ? 'step' : null">
               <span class="timeline-dot" aria-hidden="true"><i class="bi" [class]="status(event.status)?.icon ?? 'bi-circle'"></i></span>
-              <div><strong>{{ status(event.status)?.label ?? event.status }}</strong>
+              <div><strong>{{ (status(event.status)?.label ?? event.status) | t }}</strong>
                 <p><time [attr.datetime]="event.at">{{ event.at | date:'dd/MM/yyyy HH:mm':'+0700' }}</time></p>
               </div>
             </li>
           }
         </ol>
       } @else {
-        <p class="muted">Dự kiến sau khi gửi yêu cầu.</p>
+        <p class="muted">{{ 'what_happens_after_you_send_a_request' | t }}</p>
         <ol class="timeline planned">
           @for (step of statuses; track step.value) {
-            <li><span class="timeline-dot" aria-hidden="true"><i class="bi" [class]="step.icon"></i></span><strong>{{ step.label }}</strong></li>
+            <li><span class="timeline-dot" aria-hidden="true"><i class="bi" [class]="step.icon"></i></span><strong>{{ (step.label) | t }}</strong></li>
           }
         </ol>
       }
@@ -227,21 +251,21 @@
   </div>
   @if (isTicket && mode() !== 'view') {
     <section class="panel today-tickets" aria-labelledby="today-title">
-      <div class="section-heading"><h2 id="today-title">Yêu cầu tạo hôm nay</h2><a class="text-button" routerLink="/tickets" [queryParams]="scope">Xem danh sách</a></div>
+      <div class="section-heading"><h2 id="today-title">{{ 'requests_created_today' | t }}</h2><a class="text-button" routerLink="/tickets" [queryParams]="scope">{{ 'see_the_list' | t }}</a></div>
       @if (todayBusy) {
-        <p class="muted" role="status">Đang tải yêu cầu trong ngày…</p>
+        <p class="muted" role="status">{{ 'loading_todays_requests' | t }}</p>
       } @else if (todayError) {
-        <p role="alert">Không tải được yêu cầu trong ngày. <button type="button" class="text-button" (click)="loadToday(todayPage)">Thử lại</button></p>
+        <p role="alert">{{ 'we_couldnt_load_todays_requests' | t }} <button type="button" class="text-button" (click)="loadToday(todayPage)">{{ 'try_again' | t }}</button></p>
       } @else if (todayRows.length) {
-        <div class="table-scroll" role="region" aria-label="Yêu cầu tạo hôm nay" tabindex="0">
+        <div class="table-scroll" role="region" [attr.aria-label]="('requests_created_today' | t)" tabindex="0">
           <table class="today-table">
-            <thead><tr><th scope="col">Mã</th><th scope="col">Tiêu đề</th><th scope="col">Trạng thái</th><th scope="col">Giờ tạo</th></tr></thead>
+            <thead><tr><th scope="col">{{ 'code' | t }}</th><th scope="col">{{ 'title' | t }}</th><th scope="col">{{ 'status' | t }}</th><th scope="col">{{ 'time_created' | t }}</th></tr></thead>
             <tbody>
               @for (row of todayRows; track row.id) {
                 <tr>
                   <td><a class="badge" [routerLink]="['/tickets', row.id, requesterId ? 'view' : 'edit']" [queryParams]="scope">{{ row['code'] }}</a></td>
                   <td>{{ row['title'] }}</td>
-                  <td><span class="badge badge-dot" [attr.data-tone]="status(row['status'])?.tone">{{ status(row['status'])?.label }}</span></td>
+                  <td><span class="badge badge-dot" [attr.data-tone]="status(row['status'])?.tone">{{ (status(row['status'])?.label) | t }}</span></td>
                   <td>{{ row['createdAt']?.toString() | date:'HH:mm':'+0700' }}</td>
                 </tr>
               }
@@ -251,14 +275,14 @@
         @if (todayPages > 1) {
           <div class="pagination">
             <div class="pager">
-              <button class="secondary" type="button" [disabled]="todayPage <= 1" (click)="loadToday(todayPage - 1)" aria-label="Trang trước của yêu cầu hôm nay"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
-              <span>Trang {{ todayPage }} / {{ todayPages }}</span>
-              <button class="secondary" type="button" [disabled]="todayPage >= todayPages" (click)="loadToday(todayPage + 1)" aria-label="Trang sau của yêu cầu hôm nay"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+              <button class="secondary" type="button" [disabled]="todayPage <= 1" (click)="loadToday(todayPage - 1)" [attr.aria-label]="('previous_page_of_todays_requests' | t)"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
+              <span>{{ 'page' | t }} {{ todayPage }} / {{ todayPages }}</span>
+              <button class="secondary" type="button" [disabled]="todayPage >= todayPages" (click)="loadToday(todayPage + 1)" [attr.aria-label]="('next_page_of_todays_requests' | t)"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
             </div>
           </div>
         }
       } @else {
-        <p class="muted">Hôm nay chưa có yêu cầu nào.</p>
+        <p class="muted">{{ 'no_requests_were_created_today' | t }}</p>
       }
     </section>
   }

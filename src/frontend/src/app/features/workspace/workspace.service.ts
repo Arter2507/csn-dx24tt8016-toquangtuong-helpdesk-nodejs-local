@@ -27,6 +27,10 @@ export class WorkspaceService {
     );
   }
 
+  archiveTickets(ids: number[]) {
+    return this.http.post<ApiResponse<{ count: number }>>('/api/v1/tickets/archive', { ids });
+  }
+
   find(resource: Resource, id: string) {
     return this.http.get<ApiResponse<Row & { attachments?: Attachment[]; history?: TicketEvent[] }>>('/api/v1/' + resource + '/' + encodeURIComponent(id));
   }
