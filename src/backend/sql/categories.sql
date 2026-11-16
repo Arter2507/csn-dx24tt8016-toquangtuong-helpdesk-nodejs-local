@@ -1,4 +1,6 @@
--- Schema mẫu cho danh mục, chưa phải schema đầy đủ của dự án.
+-- DEPRECATED: dùng sql/helpdesk-schema.sql (schema đầy đủ + seed).
+-- File này giữ để tương thích tài liệu cũ; chỉ tạo bảng categories.
+
 CREATE TABLE IF NOT EXISTS categories (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   code VARCHAR(30) NOT NULL UNIQUE,

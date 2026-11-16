@@ -2,7 +2,16 @@ import { BulkActions, RowSelection } from '../../bulk-actions';
 import { Loading } from '../../loading';
 import { Translate, I18n, errorKey } from '../../i18n';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectorRef, Component, DestroyRef, ElementRef, inject, input, OnInit, viewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  OnInit,
+  viewChild,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -79,33 +88,54 @@ export class Workspace implements OnInit {
   noticeCode = '';
   noticeTicket: number | null = null;
 
-  get rowIds() { return this.rows.map(row => row.id); }
+  get rowIds() {
+    return this.rows.map((row) => row.id);
+  }
   readonly bulk = viewChild(BulkActions);
   statusSaving = false;
   statusError = '';
-  get canDelete() { return this.isTicket && !this.requesterId && !(Number(this.assigneeId) > 0); }
-  get isTicket() { return this.resource() === 'tickets'; }
-  get filters() { return this.isTicket ? ticketStatuses : userRoles; }
-  get displayField() { return this.isTicket ? 'title' : 'fullName'; }
-  get fixedRequester() { return !!this.requesterId && Number(this.requesterId) === this.form['requesterId']; }
-  get readOnly() { return this.mode() === 'view' || this.closed; }
-  get scope() { return { requesterId: this.requesterId || null, assigneeId: this.assigneeId || null }; }
-  get closed() { return this.editing?.['status'] === 'CLOSED'; }
-  get startRow() { return (this.page - 1) * this.pageSize + 1; }
+  get canDelete() {
+    return this.isTicket && !this.requesterId && !(Number(this.assigneeId) > 0);
+  }
+  get isTicket() {
+    return this.resource() === 'tickets';
+  }
+  get filters() {
+    return this.isTicket ? ticketStatuses : userRoles;
+  }
+  get displayField() {
+    return this.isTicket ? 'title' : 'fullName';
+  }
+  get fixedRequester() {
+    return !!this.requesterId && Number(this.requesterId) === this.form['requesterId'];
+  }
+  get readOnly() {
+    return this.mode() === 'view' || this.closed;
+  }
+  get scope() {
+    return { requesterId: this.requesterId || null, assigneeId: this.assigneeId || null };
+  }
+  get closed() {
+    return this.editing?.['status'] === 'CLOSED';
+  }
+  get startRow() {
+    return (this.page - 1) * this.pageSize + 1;
+  }
 
   ngOnInit() {
-    const result = this.router.lastSuccessfulNavigation()?.extras.info as { notice?: string; ticketId?: number; code?: string } | undefined;
+    const result = this.router.lastSuccessfulNavigation()?.extras.info as
+      { notice?: string; ticketId?: number; code?: string } | undefined;
     this.notice = result?.notice ?? '';
     this.noticeTicket = result?.ticketId ?? null;
     this.noticeCode = result?.code ?? '';
     if (this.mode() === 'list') {
       this.order = this.isTicket ? 'recent' : 'asc';
-      this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(params => {
+      this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
         this.requesterId = params.get('requesterId') ?? '';
         this.assigneeId = params.get('assigneeId') ?? '';
         this.search = params.get('q') ?? '';
         const filter = params.get('status') ?? '';
-        this.filter = this.filters.some(item => item.value === filter) ? filter : '';
+        this.filter = this.filters.some((item) => item.value === filter) ? filter : '';
         this.applyFilters();
       });
       return;
@@ -115,7 +145,7 @@ export class Workspace implements OnInit {
       this.assigneeId = this.route.snapshot.queryParamMap.get('assigneeId') ?? '';
       if (this.mode() !== 'view') void this.loadToday(1);
     }
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
       void this.loadEditor(params.get('id'));
     });
   }
@@ -133,24 +163,61 @@ export class Workspace implements OnInit {
     this.history = [];
     try {
       const row = id ? (await firstValueFrom(this.service.find(this.resource(), id))).data : null;
-      const fields: Field[] = this.isTicket ? await this.ticketFields(row) : [
-        { key: 'fullName', label: 'full_name', placeholder: 'enter_a_full_name', maxLength: 150 },
-        { key: 'email', label: 'email', kind: 'email', placeholder: 'name@example.com', maxLength: 254 },
-        { key: 'role', label: 'role', kind: 'select', options: userRoles },
-        ...(row ? [{ key: 'isActive', label: 'account_status', kind: 'select' as const,
-          options: [{ value: true, label: 'in_use' }, { value: false, label: 'not_in_use' }] }] : []),
-      ];
+      const fields: Field[] = this.isTicket
+        ? await this.ticketFields(row)
+        : [
+            {
+              key: 'fullName',
+              label: 'full_name',
+              placeholder: 'enter_a_full_name',
+              maxLength: 150,
+            },
+            {
+              key: 'email',
+              label: 'email',
+              kind: 'email',
+              placeholder: 'name@example.com',
+              maxLength: 254,
+            },
+            { key: 'role', label: 'role', kind: 'select', options: userRoles },
+            ...(row
+              ? [
+                  {
+                    key: 'isActive',
+                    label: 'account_status',
+                    kind: 'select' as const,
+                    options: [
+                      { value: true, label: 'in_use' },
+                      { value: false, label: 'not_in_use' },
+                    ],
+                  },
+                ]
+              : []),
+          ];
       if (request !== this.request || this.destroy.destroyed) return;
       this.editing = row;
       this.attachments = row?.attachments ?? [];
       this.history = row?.history ?? [];
       this.fields = fields;
-      this.form = Object.fromEntries(fields.map(field => [
-        field.key, row ? row[field.key] : field.key === 'priority' ? 'MEDIUM' : field.key === 'categoryId' ? null : field.options?.[0]?.value ?? '',
-      ]));
-      const requesters = fields.find(field => field.key === 'requesterId')?.options;
+      this.form = Object.fromEntries(
+        fields.map((field) => [
+          field.key,
+          row
+            ? row[field.key]
+            : field.key === 'priority'
+              ? 'MEDIUM'
+              : field.key === 'categoryId'
+                ? null
+                : (field.options?.[0]?.value ?? ''),
+        ]),
+      );
+      const requesters = fields.find((field) => field.key === 'requesterId')?.options;
       if (requesters && this.requesterId) {
-        this.form['requesterId'] = requesters.some(option => option.value === Number(this.requesterId)) ? Number(this.requesterId) : null;
+        this.form['requesterId'] = requesters.some(
+          (option) => option.value === Number(this.requesterId),
+        )
+          ? Number(this.requesterId)
+          : null;
         if (this.form['requesterId'] === null) this.error = 'api_INVALID_REQUESTER';
       }
     } catch (error) {
@@ -166,14 +233,27 @@ export class Workspace implements OnInit {
   async loadToday(page: number) {
     this.todayBusy = true;
     this.todayError = false;
-    const createdOn = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date());
+    const createdOn = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' }).format(
+      new Date(),
+    );
     try {
-      const result = await firstValueFrom(this.service.list('tickets', { createdOn, page, pageSize: 5, sortBy: 'id', sortOrder: 'desc', requesterId: this.requesterId, assigneeId: this.assigneeId }));
+      const result = await firstValueFrom(
+        this.service.list('tickets', {
+          createdOn,
+          page,
+          pageSize: 5,
+          sortBy: 'id',
+          sortOrder: 'desc',
+          requesterId: this.requesterId,
+          assigneeId: this.assigneeId,
+        }),
+      );
       this.todayRows = result.data;
       this.todayPage = result.meta?.page ?? page;
       this.todayPages = result.meta?.totalPages ?? 0;
-    } catch { this.todayError = true; }
-    finally {
+    } catch {
+      this.todayError = true;
+    } finally {
       this.todayBusy = false;
       if (!this.destroy.destroyed) this.view.markForCheck();
     }
@@ -193,7 +273,7 @@ export class Workspace implements OnInit {
   private addFiles(files: File[]) {
     if (!files.length || this.readOnly || this.saving) return;
     this.fileError = '';
-    if (files.some(file => !FILE_TYPES.includes(file.type) || !file.size)) {
+    if (files.some((file) => !FILE_TYPES.includes(file.type) || !file.size)) {
       this.fileError = 'choose_a_valid_png_jpeg_gif_webp_or_pdf';
       return;
     }
@@ -210,7 +290,7 @@ export class Workspace implements OnInit {
   }
 
   removeAttachment(id: string) {
-    this.attachments = this.attachments.filter(file => file.id !== id);
+    this.attachments = this.attachments.filter((file) => file.id !== id);
     this.removed.push(id);
     this.fileError = '';
   }
@@ -221,40 +301,89 @@ export class Workspace implements OnInit {
   }
 
   private async loadOptions() {
-    const { users, categories } = await firstValueFrom(forkJoin({
-      users: this.service.listAll('users'), categories: this.categories.listAll(),
-    }));
+    const { users, categories } = await firstValueFrom(
+      forkJoin({
+        users: this.service.listAll('users'),
+        categories: this.categories.listAll(),
+      }),
+    );
     this.optionsLoaded = true;
     this.categoryOptions = categories;
 
-    this.accountNames = new Map(users.map(row => [row.id, this.i18n.personKey(row)]));
+    this.accountNames = new Map(users.map((row) => [row.id, this.i18n.personKey(row)]));
     return users;
   }
 
   private async ticketFields(row: Row | null): Promise<Field[]> {
     const accounts = await this.loadOptions();
-    const accountOptions = (rows: Row[]) => rows.map(row => ({ value: row.id, label: this.i18n.personKey(row) }));
-    const active = accounts.filter(user => user['isActive']);
-    const categories = this.categoryOptions.filter(category => category.isActive || category.id === row?.['categoryId']);
-    const assignees = accounts.filter(user => (user['isActive'] && user['role'] === 'TECHNICIAN') || user.id === row?.['assigneeId']);
+    const accountOptions = (rows: Row[]) =>
+      rows.map((row) => ({ value: row.id, label: this.i18n.personKey(row) }));
+    const active = accounts.filter((user) => user['isActive']);
+    const categories = this.categoryOptions.filter(
+      (category) => category.isActive || category.id === row?.['categoryId'],
+    );
+    const assignees = accounts.filter(
+      (user) =>
+        (user['isActive'] && user['role'] === 'TECHNICIAN') || user.id === row?.['assigneeId'],
+    );
     return [
-      { key: 'title', label: 'request_title', placeholder: 'enter_a_brief_title', maxLength: 200, wide: true },
-      { key: 'categoryId', label: 'request_category', kind: 'select', options: [
-        { value: null, label: 'choose_a_category' }, ...categories.map(row => ({ value: row.id, label: row.name })),
-      ] },
+      {
+        key: 'title',
+        label: 'request_title',
+        placeholder: 'enter_a_brief_title',
+        maxLength: 200,
+        wide: true,
+      },
+      {
+        key: 'categoryId',
+        label: 'request_category',
+        kind: 'select',
+        options: [
+          { value: null, label: 'choose_a_category' },
+          ...categories.map((row) => ({ value: row.id, label: row.name })),
+        ],
+      },
       { key: 'priority', label: 'priority_level', kind: 'select', options: ticketPriorities },
-      { key: 'description', label: 'describe_the_issue', kind: 'textarea', placeholder: 'tell_us_what_happened_and_what_youve_already_tried', maxLength: 10000, wide: true },
-      ...(row ? [
-        { key: 'assigneeId', label: 'technician_2', kind: 'select' as const, optional: true,
-          options: [{ value: null, label: 'unassigned' }, ...accountOptions(assignees)] },
-        { key: 'status', label: 'status', kind: 'select' as const, options: ticketStatuses },
-      ] : [{ key: 'requesterId', label: 'demo_requester', kind: 'select' as const, options: accountOptions(active.filter(user => !this.requesterId || user.id === Number(this.requesterId))) }]),
+      {
+        key: 'description',
+        label: 'describe_the_issue',
+        kind: 'textarea',
+        placeholder: 'tell_us_what_happened_and_what_youve_already_tried',
+        maxLength: 10000,
+        wide: true,
+      },
+      ...(row
+        ? [
+            {
+              key: 'assigneeId',
+              label: 'technician_2',
+              kind: 'select' as const,
+              optional: true,
+              options: [{ value: null, label: 'unassigned' }, ...accountOptions(assignees)],
+            },
+            { key: 'status', label: 'status', kind: 'select' as const, options: ticketStatuses },
+          ]
+        : [
+            {
+              key: 'requesterId',
+              label: 'demo_requester',
+              kind: 'select' as const,
+              options: accountOptions(
+                active.filter((user) => !this.requesterId || user.id === Number(this.requesterId)),
+              ),
+            },
+          ]),
     ];
   }
 
   applyFilters() {
-    this.applied = { search: this.search.trim().slice(0, 100), filter: this.filter, priority: this.priorityFilter,
-      categoryId: this.categoryFilter, order: this.order };
+    this.applied = {
+      search: this.search.trim().slice(0, 100),
+      filter: this.filter,
+      priority: this.priorityFilter,
+      categoryId: this.categoryFilter,
+      order: this.order,
+    };
     void this.load(1);
   }
 
@@ -262,7 +391,10 @@ export class Workspace implements OnInit {
     this.search = this.filter = this.priorityFilter = '';
     this.categoryFilter = 0;
     this.order = this.isTicket ? 'recent' : 'asc';
-    if (this.route.snapshot.queryParamMap.has('q') || this.route.snapshot.queryParamMap.has('status')) {
+    if (
+      this.route.snapshot.queryParamMap.has('q') ||
+      this.route.snapshot.queryParamMap.has('status')
+    ) {
       void this.router.navigate(['/', this.resource()], { queryParams: this.scope });
     } else {
       this.applyFilters();
@@ -278,12 +410,19 @@ export class Workspace implements OnInit {
     try {
       if (this.isTicket && !this.optionsLoaded) await this.loadOptions();
       if (request !== this.request || this.destroy.destroyed) return;
-      const result = await firstValueFrom(this.service.list(this.resource(), {
-        search, filter, priority, categoryId: categoryId || '', page,
-        requesterId: this.requesterId, assigneeId: this.assigneeId,
-        sortBy: order === 'recent' ? 'id' : this.displayField,
-        sortOrder: order === 'asc' ? 'asc' : 'desc',
-      }));
+      const result = await firstValueFrom(
+        this.service.list(this.resource(), {
+          search,
+          filter,
+          priority,
+          categoryId: categoryId || '',
+          page,
+          requesterId: this.requesterId,
+          assigneeId: this.assigneeId,
+          sortBy: order === 'recent' ? 'id' : this.displayField,
+          sortOrder: order === 'asc' ? 'asc' : 'desc',
+        }),
+      );
       if (request !== this.request || this.destroy.destroyed) return;
       this.rows = result.data;
       this.page = result.meta?.page ?? page;
@@ -311,25 +450,34 @@ export class Workspace implements OnInit {
       if (this.destroy.destroyed) return;
       this.notice = isActive ? 'user_activated' : 'user_deactivated';
       await this.load(this.page);
-    } catch (error) { this.statusError = errorKey(error); }
-    finally {
+    } catch (error) {
+      this.statusError = errorKey(error);
+    } finally {
       this.statusSaving = false;
       if (!this.destroy.destroyed) this.view.markForCheck();
     }
   }
 
   categoryName(id: number) {
-    const category = this.categoryOptions.find(row => row.id === id);
+    const category = this.categoryOptions.find((row) => row.id === id);
     return category ? this.i18n.category(category) : '—';
   }
 
   fieldLabel(field: Field, value: Value, fallback: string) {
-    return field.key === 'categoryId' && typeof value === 'number' ? this.categoryName(value) : this.i18n.text(fallback);
+    return field.key === 'categoryId' && typeof value === 'number'
+      ? this.categoryName(value)
+      : this.i18n.text(fallback);
   }
 
-  status(value: unknown) { return ticketStatuses.find(item => item.value === value); }
-  priority(value: unknown) { return ticketPriorities.find(item => item.value === value); }
-  role(value: unknown) { return userRoles.find(item => item.value === value)?.label; }
+  status(value: unknown) {
+    return ticketStatuses.find((item) => item.value === value);
+  }
+  priority(value: unknown) {
+    return ticketPriorities.find((item) => item.value === value);
+  }
+  role(value: unknown) {
+    return userRoles.find((item) => item.value === value)?.label;
+  }
 
   async save(editor: NgForm) {
     if (this.busy || this.saving || this.readOnly) return;
@@ -340,16 +488,41 @@ export class Workspace implements OnInit {
     }
     this.saving = true;
     this.error = '';
-    const payload = Object.fromEntries(this.fields.map(field => [field.key, this.form[field.key]]));
+    const payload = Object.fromEntries(
+      this.fields.map((field) => [field.key, this.form[field.key]]),
+    );
     if (this.isTicket && this.editing) payload['version'] = this.editing['version'];
     try {
-      const { data } = await firstValueFrom(this.service.save(this.resource(), this.editing?.id ?? null, payload, this.files, this.removed));
+      const { data } = await firstValueFrom(
+        this.service.save(
+          this.resource(),
+          this.editing?.id ?? null,
+          payload,
+          this.files,
+          this.removed,
+        ),
+      );
       const notice = this.isTicket
-        ? (this.editing ? 'updated_request' : 'sent_request')
-        : this.editing ? 'user_updated' : 'user_added';
-      await this.router.navigate(['/', this.resource()], { queryParams: this.scope, info: { notice, ticketId: this.isTicket ? data.id : null, code: data['code'] ?? '#' + data.id } });
-    } catch (error) { this.showError(error); }
-    finally { this.saving = false; this.view.markForCheck(); }
+        ? this.editing
+          ? 'updated_request'
+          : 'sent_request'
+        : this.editing
+          ? 'user_updated'
+          : 'user_added';
+      await this.router.navigate(['/', this.resource()], {
+        queryParams: this.scope,
+        info: {
+          notice,
+          ticketId: this.isTicket ? data.id : null,
+          code: data['code'] ?? '#' + data.id,
+        },
+      });
+    } catch (error) {
+      this.showError(error);
+    } finally {
+      this.saving = false;
+      this.view.markForCheck();
+    }
   }
 
   private showError(error: unknown) {

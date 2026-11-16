@@ -25,27 +25,33 @@ export class Shell {
   private readonly pageLabel = signal('overview');
   readonly accountParams = signal<{ account: number } | null>(null);
   readonly groups = [
-    { label: 'workspace', links: [
-      { path: '/', label: 'overview', icon: 'bi-grid-1x2' },
-      { path: '/dashboard/technician', label: 'technician', icon: 'bi-tools' },
-      { path: '/dashboard/user', label: 'requester_workspace', icon: 'bi-person' },
-      { path: '/tickets', label: 'support_requests', icon: 'bi-ticket-perforated' },
-      { path: '/notifications', label: 'notifications', icon: 'bi-bell' },
-    ] },
-    { label: 'administration', links: [
-      { path: '/users', label: 'users', icon: 'bi-people' },
-      { path: '/categories', label: 'categories', icon: 'bi-tags' },
-      { path: '/reports', label: 'reports', icon: 'bi-bar-chart' },
-      { path: '/backup', label: 'backups_2', icon: 'bi-database' },
-      { path: '/settings', label: 'settings', icon: 'bi-gear' },
-    ] },
+    {
+      label: 'workspace',
+      links: [
+        { path: '/', label: 'overview', icon: 'bi-grid-1x2' },
+        { path: '/dashboard/technician', label: 'technician', icon: 'bi-tools' },
+        { path: '/dashboard/user', label: 'requester_workspace', icon: 'bi-person' },
+        { path: '/tickets', label: 'support_requests', icon: 'bi-ticket-perforated' },
+        { path: '/notifications', label: 'notifications', icon: 'bi-bell' },
+      ],
+    },
+    {
+      label: 'administration',
+      links: [
+        { path: '/users', label: 'users', icon: 'bi-people' },
+        { path: '/categories', label: 'categories', icon: 'bi-tags' },
+        { path: '/reports', label: 'reports', icon: 'bi-bar-chart' },
+        { path: '/backup', label: 'backups_2', icon: 'bi-database' },
+        { path: '/settings', label: 'settings', icon: 'bi-gear' },
+      ],
+    },
   ];
 
   readonly crumbs = signal<{ label: string; path?: string }[]>([]);
   private currentPath = '';
 
   constructor() {
-    this.router.events.pipe(takeUntilDestroyed()).subscribe(event => {
+    this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
       if (!(event instanceof NavigationEnd)) return;
       const path = event.urlAfterRedirects.split(/[?#]/)[0];
       if (path !== this.currentPath) {
@@ -54,24 +60,48 @@ export class Shell {
         if (window.matchMedia('(max-width: 767px)').matches) window.scrollTo(0, 0);
       }
       const route = this.router.routerState.snapshot.root.firstChild;
-      const section = this.groups.flatMap(group => group.links).find(link => link.path === '/' + route?.url[0]?.path);
-      const account = Number(route?.queryParamMap.get('account') ?? route?.queryParamMap.get('requesterId') ??
-        route?.queryParamMap.get('assigneeId') ?? (route?.data['role'] === 'technician' ? 2 : route?.data['role'] === 'user' ? 1 : 0));
+      const section = this.groups
+        .flatMap((group) => group.links)
+        .find((link) => link.path === '/' + route?.url[0]?.path);
+      const account = Number(
+        route?.queryParamMap.get('account') ??
+          route?.queryParamMap.get('requesterId') ??
+          route?.queryParamMap.get('assigneeId') ??
+          (route?.data['role'] === 'technician' ? 2 : route?.data['role'] === 'user' ? 1 : 0),
+      );
       this.accountParams.set(account > 0 ? { account } : null);
       const mode = route?.data['mode'];
       let current = route?.data['crumb'] ?? section?.label ?? route?.data['title'] ?? 'overview';
-      if (mode === 'create') current = section?.path === '/tickets' ? 'new_request' : section?.path === '/users' ? 'add_user' : 'add_category';
+      if (mode === 'create')
+        current =
+          section?.path === '/tickets'
+            ? 'new_request'
+            : section?.path === '/users'
+              ? 'add_user'
+              : 'add_category';
       if (mode === 'edit') current = 'edit_2';
       if (mode === 'view') current = 'details';
       this.pageLabel.set(current);
-      this.crumbs.set(path === '/' ? [{ label: 'overview' }] : [
-        { label: 'overview', path: '/' },
-        ...(section && (mode === 'create' || mode === 'edit' || mode === 'view') ? [section] : []),
-        { label: current },
-      ]);
+      this.crumbs.set(
+        path === '/'
+          ? [{ label: 'overview' }]
+          : [
+              { label: 'overview', path: '/' },
+              ...(section && (mode === 'create' || mode === 'edit' || mode === 'view')
+                ? [section]
+                : []),
+              { label: current },
+            ],
+      );
     });
-    effect(() => this.title.setTitle(this.i18n.text('browser_title', { page: this.i18n.text(this.pageLabel()) })));
-    effect(() => localStorage.setItem('helpdesk.sidebar', this.collapsed() ? 'collapsed' : 'expanded'));
+    effect(() =>
+      this.title.setTitle(
+        this.i18n.text('browser_title', { page: this.i18n.text(this.pageLabel()) }),
+      ),
+    );
+    effect(() =>
+      localStorage.setItem('helpdesk.sidebar', this.collapsed() ? 'collapsed' : 'expanded'),
+    );
   }
 
   search(value: string) {
@@ -79,7 +109,8 @@ export class Shell {
     const route = this.router.routerState.snapshot.root.firstChild;
     const queryParams: Record<string, string | number | null> = { q: value.trim() || null };
     if (route?.data['role'] === 'technician') queryParams['assigneeId'] = 2;
-    if (route?.data['role'] === 'user') queryParams['requesterId'] = route.queryParamMap.get('account') === '2' ? 2 : 1;
+    if (route?.data['role'] === 'user')
+      queryParams['requesterId'] = route.queryParamMap.get('account') === '2' ? 2 : 1;
     for (const key of ['assigneeId', 'requesterId']) {
       if (route?.queryParamMap.has(key)) queryParams[key] = route.queryParamMap.get(key);
     }

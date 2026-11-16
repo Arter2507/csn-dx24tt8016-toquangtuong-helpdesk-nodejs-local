@@ -1,7 +1,19 @@
 export const ticketStatuses = [
   { value: 'NEW', label: 'new', tone: 'primary', color: 'new', icon: 'bi-plus-lg' },
-  { value: 'IN_PROGRESS', label: 'in_progress', tone: 'info', color: 'progress', icon: 'bi-arrow-repeat' },
-  { value: 'RESOLVED', label: 'waiting_for_you_to_review', tone: 'warning', color: 'resolved', icon: 'bi-clock' },
+  {
+    value: 'IN_PROGRESS',
+    label: 'in_progress',
+    tone: 'info',
+    color: 'progress',
+    icon: 'bi-arrow-repeat',
+  },
+  {
+    value: 'RESOLVED',
+    label: 'waiting_for_you_to_review',
+    tone: 'warning',
+    color: 'resolved',
+    icon: 'bi-clock',
+  },
   { value: 'CLOSED', label: 'closed', tone: 'success', color: 'closed', icon: 'bi-check-lg' },
 ] as const;
 

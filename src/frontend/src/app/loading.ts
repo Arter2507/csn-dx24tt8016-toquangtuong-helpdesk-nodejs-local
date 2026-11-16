@@ -11,8 +11,8 @@ export class NetworkProgress {
 export const trackProgress: HttpInterceptorFn = (request, next) => {
   const progress = inject(NetworkProgress);
   return defer(() => {
-    progress.pending.update(count => count + 1);
-    return next(request).pipe(finalize(() => progress.pending.update(count => count - 1)));
+    progress.pending.update((count) => count + 1);
+    return next(request).pipe(finalize(() => progress.pending.update((count) => count - 1)));
   });
 };
 

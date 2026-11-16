@@ -4,7 +4,9 @@ export type Theme = 'light' | 'dark';
 
 @Injectable({ providedIn: 'root' })
 export class Preferences {
-  readonly theme = signal<Theme>(localStorage.getItem('helpdesk.theme') === 'dark' ? 'dark' : 'light');
+  readonly theme = signal<Theme>(
+    localStorage.getItem('helpdesk.theme') === 'dark' ? 'dark' : 'light',
+  );
   readonly account = signal(Number(localStorage.getItem('tram-meo.account')) || 1);
   readonly reducedMotion = signal(localStorage.getItem('tram-meo.reduce-motion') === 'true');
 

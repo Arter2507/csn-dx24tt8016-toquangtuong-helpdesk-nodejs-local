@@ -1,12 +1,21 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Trạm Mèo — Express API",
+  "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test"
+    "typecheck:lint": "eslint src scripts prisma",
+    "build": "node scripts/check-syntax.js",
+    "re-build": "node scripts/clean-cache.js && node scripts/check-syntax.js",
+    "test": "node --test",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio",
+    "prisma:seed": "node prisma/seed.js",
+    "db:sample": "node scripts/import-sample-data.js"
   },
   "keywords": [],
   "author": "",
@@ -21,10 +30,20 @@
   "packageManager": "pnpm@12.16.1",
   "type": "module",
   "dependencies": {
+    "@prisma/client": "^6.19.0",
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
     "multer": "2.5.0",
     "mysql2": "^3.24.6",
     "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "prisma": "^6.19.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }

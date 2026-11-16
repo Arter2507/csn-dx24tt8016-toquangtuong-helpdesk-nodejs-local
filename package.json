@@ -1,0 +1,17 @@
+{
+  "name": "tram-meo",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Trạm Mèo — workspace lệnh pnpm cho frontend và backend",
+  "packageManager": "pnpm@12.16.1",
+  "scripts": {
+    "typecheck:lint-frontend": "pnpm --dir src/frontend run typecheck:lint",
+    "typecheck:lint-backend": "pnpm --dir src/backend run typecheck:lint",
+    "build-frontend": "pnpm --dir src/frontend run build",
+    "build-backend": "pnpm --dir src/backend run build",
+    "re-build-frontend": "pnpm --dir src/frontend run re-build",
+    "re-build-backend": "pnpm --dir src/backend run re-build",
+    "dev-frontend": "pnpm --dir src/frontend run dev",
+    "dev-backend": "pnpm --dir src/backend run dev"
+  }
+}

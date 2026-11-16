@@ -39,21 +39,28 @@ export class AccountPages implements OnInit {
   readonly seen = signal(new Set((localStorage.getItem(readKey) ?? '').split(',').filter(Boolean)));
   name = '';
   email = '';
-  readonly profile = computed(() => this.users()?.find(user => user.id === this.account()));
-  readonly updates = computed(() => this.tickets()
-    .filter(row => row['requesterId'] === this.account() || row['assigneeId'] === this.account())
-    .sort((a, b) => String(b['updatedAt'] ?? '').localeCompare(String(a['updatedAt'] ?? '')) || b.id - a.id)
-    .map(row => ({
-      row,
-      id: [this.account(), row.id, row['version'], row['updatedAt']].join(':'),
-      assigned: row['assigneeId'] === this.account() && row['requesterId'] !== this.account(),
-      status: ticketStatuses.find(item => item.value === row['status']),
-    })));
-  readonly unread = computed(() => this.updates().filter(update => !this.seen().has(update.id)));
-  readonly shown = computed(() => this.unreadOnly() ? this.unread() : this.updates());
+  readonly profile = computed(() => this.users()?.find((user) => user.id === this.account()));
+  readonly updates = computed(() =>
+    this.tickets()
+      .filter(
+        (row) => row['requesterId'] === this.account() || row['assigneeId'] === this.account(),
+      )
+      .sort(
+        (a, b) =>
+          String(b['updatedAt'] ?? '').localeCompare(String(a['updatedAt'] ?? '')) || b.id - a.id,
+      )
+      .map((row) => ({
+        row,
+        id: [this.account(), row.id, row['version'], row['updatedAt']].join(':'),
+        assigned: row['assigneeId'] === this.account() && row['requesterId'] !== this.account(),
+        status: ticketStatuses.find((item) => item.value === row['status']),
+      })),
+  );
+  readonly unread = computed(() => this.updates().filter((update) => !this.seen().has(update.id)));
+  readonly shown = computed(() => (this.unreadOnly() ? this.unread() : this.updates()));
 
   ngOnInit() {
-    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroy)).subscribe(params => {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
       this.selectAccount(Number(params.get('account')) || this.preferences.account());
     });
     if (this.page() !== 'backup') this.load();
@@ -63,21 +70,24 @@ export class AccountPages implements OnInit {
     this.error.set('');
     forkJoin({
       users: this.workspace.listAll('users'),
-      tickets: this.page() === 'notifications' ? this.workspace.listAll('tickets') : of([] as Row[]),
-    }).pipe(takeUntilDestroyed(this.destroy)).subscribe({
-      next: ({ users, tickets }) => {
-        this.users.set(users.filter(user => user['isActive']));
-        this.tickets.set(tickets);
-        if (this.page() === 'settings') {
-          const available = this.users() ?? [];
-          if (available[0] && !available.some(user => user.id === this.preferences.account())) {
-            this.preferences.account.set(available[0].id);
+      tickets:
+        this.page() === 'notifications' ? this.workspace.listAll('tickets') : of([] as Row[]),
+    })
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: ({ users, tickets }) => {
+          this.users.set(users.filter((user) => user['isActive']));
+          this.tickets.set(tickets);
+          if (this.page() === 'settings') {
+            const available = this.users() ?? [];
+            if (available[0] && !available.some((user) => user.id === this.preferences.account())) {
+              this.preferences.account.set(available[0].id);
+            }
           }
-        }
-        this.syncProfile();
-      },
-      error: error => this.error.set(errorKey(error)),
-    });
+          this.syncProfile();
+        },
+        error: (error) => this.error.set(errorKey(error)),
+      });
   }
 
   selectAccount(id: number) {
@@ -92,7 +102,9 @@ export class AccountPages implements OnInit {
     this.email = String(this.profile()?.['email'] ?? '');
   }
 
-  role(value: unknown) { return userRoles.find(item => item.value === value)?.label; }
+  role(value: unknown) {
+    return userRoles.find((item) => item.value === value)?.label;
+  }
 
   saveProfile() {
     const row = this.profile();
@@ -100,23 +112,36 @@ export class AccountPages implements OnInit {
     this.busy.set(true);
     this.error.set('');
     this.feedback.set('');
-    this.workspace.save('users', row.id, {
-      fullName: this.name.trim(), email: this.email.trim(), role: row['role'], isActive: row['isActive'],
-    }).pipe(takeUntilDestroyed(this.destroy)).subscribe({
-      next: ({ data }) => {
-        this.users.update(users => (users ?? []).map(user => user.id === data.id ? data : user));
-        this.busy.set(false);
-        this.syncProfile();
-        this.feedback.set('profile_saved');
-      },
-      error: error => { this.error.set(errorKey(error)); this.busy.set(false); },
-    });
+    this.workspace
+      .save('users', row.id, {
+        fullName: this.name.trim(),
+        email: this.email.trim(),
+        role: row['role'],
+        isActive: row['isActive'],
+      })
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: ({ data }) => {
+          this.users.update((users) =>
+            (users ?? []).map((user) => (user.id === data.id ? data : user)),
+          );
+          this.busy.set(false);
+          this.syncProfile();
+          this.feedback.set('profile_saved');
+        },
+        error: (error) => {
+          this.error.set(errorKey(error));
+          this.busy.set(false);
+        },
+      });
   }
 
-  unreadIds() { return this.unread().map(item => item.id); }
+  unreadIds() {
+    return this.unread().map((item) => item.id);
+  }
 
   markRead(ids: string[]) {
-    this.seen.update(seen => new Set([...seen, ...ids]));
+    this.seen.update((seen) => new Set([...seen, ...ids]));
     localStorage.setItem(readKey, [...this.seen()].join(','));
   }
 
@@ -125,20 +150,28 @@ export class AccountPages implements OnInit {
     this.busy.set(true);
     this.error.set('');
     this.feedback.set('');
-    this.http.get<ApiResponse<{ createdAt: string }>>('/api/v1/backups/snapshot').pipe(takeUntilDestroyed(this.destroy)).subscribe({
-      next: ({ data }) => {
-        const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'tram-meo-' + data.createdAt.slice(0, 10) + '.json';
-        link.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        this.lastBackup.set(data.createdAt);
-        localStorage.setItem(backupKey, data.createdAt);
-        this.feedback.set('backup_downloaded');
-        this.busy.set(false);
-      },
-      error: error => { this.error.set(errorKey(error)); this.busy.set(false); },
-    });
+    this.http
+      .get<ApiResponse<{ createdAt: string }>>('/api/v1/backups/snapshot')
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: ({ data }) => {
+          const url = URL.createObjectURL(
+            new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
+          );
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = 'tram-meo-' + data.createdAt.slice(0, 10) + '.json';
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          this.lastBackup.set(data.createdAt);
+          localStorage.setItem(backupKey, data.createdAt);
+          this.feedback.set('backup_downloaded');
+          this.busy.set(false);
+        },
+        error: (error) => {
+          this.error.set(errorKey(error));
+          this.busy.set(false);
+        },
+      });
   }
 }

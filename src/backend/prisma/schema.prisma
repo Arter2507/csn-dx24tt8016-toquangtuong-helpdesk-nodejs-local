@@ -1,0 +1,195 @@
+// Trạm Mèo — Prisma schema map 1-1 với sql/helpdesk-schema.sql
+// Runtime API hiện vẫn dùng mysql2; Prisma phục vụ migrate/seed/B1.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  email        String    @unique @db.VarChar(254)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  fullName     String    @map("full_name") @db.VarChar(150)
+  phone        String?   @db.VarChar(30)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @map("created_at") @db.DateTime(3)
+  updatedAt    DateTime  @map("updated_at") @db.DateTime(3)
+
+  roles                 UserRole[]
+  sessions              AuthSession[]
+  technicianCategories  TechnicianCategory[]
+  ticketsRequested      Ticket[]             @relation("TicketRequester")
+  ticketsAssigned       Ticket[]             @relation("TicketAssignee")
+  comments              TicketComment[]
+  attachmentsUploaded   TicketAttachment[]
+  eventsActed           TicketEvent[]
+  notifications         Notification[]
+
+  @@map("users")
+}
+
+model Role {
+  id   BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  code String @unique @db.VarChar(30)
+  name String @db.VarChar(100)
+
+  users UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId    BigInt   @map("user_id") @db.UnsignedBigInt
+  roleId    BigInt   @map("role_id") @db.UnsignedBigInt
+  createdAt DateTime @map("created_at") @db.DateTime(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([userId, roleId])
+  @@index([roleId, userId], map: "idx_user_roles_role_user")
+  @@map("user_roles")
+}
+
+model AuthSession {
+  id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  userId           BigInt    @map("user_id") @db.UnsignedBigInt
+  refreshTokenHash String    @unique @map("refresh_token_hash") @db.Char(64)
+  expiresAt        DateTime  @map("expires_at") @db.DateTime(3)
+  revokedAt        DateTime? @map("revoked_at") @db.DateTime(3)
+  createdAt        DateTime  @map("created_at") @db.DateTime(3)
+  updatedAt        DateTime  @map("updated_at") @db.DateTime(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([userId, revokedAt], map: "idx_auth_sessions_user_revoked")
+  @@map("auth_sessions")
+}
+
+model Category {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  code      String   @unique @db.VarChar(30)
+  name      String   @db.VarChar(100)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @map("created_at") @db.DateTime(3)
+  updatedAt DateTime @map("updated_at") @db.DateTime(3)
+
+  technicians TechnicianCategory[]
+  tickets     Ticket[]
+
+  @@map("categories")
+}
+
+model TechnicianCategory {
+  userId     BigInt   @map("user_id") @db.UnsignedBigInt
+  categoryId BigInt   @map("category_id") @db.UnsignedBigInt
+  createdAt  DateTime @map("created_at") @db.DateTime(3)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@id([userId, categoryId])
+  @@index([categoryId, userId], map: "idx_technician_categories_category_user")
+  @@map("technician_categories")
+}
+
+model Ticket {
+  id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  requesterId BigInt    @map("requester_id") @db.UnsignedBigInt
+  assigneeId  BigInt?   @map("assignee_id") @db.UnsignedBigInt
+  categoryId  BigInt    @map("category_id") @db.UnsignedBigInt
+  title       String    @db.VarChar(200)
+  description String    @db.Text
+  priority    String    @db.VarChar(10)
+  status      String    @db.VarChar(20)
+  version     Int       @default(1) @db.UnsignedInt
+  resolvedAt  DateTime? @map("resolved_at") @db.DateTime(3)
+  closedAt    DateTime? @map("closed_at") @db.DateTime(3)
+  archivedAt  DateTime? @map("archived_at") @db.DateTime(3)
+  createdAt   DateTime  @map("created_at") @db.DateTime(3)
+  updatedAt   DateTime  @map("updated_at") @db.DateTime(3)
+
+  requester   User               @relation("TicketRequester", fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assignee    User?              @relation("TicketAssignee", fields: [assigneeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  category    Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  comments    TicketComment[]
+  attachments TicketAttachment[]
+  events      TicketEvent[]
+  notifications Notification[]
+
+  @@index([requesterId, createdAt, id], map: "idx_tickets_requester_created")
+  @@index([assigneeId, status, createdAt, id], map: "idx_tickets_assignee_status_created")
+  @@index([status, createdAt, id], map: "idx_tickets_status_created")
+  @@index([categoryId, createdAt, id], map: "idx_tickets_category_created")
+  @@map("tickets")
+}
+
+model TicketComment {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  ticketId  BigInt   @map("ticket_id") @db.UnsignedBigInt
+  authorId  BigInt   @map("author_id") @db.UnsignedBigInt
+  body      String   @db.Text
+  createdAt DateTime @map("created_at") @db.DateTime(3)
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([ticketId, createdAt, id], map: "idx_ticket_comments_ticket_created")
+  @@map("ticket_comments")
+}
+
+model TicketAttachment {
+  id           BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  ticketId     BigInt   @map("ticket_id") @db.UnsignedBigInt
+  uploaderId   BigInt   @map("uploader_id") @db.UnsignedBigInt
+  originalName String   @map("original_name") @db.VarChar(255)
+  storageKey   String   @unique @map("storage_key") @db.VarChar(255)
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  sizeBytes    BigInt   @map("size_bytes") @db.UnsignedBigInt
+  createdAt    DateTime @map("created_at") @db.DateTime(3)
+
+  ticket   Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  uploader User   @relation(fields: [uploaderId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([ticketId, createdAt, id], map: "idx_ticket_attachments_ticket_created")
+  @@map("ticket_attachments")
+}
+
+model TicketEvent {
+  id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  ticketId  BigInt   @map("ticket_id") @db.UnsignedBigInt
+  actorId   BigInt   @map("actor_id") @db.UnsignedBigInt
+  eventType String   @map("event_type") @db.VarChar(30)
+  oldValue  Json?    @map("old_value")
+  newValue  Json?    @map("new_value")
+  note      String?  @db.Text
+  createdAt DateTime @map("created_at") @db.DateTime(3)
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  actor  User   @relation(fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([ticketId, createdAt, id], map: "idx_ticket_events_ticket_created")
+  @@map("ticket_events")
+}
+
+model Notification {
+  id        BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  userId    BigInt    @map("user_id") @db.UnsignedBigInt
+  ticketId  BigInt?   @map("ticket_id") @db.UnsignedBigInt
+  type      String    @db.VarChar(30)
+  title     String    @db.VarChar(200)
+  body      String    @db.VarChar(500)
+  readAt    DateTime? @map("read_at") @db.DateTime(3)
+  createdAt DateTime  @map("created_at") @db.DateTime(3)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([userId, readAt, createdAt, id], map: "idx_notifications_user_read_created")
+  @@map("notifications")
+}

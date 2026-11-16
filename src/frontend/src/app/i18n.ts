@@ -5,7 +5,9 @@ export type Language = 'vi' | 'en';
 
 @Injectable({ providedIn: 'root' })
 export class I18n {
-  readonly language = signal<Language>(localStorage.getItem('tram-meo.language') === 'en' ? 'en' : 'vi');
+  readonly language = signal<Language>(
+    localStorage.getItem('tram-meo.language') === 'en' ? 'en' : 'vi',
+  );
 
   constructor() {
     effect(() => {
@@ -30,15 +32,20 @@ export class I18n {
 
   text(key: unknown, params?: Record<string, string | number>): string {
     if (typeof key !== 'string') return '';
-    const translation = (messages as Record<string, Record<Language, string>>)[key]?.[this.language()] ?? key;
-    return params ? translation.replace(/\{(\w+)\}/g, (match, name) => String(params[name] ?? match)) : translation;
+    const translation =
+      (messages as Record<string, Record<Language, string>>)[key]?.[this.language()] ?? key;
+    return params
+      ? translation.replace(/\{(\w+)\}/g, (match, name) => String(params[name] ?? match))
+      : translation;
   }
 }
 
 @Pipe({ name: 't', pure: false })
 export class Translate {
   private readonly i18n = inject(I18n);
-  transform(key: unknown, params?: Record<string, string | number>) { return this.i18n.text(key, params); }
+  transform(key: unknown, params?: Record<string, string | number>) {
+    return this.i18n.text(key, params);
+  }
 }
 
 export function errorKey(error: unknown, fallback = 'we_couldnt_load_or_save_your_data_try_again') {

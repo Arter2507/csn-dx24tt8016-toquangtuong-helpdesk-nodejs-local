@@ -1,33 +1,83 @@
 <a class="skip-link" href="#main-content">{{ 'skip_to_content' | t }}</a>
-<div class="navigation-progress" [class.active]="navigating() || progress.pending()" aria-hidden="true"><span></span></div>
+<div
+  class="navigation-progress"
+  [class.active]="navigating() || progress.pending()"
+  aria-hidden="true"
+>
+  <span></span>
+</div>
 <header class="topbar">
-  <button #mobileMenu class="icon-button mobile-menu" type="button" [attr.aria-label]="('menu' | t)" aria-controls="sidebar"
-    [attr.aria-expanded]="menuOpen()" (click)="menuOpen.set(!menuOpen())" (keydown.escape)="menuOpen.set(false)">
+  <button
+    #mobileMenu
+    class="icon-button mobile-menu"
+    type="button"
+    [attr.aria-label]="'menu' | t"
+    aria-controls="sidebar"
+    [attr.aria-expanded]="menuOpen()"
+    (click)="menuOpen.set(!menuOpen())"
+    (keydown.escape)="menuOpen.set(false)"
+  >
     <i class="bi bi-list" aria-hidden="true"></i>
   </button>
   <a class="brand" routerLink="/" (click)="menuOpen.set(false)">
-    <span class="brand-mark"><img src="mascot/cat-support.webp" alt="" width="37" height="35"></span>
+    <span class="brand-mark"
+      ><img src="mascot/cat-support.webp" alt="" width="37" height="35"
+    /></span>
     <span class="brand-wordmark">
       <strong>{{ 'tr_m_m_o' | t }}</strong>
-      <span class="brand-tagline">{{ 'tech_trouble_m_o_can_help' | t }} <span class="brand-version">v0.2.0</span></span>
+      <span class="brand-tagline"
+        >{{ 'tech_trouble_m_o_can_help' | t }} <span class="brand-version">v0.2.0</span></span
+      >
     </span>
   </a>
-  <form class="quick-search" role="search" (submit)="$event.preventDefault(); search(quickSearch.value)">
-    <input #quickSearch type="search" [attr.aria-label]="('quick_request_search' | t)" [placeholder]="('find_a_request' | t)" maxlength="100">
-    <button type="submit" [attr.aria-label]="('find_a_request_2' | t)"><i class="bi bi-search" aria-hidden="true"></i></button>
+  <form
+    class="quick-search"
+    role="search"
+    (submit)="$event.preventDefault(); search(quickSearch.value)"
+  >
+    <input
+      #quickSearch
+      type="search"
+      [attr.aria-label]="'quick_request_search' | t"
+      [placeholder]="'find_a_request' | t"
+      maxlength="100"
+    />
+    <button type="submit" [attr.aria-label]="'find_a_request_2' | t">
+      <i class="bi bi-search" aria-hidden="true"></i>
+    </button>
   </form>
-  <a class="icon-button topbar-notifications" routerLink="/notifications" [queryParams]="accountParams()" [attr.aria-label]="('notifications' | t)" (click)="menuOpen.set(false)">
+  <a
+    class="icon-button topbar-notifications"
+    routerLink="/notifications"
+    [queryParams]="accountParams()"
+    [attr.aria-label]="'notifications' | t"
+    (click)="menuOpen.set(false)"
+  >
     <i class="bi bi-bell" aria-hidden="true"></i>
   </a>
-  <details class="account-menu" #account (keydown.escape)="account.open = false; accountButton.focus()">
-    <summary #accountButton [attr.aria-label]="('demo_workspace' | t)">
+  <details
+    class="account-menu"
+    #account
+    (keydown.escape)="account.open = false; accountButton.focus()"
+  >
+    <summary #accountButton [attr.aria-label]="'demo_workspace' | t">
       <span class="account-avatar" aria-hidden="true">TM</span>
       <span class="account-label">{{ 'demo_workspace' | t }}</span>
       <i class="bi bi-chevron-down" aria-hidden="true"></i>
     </summary>
     <div class="account-links">
-      <a routerLink="/profile" [queryParams]="accountParams()" (click)="account.open = false; menuOpen.set(false)">{{ 'profile' | t }}</a>
-      <a routerLink="/notifications" [queryParams]="accountParams()" (click)="account.open = false; menuOpen.set(false)">{{ 'notifications' | t }}</a>
+      <a
+        routerLink="/profile"
+        [queryParams]="accountParams()"
+        (click)="account.open = false; menuOpen.set(false)"
+        >{{ 'profile' | t }}</a
+      >
+      <a
+        routerLink="/notifications"
+        [queryParams]="accountParams()"
+        (click)="account.open = false; menuOpen.set(false)"
+        >{{ 'notifications' | t }}</a
+      >
       <a routerLink="/settings" (click)="account.open = false">{{ 'settings' | t }}</a>
     </div>
   </details>
@@ -35,43 +85,77 @@
 <div class="layout" [class.collapsed]="collapsed()">
   <div class="sidebar-frame" [class.open]="menuOpen()">
     <aside id="sidebar" (keydown.escape)="menuOpen.set(false); mobileMenu.focus()">
-    <nav [attr.aria-label]="('main_navigation' | t)">
-      @for (group of groups; track group.label) {
-        <p class="nav-label">{{ (group.label) | t }}</p>
-        @for (link of group.links; track link.path) {
-          <a [routerLink]="link.path" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: link.path === '/' }"
-            [attr.aria-label]="link.label | t" [attr.title]="link.label | t" ariaCurrentWhenActive="page"
-            (click)="menuOpen.set(false); content.focus()">
-            <i class="bi" [class]="link.icon" aria-hidden="true"></i><span>{{ (link.label) | t }}</span>
-          </a>
+      <nav [attr.aria-label]="'main_navigation' | t">
+        @for (group of groups; track group.label) {
+          <p class="nav-label">{{ group.label | t }}</p>
+          @for (link of group.links; track link.path) {
+            <a
+              [routerLink]="link.path"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+              [attr.aria-label]="link.label | t"
+              [attr.title]="link.label | t"
+              ariaCurrentWhenActive="page"
+              (click)="menuOpen.set(false); content.focus()"
+            >
+              <i class="bi" [class]="link.icon" aria-hidden="true"></i
+              ><span>{{ link.label | t }}</span>
+            </a>
+          }
         }
-      }
-    </nav>
-    <div class="sidebar-controls">
-      <div class="theme-picker" role="group" [attr.aria-label]="('color_theme' | t)">
-        <button type="button" [attr.aria-label]="('light_theme' | t)" [title]="('light_theme' | t)" [attr.aria-pressed]="theme() === 'light'" (click)="theme.set('light')">
-          <i class="bi bi-sun" aria-hidden="true"></i>
-        </button>
-        <button type="button" [attr.aria-label]="('dark_theme' | t)" [title]="('dark_theme' | t)" [attr.aria-pressed]="theme() === 'dark'" (click)="theme.set('dark')">
-          <i class="bi bi-moon-stars" aria-hidden="true"></i>
+      </nav>
+      <div class="sidebar-controls">
+        <div class="theme-picker" role="group" [attr.aria-label]="'color_theme' | t">
+          <button
+            type="button"
+            [attr.aria-label]="'light_theme' | t"
+            [title]="'light_theme' | t"
+            [attr.aria-pressed]="theme() === 'light'"
+            (click)="theme.set('light')"
+          >
+            <i class="bi bi-sun" aria-hidden="true"></i>
+          </button>
+          <button
+            type="button"
+            [attr.aria-label]="'dark_theme' | t"
+            [title]="'dark_theme' | t"
+            [attr.aria-pressed]="theme() === 'dark'"
+            (click)="theme.set('dark')"
+          >
+            <i class="bi bi-moon-stars" aria-hidden="true"></i>
+          </button>
+        </div>
+        <button
+          type="button"
+          class="icon-button collapse-menu"
+          [attr.aria-label]="collapsed() ? ('expand_sidebar' | t) : ('collapse_sidebar' | t)"
+          [attr.aria-expanded]="!collapsed()"
+          aria-controls="sidebar"
+          [attr.title]="collapsed() ? ('expand_sidebar' | t) : ('collapse_sidebar' | t)"
+          (click)="collapsed.set(!collapsed())"
+        >
+          <i
+            class="bi"
+            [class]="collapsed() ? 'bi-chevron-double-right' : 'bi-chevron-double-left'"
+            aria-hidden="true"
+          ></i>
         </button>
       </div>
-      <button type="button" class="icon-button collapse-menu"
-        [attr.aria-label]="collapsed() ? ('expand_sidebar' | t) : ('collapse_sidebar' | t)" [attr.aria-expanded]="!collapsed()" aria-controls="sidebar"
-        [attr.title]="collapsed() ? ('expand_sidebar' | t) : ('collapse_sidebar' | t)" (click)="collapsed.set(!collapsed())">
-        <i class="bi" [class]="collapsed() ? 'bi-chevron-double-right' : 'bi-chevron-double-left'" aria-hidden="true"></i>
-      </button>
-    </div>
     </aside>
   </div>
   <main #content id="main-content" tabindex="-1">
-    <nav class="breadcrumbs" [attr.aria-label]="('breadcrumbs' | t)">
+    <nav class="breadcrumbs" [attr.aria-label]="'breadcrumbs' | t">
       <ol>
         @for (crumb of crumbs(); track $index) {
           <li>
-            @if (!$first) { <i class="bi bi-chevron-right" aria-hidden="true"></i> }
-            @if (crumb.path) { <a [routerLink]="crumb.path">{{ (crumb.label) | t }}</a> }
-            @else { <span aria-current="page">{{ (crumb.label) | t }}</span> }
+            @if (!$first) {
+              <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            }
+            @if (crumb.path) {
+              <a [routerLink]="crumb.path">{{ crumb.label | t }}</a>
+            } @else {
+              <span aria-current="page">{{ crumb.label | t }}</span>
+            }
           </li>
         }
       </ol>

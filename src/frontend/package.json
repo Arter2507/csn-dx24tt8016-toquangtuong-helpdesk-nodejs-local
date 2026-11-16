@@ -4,7 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "dev": "ng serve --host 127.0.0.1 --port 4200",
+    "typecheck:lint": "tsc -p tsconfig.app.json --noEmit && prettier --check \"src/**/*.{ts,html,css,json}\"",
     "build": "ng build",
+    "re-build": "rimraf .angular dist && ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -27,6 +30,7 @@
     "@angular/compiler-cli": "^22.2.0",
     "jsdom": "^30.0.0",
     "prettier": "^3.8.1",
+    "rimraf": "^6.0.1",
     "typescript": "~6.0.2",
     "vitest": "^5.0.0"
   }

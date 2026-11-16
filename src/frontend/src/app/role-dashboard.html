@@ -1,33 +1,61 @@
 <header class="page-heading role-heading">
   <div>
-    <span class="role-kicker"><i class="bi" [class]="technician() ? 'bi-tools' : 'bi-headset'" aria-hidden="true"></i> {{ 'demo_workspace' | t }}</span>
+    <span class="role-kicker"
+      ><i class="bi" [class]="technician() ? 'bi-tools' : 'bi-headset'" aria-hidden="true"></i>
+      {{ 'demo_workspace' | t }}</span
+    >
     <h1>{{ technician() ? ('technician_workspace' | t) : ('my_support_requests' | t) }}</h1>
-    <p>{{ technician() ? ('see_whats_assigned_to_you_your_week_and_recent_updates' | t) : ('send_requests_track_progress_and_see_what_needs_your_attention' | t) }}</p>
+    <p>
+      {{
+        technician()
+          ? ('see_whats_assigned_to_you_your_week_and_recent_updates' | t)
+          : ('send_requests_track_progress_and_see_what_needs_your_attention' | t)
+      }}
+    </p>
   </div>
   <div class="heading-actions">
     @if (technician()) {
-      <a class="secondary" routerLink="/dashboard/user" [queryParams]="{ account: technicianId }"><i class="bi bi-arrow-left-right" aria-hidden="true"></i> {{ 'switch_to_requester_view' | t }}</a>
+      <a class="secondary" routerLink="/dashboard/user" [queryParams]="{ account: technicianId }"
+        ><i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+        {{ 'switch_to_requester_view' | t }}</a
+      >
     } @else {
-      <a class="primary" routerLink="/tickets/new" [queryParams]="{ requesterId: account() }"><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'new_request' | t }}</a>
+      <a class="primary" routerLink="/tickets/new" [queryParams]="{ requesterId: account() }"
+        ><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'new_request' | t }}</a
+      >
     }
   </div>
 </header>
 
 @if (error()) {
-  <div class="notice error" role="alert">{{ 'we_couldnt_load_your_data' | t }} <button class="secondary" type="button" (click)="load()">{{ 'try_again' | t }}</button></div>
+  <div class="notice error" role="alert">
+    {{ 'we_couldnt_load_your_data' | t }}
+    <button class="secondary" type="button" (click)="load()">{{ 'try_again' | t }}</button>
+  </div>
 } @else if (data()) {
   <div class="role-identity">
     <div class="identity-copy">
       <span class="identity-icon"><i class="bi bi-person" aria-hidden="true"></i></span>
-      <div><strong>{{ (profile() ? i18n.personKey(profile()!) : 'demo_account') | t }}</strong><small>{{ technician() ? ('technician' | t) : ('requester' | t) }}</small></div>
+      <div>
+        <strong>{{ (profile() ? i18n.personKey(profile()!) : 'demo_account') | t }}</strong
+        ><small>{{ technician() ? ('technician' | t) : ('requester' | t) }}</small>
+      </div>
     </div>
     @if (!technician()) {
       <div class="heading-actions">
         @if (account() === technicianId) {
-          <a class="secondary" routerLink="/dashboard/technician"><i class="bi bi-arrow-left-right" aria-hidden="true"></i> {{ 'back_to_technician_workspace' | t }}</a>
+          <a class="secondary" routerLink="/dashboard/technician"
+            ><i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+            {{ 'back_to_technician_workspace' | t }}</a
+          >
           <a class="text-button" routerLink="/dashboard/user">{{ 'view_demo_requester' | t }}</a>
         } @else {
-          <a class="text-button" routerLink="/dashboard/user" [queryParams]="{ account: technicianId }">{{ 'view_the_technician_as_a_requester' | t }}</a>
+          <a
+            class="text-button"
+            routerLink="/dashboard/user"
+            [queryParams]="{ account: technicianId }"
+            >{{ 'view_the_technician_as_a_requester' | t }}</a
+          >
         }
       </div>
     }
@@ -36,60 +64,157 @@
   <div class="role-metrics">
     <a class="panel role-metric" routerLink="/tickets" [queryParams]="scope()">
       <span class="stat-icon"><i class="bi bi-ticket-perforated" aria-hidden="true"></i></span>
-      <span>{{ technician() ? ('assigned_to_you' | t) : ('total_requests_sent' | t) }}<strong>{{ tickets().length }}</strong></span>
+      <span
+        >{{ technician() ? ('assigned_to_you' | t) : ('total_requests_sent' | t)
+        }}<strong>{{ tickets().length }}</strong></span
+      >
     </a>
-    <a class="panel role-metric" routerLink="/tickets" [queryParams]="{ ...scope(), status: 'IN_PROGRESS' }">
-      <span class="stat-icon" data-tone="info"><i class="bi bi-arrow-repeat" aria-hidden="true"></i></span>
-      <span>{{ 'in_progress' | t }}<strong>{{ processing() }}</strong></span>
+    <a
+      class="panel role-metric"
+      routerLink="/tickets"
+      [queryParams]="{ ...scope(), status: 'IN_PROGRESS' }"
+    >
+      <span class="stat-icon" data-tone="info"
+        ><i class="bi bi-arrow-repeat" aria-hidden="true"></i
+      ></span>
+      <span
+        >{{ 'in_progress' | t }}<strong>{{ processing() }}</strong></span
+      >
     </a>
-    <a class="panel role-metric" routerLink="/tickets" [queryParams]="{ ...scope(), status: 'RESOLVED' }">
-      <span class="stat-icon" data-tone="warning"><i class="bi bi-clock-history" aria-hidden="true"></i></span>
-      <span>{{ 'waiting_for_you_to_review' | t }}<strong>{{ waiting() }}</strong></span>
+    <a
+      class="panel role-metric"
+      routerLink="/tickets"
+      [queryParams]="{ ...scope(), status: 'RESOLVED' }"
+    >
+      <span class="stat-icon" data-tone="warning"
+        ><i class="bi bi-clock-history" aria-hidden="true"></i
+      ></span>
+      <span
+        >{{ 'waiting_for_you_to_review' | t }}<strong>{{ waiting() }}</strong></span
+      >
     </a>
   </div>
 
   @if (technician()) {
     <div class="role-grid">
       <section class="panel">
-        <header class="section-heading"><h2><i class="bi bi-list-task" aria-hidden="true"></i> {{ selectedDay() === today ? ('todays_tasks' | t) : ('tasks_on' | t) + shortDate(selectedDay()) }}</h2>
+        <header class="section-heading">
+          <h2>
+            <i class="bi bi-list-task" aria-hidden="true"></i>
+            {{
+              selectedDay() === today
+                ? ('todays_tasks' | t)
+                : ('tasks_on' | t) + shortDate(selectedDay())
+            }}
+          </h2>
           <span class="badge">{{ techDay().length }} {{ 'requests' | t }}</span>
         </header>
         <p class="role-description">{{ 'assigned_requests_updated_on_the_selected_day' | t }}</p>
-        <ng-container *ngTemplateOutlet="ticketList; context: { $implicit: techDay(), empty: 'none_of_your_assigned_requests_were_updated_on_this_day' }" />
-        <a class="text-button" routerLink="/tickets" [queryParams]="scope()">{{ 'see_all_my_assignments' | t }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        <ng-container
+          *ngTemplateOutlet="
+            ticketList;
+            context: {
+              $implicit: techDay(),
+              empty: 'none_of_your_assigned_requests_were_updated_on_this_day',
+            }
+          "
+        />
+        <a class="text-button" routerLink="/tickets" [queryParams]="scope()"
+          >{{ 'see_all_my_assignments' | t }} <i class="bi bi-arrow-right" aria-hidden="true"></i
+        ></a>
       </section>
       <section class="panel calendar-card">
-        <header class="section-heading"><h2><i class="bi bi-calendar-week" aria-hidden="true"></i> {{ 'weekly_calendar' | t }}</h2>
+        <header class="section-heading">
+          <h2>
+            <i class="bi bi-calendar-week" aria-hidden="true"></i> {{ 'weekly_calendar' | t }}
+          </h2>
           <div class="calendar-controls">
-            <button type="button" class="icon-button" [attr.aria-label]="('previous_week' | t)" (click)="moveWeek(-1)"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>
-            <button type="button" class="text-button" (click)="selectedDay.set(today)">{{ 'today' | t }}</button>
-            <button type="button" class="icon-button" [attr.aria-label]="('next_week' | t)" (click)="moveWeek(1)"><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
+            <button
+              type="button"
+              class="icon-button"
+              [attr.aria-label]="'previous_week' | t"
+              (click)="moveWeek(-1)"
+            >
+              <i class="bi bi-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="text-button" (click)="selectedDay.set(today)">
+              {{ 'today' | t }}
+            </button>
+            <button
+              type="button"
+              class="icon-button"
+              [attr.aria-label]="'next_week' | t"
+              (click)="moveWeek(1)"
+            >
+              <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </button>
           </div>
         </header>
-        <p class="role-description">{{ shortDate(weekStart()) }} – {{ shortDate(week()[6].date) }} {{ 'requests_by_last_update' | t }}</p>
+        <p class="role-description">
+          {{ shortDate(weekStart()) }} – {{ shortDate(week()[6].date) }}
+          {{ 'requests_by_last_update' | t }}
+        </p>
         <div class="week-days">
           @for (day of week(); track day.date) {
-            <button type="button" [attr.aria-pressed]="selectedDay() === day.date" [attr.aria-label]="(day.label | t) + ' ' + shortDate(day.date) + ', ' + day.count + ('requests_2' | t)" (click)="selectedDay.set(day.date)">
-              <span>{{ day.label | t }}</span><strong>{{ shortDate(day.date) }}</strong><small>{{ day.count }}</small>
+            <button
+              type="button"
+              [attr.aria-pressed]="selectedDay() === day.date"
+              [attr.aria-label]="
+                (day.label | t) + ' ' + shortDate(day.date) + ', ' + day.count + ('requests_2' | t)
+              "
+              (click)="selectedDay.set(day.date)"
+            >
+              <span>{{ day.label | t }}</span
+              ><strong>{{ shortDate(day.date) }}</strong
+              ><small>{{ day.count }}</small>
             </button>
           }
         </div>
       </section>
       <section class="panel">
-        <header class="section-heading"><h2><label for="quick-note"><i class="bi bi-pencil-square" aria-hidden="true"></i> {{ 'quick_note' | t }}</label></h2></header>
+        <header class="section-heading">
+          <h2>
+            <label for="quick-note"
+              ><i class="bi bi-pencil-square" aria-hidden="true"></i> {{ 'quick_note' | t }}</label
+            >
+          </h2>
+        </header>
         <p class="role-description">{{ 'your_note_is_saved_in_this_browser' | t }}</p>
-        <textarea #noteInput id="quick-note" rows="3" maxlength="1000" [value]="note()" (input)="setNote(noteInput.value)" [placeholder]="('jot_down_a_troubleshooting_step_or_a_handover_note' | t)"></textarea>
+        <textarea
+          #noteInput
+          id="quick-note"
+          rows="3"
+          maxlength="1000"
+          [value]="note()"
+          (input)="setNote(noteInput.value)"
+          [placeholder]="'jot_down_a_troubleshooting_step_or_a_handover_note' | t"
+        ></textarea>
         <div class="note-actions">
-          <span class="muted" role="status">{{ (noteFeedback() || (noteChanged() ? 'unsaved_changes' : '')) | t }}</span>
-          <button type="button" class="secondary" [disabled]="!noteChanged()" (click)="saveNote()">{{ 'save_note' | t }}</button>
+          <span class="muted" role="status">{{
+            noteFeedback() || (noteChanged() ? 'unsaved_changes' : '') | t
+          }}</span>
+          <button type="button" class="secondary" [disabled]="!noteChanged()" (click)="saveNote()">
+            {{ 'save_note' | t }}
+          </button>
         </div>
       </section>
       <section class="panel">
-        <header class="section-heading"><h2><i class="bi bi-lightning-charge" aria-hidden="true"></i> {{ 'quick_links' | t }}</h2></header>
+        <header class="section-heading">
+          <h2><i class="bi bi-lightning-charge" aria-hidden="true"></i> {{ 'quick_links' | t }}</h2>
+        </header>
         <div class="role-shortcuts">
-          <a routerLink="/tickets" [queryParams]="scope()"><i class="bi bi-inboxes" aria-hidden="true"></i> {{ 'my_assignments' | t }} <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
-          <a routerLink="/tickets" [queryParams]="{ ...scope(), status: 'IN_PROGRESS' }"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> {{ 'work_in_progress' | t }} <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
-          <a routerLink="/tickets/new" [queryParams]="{ requesterId: technicianId }"><i class="bi bi-plus-circle" aria-hidden="true"></i> {{ 'send_my_own_request' | t }} <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+          <a routerLink="/tickets" [queryParams]="scope()"
+            ><i class="bi bi-inboxes" aria-hidden="true"></i> {{ 'my_assignments' | t }}
+            <i class="bi bi-arrow-up-right" aria-hidden="true"></i
+          ></a>
+          <a routerLink="/tickets" [queryParams]="{ ...scope(), status: 'IN_PROGRESS' }"
+            ><i class="bi bi-arrow-repeat" aria-hidden="true"></i> {{ 'work_in_progress' | t }}
+            <i class="bi bi-arrow-up-right" aria-hidden="true"></i
+          ></a>
+          <a routerLink="/tickets/new" [queryParams]="{ requesterId: technicianId }"
+            ><i class="bi bi-plus-circle" aria-hidden="true"></i> {{ 'send_my_own_request' | t }}
+            <i class="bi bi-arrow-up-right" aria-hidden="true"></i
+          ></a>
         </div>
       </section>
     </div>
@@ -98,25 +223,75 @@
       <section class="panel">
         <header class="section-heading">
           <h2><i class="bi bi-inboxes" aria-hidden="true"></i> {{ 'sent_requests' | t }}</h2>
-          <div class="period-toggle" role="group" [attr.aria-label]="('request_period' | t)">
-            <button type="button" [attr.aria-pressed]="userPeriod() === 'day'" (click)="userPeriod.set('day')">{{ 'today' | t }}</button>
-            <button type="button" [attr.aria-pressed]="userPeriod() === 'week'" (click)="userPeriod.set('week')">{{ 'this_week' | t }}</button>
+          <div class="period-toggle" role="group" [attr.aria-label]="'request_period' | t">
+            <button
+              type="button"
+              [attr.aria-pressed]="userPeriod() === 'day'"
+              (click)="userPeriod.set('day')"
+            >
+              {{ 'today' | t }}
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="userPeriod() === 'week'"
+              (click)="userPeriod.set('week')"
+            >
+              {{ 'this_week' | t }}
+            </button>
           </div>
         </header>
-        <p class="role-description">{{ 'from' | t }} {{ shortDate(userStart()) }} {{ 'to' | t }} {{ shortDate(today) }} {{ 'up_to_8_recent_requests' | t }}</p>
-        <ng-container *ngTemplateOutlet="ticketList; context: { $implicit: userRows(), empty: 'you_havent_sent_a_request_in_this_period' }" />
-        <a class="text-button" routerLink="/tickets" [queryParams]="scope()">{{ 'see_all_my_requests' | t }} <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        <p class="role-description">
+          {{ 'from' | t }} {{ shortDate(userStart()) }} {{ 'to' | t }} {{ shortDate(today) }}
+          {{ 'up_to_8_recent_requests' | t }}
+        </p>
+        <ng-container
+          *ngTemplateOutlet="
+            ticketList;
+            context: { $implicit: userRows(), empty: 'you_havent_sent_a_request_in_this_period' }
+          "
+        />
+        <a class="text-button" routerLink="/tickets" [queryParams]="scope()"
+          >{{ 'see_all_my_requests' | t }} <i class="bi bi-arrow-right" aria-hidden="true"></i
+        ></a>
       </section>
       <section class="panel">
-        <header class="section-heading"><h2><i class="bi bi-exclamation-circle" aria-hidden="true"></i> {{ '5_priority_requests' | t }}</h2></header>
-        <p class="role-description">{{ 'open_requests_ordered_by_priority_and_then_most_recent_update' | t }}</p>
-        <ng-container *ngTemplateOutlet="ticketList; context: { $implicit: priorityRows(), empty: 'you_have_no_open_requests' }" />
+        <header class="section-heading">
+          <h2>
+            <i class="bi bi-exclamation-circle" aria-hidden="true"></i>
+            {{ '5_priority_requests' | t }}
+          </h2>
+        </header>
+        <p class="role-description">
+          {{ 'open_requests_ordered_by_priority_and_then_most_recent_update' | t }}
+        </p>
+        <ng-container
+          *ngTemplateOutlet="
+            ticketList;
+            context: { $implicit: priorityRows(), empty: 'you_have_no_open_requests' }
+          "
+        />
       </section>
       <section class="panel requester-attention">
-        <div><h2><i class="bi bi-check2-circle" aria-hidden="true"></i> {{ 'ready_for_you_to_review' | t }}</h2>
-          <p class="muted">{{ waiting() ? ('requests_ready' | t:{count: waiting()}) : ('when_a_technician_finishes_the_request_will_appear_under_waiting_for_you_to' | t) }}</p>
+        <div>
+          <h2>
+            <i class="bi bi-check2-circle" aria-hidden="true"></i>
+            {{ 'ready_for_you_to_review' | t }}
+          </h2>
+          <p class="muted">
+            {{
+              waiting()
+                ? ('requests_ready' | t: { count: waiting() })
+                : ('when_a_technician_finishes_the_request_will_appear_under_waiting_for_you_to'
+                  | t)
+            }}
+          </p>
         </div>
-        <a class="secondary" routerLink="/tickets" [queryParams]="{ ...scope(), status: 'RESOLVED' }">{{ 'see_requests_to_review' | t }}</a>
+        <a
+          class="secondary"
+          routerLink="/tickets"
+          [queryParams]="{ ...scope(), status: 'RESOLVED' }"
+          >{{ 'see_requests_to_review' | t }}</a
+        >
       </section>
     </div>
   }
@@ -129,18 +304,25 @@
     <ul class="role-ticket-list">
       @for (row of rows; track row.id) {
         <li>
-          <a [routerLink]="['/tickets', row.id, technician() ? 'edit' : 'view']" [queryParams]="scope()">
+          <a
+            [routerLink]="['/tickets', row.id, technician() ? 'edit' : 'view']"
+            [queryParams]="scope()"
+          >
             <span class="ticket-reference">{{ row['code'] ?? '#' + row.id }}</span>
             <span class="ticket-name">{{ row['title'] }}</span>
           </a>
           <div class="ticket-tags">
-            <span class="badge" [attr.data-tone]="priority(row['priority'])?.tone">{{ (priority(row['priority'])?.label) | t }}</span>
-            <span class="badge badge-dot" [attr.data-tone]="status(row['status'])?.tone">{{ (status(row['status'])?.label) | t }}</span>
+            <span class="badge" [attr.data-tone]="priority(row['priority'])?.tone">{{
+              priority(row['priority'])?.label | t
+            }}</span>
+            <span class="badge badge-dot" [attr.data-tone]="status(row['status'])?.tone">{{
+              status(row['status'])?.label | t
+            }}</span>
           </div>
         </li>
       }
     </ul>
   } @else {
-    <p class="role-empty"><i class="bi bi-inbox" aria-hidden="true"></i>{{ (empty) | t }}</p>
+    <p class="role-empty"><i class="bi bi-inbox" aria-hidden="true"></i>{{ empty | t }}</p>
   }
 </ng-template>

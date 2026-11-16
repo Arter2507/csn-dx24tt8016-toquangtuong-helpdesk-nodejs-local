@@ -1,4 +1,6 @@
--- Apply categories.sql first. Tables follow the design; demo records stay in memory.
+-- DEPRECATED: dùng sql/helpdesk-schema.sql (schema đầy đủ + seed).
+-- File này giữ để tương thích tài liệu cũ; thiếu auth_sessions, comments, attachments, events, notifications.
+
 CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email VARCHAR(254) NOT NULL UNIQUE,
