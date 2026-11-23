@@ -28,6 +28,7 @@ export function createUser(input) {
   return user;
 }
 export function updateUser(user, input) {
+  if (user.id === 3 && input.email !== undefined && input.email !== user.email) throw new AppError(403, 'FORBIDDEN');
   const next = { ...user, ...input };
   checkEmail(next.email, user.id);
   if (user.role === 'ADMIN' && user.isActive && (next.role !== 'ADMIN' || !next.isActive) &&

@@ -2,11 +2,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { EMPTY, expand, map, reduce } from 'rxjs';
 import { ApiResponse } from '../categories/interfaces/category';
-import { Attachment, Resource, Row, TicketEvent, Value } from './workspace.types';
+import { Session } from '../../session';
+import { Attachment, Resource, Row, TicketComment, TicketEvent, Value } from './workspace.types';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {
   private readonly http = inject(HttpClient);
+  private readonly session = inject(Session);
 
   list(resource: Resource, query: Record<string, string | number>) {
     let params = new HttpParams();
@@ -17,6 +19,11 @@ export class WorkspaceService {
   }
 
   listAll(resource: Resource) {
+    if (resource === 'users' && !this.session.allows('ADMIN')) {
+      return this.http
+        .get<ApiResponse<Row[]>>('/api/v1/directory')
+        .pipe(map((response) => response.data));
+    }
     const load = (page: number) => this.list(resource, { page, pageSize: 100 });
     return load(1).pipe(
       expand((response) =>
@@ -27,6 +34,26 @@ export class WorkspaceService {
       map((response) => response.data),
       reduce((rows, page) => [...rows, ...page], [] as Row[]),
     );
+  }
+
+  specialties(id: number) {
+    return this.http.get<ApiResponse<number[]>>('/api/v1/users/' + id + '/categories');
+  }
+
+  saveSpecialties(id: number, categoryIds: number[]) {
+    return this.http.put<ApiResponse<number[]>>('/api/v1/users/' + id + '/categories', {
+      categoryIds,
+    });
+  }
+
+  comments(id: number) {
+    return this.http.get<ApiResponse<TicketComment[]>>('/api/v1/tickets/' + id + '/comments');
+  }
+
+  addComment(id: number, body: string) {
+    return this.http.post<ApiResponse<TicketComment>>('/api/v1/tickets/' + id + '/comments', {
+      body,
+    });
   }
 
   archiveTickets(ids: number[]) {

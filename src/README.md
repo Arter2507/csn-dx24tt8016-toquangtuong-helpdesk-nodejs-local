@@ -15,7 +15,11 @@ Từ thư mục `local/` (cha của `src/`):
 
 Trong từng gói cũng có `pnpm typecheck:lint`, `pnpm build`, `pnpm re-build`, `pnpm dev`.
 
-## Chạy mẫu không cần MySQL
+## Khởi động cùng lúc
+
+Sau khi cài thư viện cho hai gói, chạy `pnpm dev` từ thư mục gốc nhánh `local` để mở API và giao diện demo. Dùng `pnpm dev:mysql` sau khi cấu hình MySQL theo [README.local.md](../README.local.md).
+
+## Chạy riêng từng phần ở chế độ demo
 
 Trong PowerShell 7, tại thư mục `local/src/backend`:
 
@@ -40,18 +44,19 @@ Nếu pnpm báo `ERR_PNPM_IGNORED_BUILDS`, xem xét các build script bị chặ
 
 `.env.example` liệt kê thông số kết nối và `DATABASE_URL` cho Prisma.
 
-**Cách khuyến nghị cho hai người (DBeaver / Navicat):** import một lần file [`backend/sql/helpdesk-schema.sql`](backend/sql/helpdesk-schema.sql). File tạo database `helpdesk`, toàn bộ bảng theo thiết kế, chỉ mục, FK và dữ liệu seed (mật khẩu tài khoản mẫu: `password`).
+**Cách khuyến nghị cho hai người (DBeaver / Navicat):** import một lần file [`backend/sql/helpdesk-schema.sql`](backend/sql/helpdesk-schema.sql). File tạo database `tram_meo_helpdesk_db`, các bảng, chỉ mục, khóa ngoại và dữ liệu khởi tạo. Chọn phương án Prisma bên dưới nếu muốn nạp bộ ticket mẫu vào một database trống.
 
 **Cách Prisma:** điền `DATABASE_URL`, rồi trong `backend/`:
 
 ```powershell
 pnpm prisma:generate
-pnpm prisma:migrate
-pnpm prisma:seed
+pnpm exec prisma migrate deploy
+# Dùng database trống để chạy dòng kế tiếp.
+pnpm db:sample
 ```
 
 Các file `sql/categories.sql` và `sql/users-tickets.sql` chỉ giữ tương thích tài liệu cũ; dùng `helpdesk-schema.sql` cho schema đầy đủ.
 
-**Chưa thể sử dụng dữ liệu MySQL chỉ bằng cách cung cấp kết nối.** Với `DATA_SOURCE=mysql`, API hiện trả 503 có chủ ý: đăng nhập JWT, xác thực, phân quyền theo vai trò và các quy tắc nghiệp vụ còn chưa được triển khai. Hoàn thiện và kiểm thử các phần đó trước khi mở truy cập dữ liệu thật. Runtime hiện vẫn dùng `mysql2`; Prisma phục vụ migrate/seed. Server hiện chỉ lắng nghe localhost; mẫu này không dành cho production.
+Với `DATA_SOURCE=mysql`, đặt `JWT_SECRET` ngẫu nhiên tối thiểu 32 byte và cấu hình `CORS_ORIGIN` theo địa chỉ frontend. Đăng nhập bằng tài khoản trong MySQL để sử dụng dữ liệu. Với database được quản lý bằng Prisma, chạy `pnpm exec prisma migrate deploy` trước khi khởi động để áp dụng migration chưa chạy. Runtime dùng `mysql2`. Prisma quản lý migration và seed.
 
-Trong demo, người dùng có một vai trò và người tạo ticket được chọn trên form. Ticket hỗ trợ phân công cho kỹ thuật viên đang hoạt động, chuyển trạng thái cơ bản và kiểm tra phiên bản khi cập nhật. Các API demo dùng chung PATCH để thử thao tác. Tổng quan và báo cáo lọc theo ngày tạo từ dữ liệu demo hiện có. Trang báo cáo có thể tải bảng tổng hợp dưới dạng CSV. Demo lưu lịch sử trạng thái và hỗ trợ tối đa 5 ảnh PNG, JPEG, GIF, WebP hoặc PDF với tổng dung lượng 50 MB mỗi ticket. Tệp ở thư mục tạm của tiến trình Express và chỉ truy cập được trong phiên demo. Khi triển khai theo hợp đồng chính thức, tách API phân công và chuyển trạng thái, lấy người tạo từ phiên, kiểm tra quyền và chuyên môn, ghi lịch sử và thông báo trong transaction. Repository MySQL cho người dùng và ticket, xác thực JWT, lịch sử nghiệp vụ đầy đủ, thông báo, lưu trữ tệp lâu dài và API thống kê cho dữ liệu thật vẫn là các phần cần triển khai. Không commit `.env` hoặc bí mật.
+Demo tiếp tục cho phép chọn tài khoản mẫu. Trong MySQL, server xác định người tạo từ phiên đăng nhập và giới hạn danh sách, chi tiết, trao đổi và tải tệp theo quyền. Tệp MySQL lưu trong `UPLOAD_DIR` của backend. Xem [hướng dẫn cấu hình](../README.local.md).

@@ -1,30 +1,14 @@
 -- Dữ liệu mẫu ~5 ticket để xem trên web (Trạm Mèo)
 -- Chạy SAU khi đã có schema (prisma migrate hoặc helpdesk-schema.sql).
--- Trong DBeaver/Navicat: chọn database tram_meo_helpdesk_db rồi Execute Script.
+-- Chọn một database thử mới tạo, đã migrate và chưa có dữ liệu.
 --
 -- Tài khoản mẫu (mật khẩu: password):
 --   user@example.test  — Người gửi
 --   tech@example.test  — Kỹ thuật viên
 --   admin@example.test — Quản trị
 
-USE tram_meo_helpdesk_db;
-
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
-
-TRUNCATE TABLE notifications;
-TRUNCATE TABLE ticket_events;
-TRUNCATE TABLE ticket_attachments;
-TRUNCATE TABLE ticket_comments;
-TRUNCATE TABLE tickets;
-TRUNCATE TABLE technician_categories;
-TRUNCATE TABLE user_roles;
-TRUNCATE TABLE auth_sessions;
-TRUNCATE TABLE users;
-TRUNCATE TABLE roles;
-TRUNCATE TABLE categories;
-
-SET FOREIGN_KEY_CHECKS = 1;
+START TRANSACTION;
 
 SET @now = UTC_TIMESTAMP(3);
 SET @password_hash = '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
@@ -133,3 +117,5 @@ INSERT INTO notifications (user_id, ticket_id, type, title, body, read_at, creat
   (1, 3, 'RESOLVED', 'Yêu cầu đã xử lý', 'Mất kết nối Wi-Fi phòng họp tầng 3', NULL, DATE_SUB(@now, INTERVAL 1 HOUR)),
   (5, 4, 'ASSIGNED', 'Được phân công xử lý', 'Máy in hành chính kẹt giấy liên tục', DATE_SUB(@now, INTERVAL 3 DAY), DATE_SUB(@now, INTERVAL 4 DAY)),
   (2, 5, 'TICKET_CREATED', 'Yêu cầu mới: phần mềm', 'Cần cài đặt bộ Office cho máy mới', NULL, DATE_SUB(@now, INTERVAL 30 MINUTE));
+
+COMMIT;

@@ -7,6 +7,7 @@ let rows = [
 let nextId = 5;
 export const demoRepository = {
   snapshot: () => rows,
+  replace(restored) { rows = restored; nextId = rows.reduce((max, row) => Math.max(max, row.id), 0) + 1; },
   isActive: id => rows.some(row => row.id === id && row.isActive),
   async list(q) {
     const keyword = q.search.toLocaleLowerCase();

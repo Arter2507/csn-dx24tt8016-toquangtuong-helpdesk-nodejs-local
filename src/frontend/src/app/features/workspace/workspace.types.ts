@@ -5,7 +5,7 @@ export type Resource = 'users' | 'tickets';
 export interface Field {
   key: string;
   label: string;
-  kind?: 'select' | 'textarea' | 'email';
+  kind?: 'select' | 'textarea' | 'email' | 'password';
   options?: ReadonlyArray<{ value: Value; label: string }>;
   placeholder?: string;
   maxLength?: number;
@@ -23,4 +23,12 @@ export interface Attachment {
 export interface TicketEvent {
   status: string;
   at: string;
+  note?: string;
+}
+
+export interface TicketComment {
+  id: number;
+  authorName: string;
+  body: string;
+  createdAt: string;
 }

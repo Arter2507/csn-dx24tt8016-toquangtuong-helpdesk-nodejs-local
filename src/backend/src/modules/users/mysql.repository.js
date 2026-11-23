@@ -1,7 +1,6 @@
+import { hash } from 'bcryptjs';
 import { pool } from '../../database/pool.js';
 import { AppError } from '../../shared/errors.js';
-
-const roleRank = { ADMIN: 3, TECHNICIAN: 2, USER: 1 };
 
 function mapUser(row) {
   if (!row) return null;
@@ -31,10 +30,18 @@ const userSelect = `
   LEFT JOIN roles r ON r.id = ur.role_id
 `;
 
-async function roleIdByCode(code) {
-  const [rows] = await pool.execute('SELECT id FROM roles WHERE code = ?', [code]);
+async function roleIdByCode(code, conn) {
+  const [rows] = await conn.execute('SELECT id FROM roles WHERE code = ?', [code]);
   if (!rows[0]) throw new AppError(500, 'ROLE_MISSING', 'Thiếu vai trò trong CSDL');
   return rows[0].id;
+}
+
+async function findUser(id, executor) {
+  const [rows] = await executor.execute(
+    `${userSelect} WHERE u.id = ? GROUP BY u.id, u.full_name, u.email, u.is_active`,
+    [id],
+  );
+  return mapUser(rows[0]);
 }
 
 export const usersMysql = {
@@ -70,15 +77,12 @@ export const usersMysql = {
     return { items: rows.map(mapUser), total: Number(countRows[0].total) };
   },
 
-  async find(id) {
-    const [rows] = await pool.execute(
-      `${userSelect} WHERE u.id = ? GROUP BY u.id, u.full_name, u.email, u.is_active`,
-      [id],
-    );
-    return mapUser(rows[0]);
+  find(id) {
+    return findUser(id, pool);
   },
 
   async create(input) {
+    const passwordHash = await hash(input.password, 12);
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
@@ -89,17 +93,17 @@ export const usersMysql = {
          VALUES (?, ?, ?, NULL, 1, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
         [
           input.email,
-          '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+          passwordHash,
           input.fullName,
         ],
       );
-      const roleId = await roleIdByCode(input.role);
+      const roleId = await roleIdByCode(input.role, conn);
       await conn.execute(
         'INSERT INTO user_roles (user_id, role_id, created_at) VALUES (?, ?, UTC_TIMESTAMP(3))',
         [result.insertId, roleId],
       );
       if (input.role === 'USER' || input.role === 'TECHNICIAN' || input.role === 'ADMIN') {
-        const userRoleId = await roleIdByCode('USER');
+        const userRoleId = await roleIdByCode('USER', conn);
         if (Number(userRoleId) !== Number(roleId)) {
           await conn.execute(
             'INSERT IGNORE INTO user_roles (user_id, role_id, created_at) VALUES (?, ?, UTC_TIMESTAMP(3))',
@@ -117,33 +121,31 @@ export const usersMysql = {
     }
   },
 
-  async update(id, input) {
-    const current = await this.find(id);
-    if (!current) return null;
-
-    const nextRole = input.role ?? current.role;
-    const nextActive = input.isActive ?? current.isActive;
-    if (
-      current.role === 'ADMIN' &&
-      current.isActive &&
-      (nextRole !== 'ADMIN' || !nextActive)
-    ) {
-      const [admins] = await pool.execute(
-        `SELECT COUNT(*) AS total
-         FROM users u
-         JOIN user_roles ur ON ur.user_id = u.id
-         JOIN roles r ON r.id = ur.role_id
-         WHERE r.code = 'ADMIN' AND u.is_active = 1 AND u.id <> ?`,
-        [id],
-      );
-      if (Number(admins[0].total) === 0) {
-        throw new AppError(409, 'LAST_ADMIN', 'Cần giữ ít nhất một quản trị viên hoạt động');
-      }
-    }
-
+  async update(id, input, files, account) {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
+      // Serialize changes that could remove the last active administrator.
+      await conn.execute("SELECT id FROM roles WHERE code = 'ADMIN' FOR UPDATE");
+      const current = await findUser(id, conn);
+      if (!current) {
+        await conn.rollback();
+        return null;
+      }
+      if (account?.id === id && input.email !== undefined && input.email !== current.email) {
+        throw new AppError(403, 'FORBIDDEN', 'Không thể tự đổi email quản trị');
+      }
+      if (current.role === 'ADMIN' && current.isActive &&
+        ((input.role && input.role !== 'ADMIN') || input.isActive === false)) {
+        const [admins] = await conn.execute(
+          `SELECT u.id FROM users u
+           JOIN user_roles ur ON ur.user_id = u.id
+           JOIN roles r ON r.id = ur.role_id
+           WHERE r.code = 'ADMIN' AND u.is_active = 1 AND u.id <> ? LIMIT 1`,
+          [id],
+        );
+        if (!admins[0]) throw new AppError(409, 'LAST_ADMIN', 'Cần giữ ít nhất một quản trị viên hoạt động');
+      }
       if (input.email !== undefined || input.fullName !== undefined || input.isActive !== undefined) {
         if (input.email) {
           const [dup] = await conn.execute('SELECT id FROM users WHERE email = ? AND id <> ?', [
@@ -169,8 +171,8 @@ export const usersMysql = {
       }
       if (input.role) {
         await conn.execute('DELETE FROM user_roles WHERE user_id = ?', [id]);
-        const userRoleId = await roleIdByCode('USER');
-        const mainRoleId = await roleIdByCode(input.role);
+        const userRoleId = await roleIdByCode('USER', conn);
+        const mainRoleId = await roleIdByCode(input.role, conn);
         await conn.execute(
           'INSERT INTO user_roles (user_id, role_id, created_at) VALUES (?, ?, UTC_TIMESTAMP(3))',
           [id, userRoleId],
@@ -182,6 +184,12 @@ export const usersMysql = {
           );
         }
       }
+      if (input.isActive === false) {
+        await conn.execute(
+          'UPDATE auth_sessions SET revoked_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3) WHERE user_id = ? AND revoked_at IS NULL',
+          [id],
+        );
+      }
       await conn.commit();
       return this.find(id);
     } catch (error) {
@@ -192,5 +200,3 @@ export const usersMysql = {
     }
   },
 };
-
-void roleRank;

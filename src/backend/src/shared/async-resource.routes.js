@@ -14,6 +14,7 @@ export function asyncResourceRoutes({
   archive = false,
   queryFields = {},
   receive = (req, res, next) => next(),
+  prepareCreate = (body) => body,
 }) {
   const router = Router();
   const querySchema = listSchema
@@ -32,7 +33,7 @@ export function asyncResourceRoutes({
       const { items, total } = await repository.list({
         ...query,
         filter: query.filter,
-      });
+      }, req.account);
       res.json({
         success: true,
         data: items,
@@ -50,7 +51,7 @@ export function asyncResourceRoutes({
 
   router.get('/:id', validate(idSchema, 'params'), async (req, res, next) => {
     try {
-      const data = await repository.find(req.validated.params.id);
+      const data = await repository.find(req.validated.params.id, req.account);
       if (!data) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy dữ liệu');
       res.json({ success: true, data, meta: null });
     } catch (error) {
@@ -58,9 +59,12 @@ export function asyncResourceRoutes({
     }
   });
 
-  router.post('/', receive, validate(input, 'body'), async (req, res, next) => {
+  router.post('/', receive, (req, res, next) => {
+    req.body = prepareCreate(req.body, req.account);
+    next();
+  }, validate(input, 'body'), async (req, res, next) => {
     try {
-      const data = await repository.create(req.validated.body, req.files);
+      const data = await repository.create(req.validated.body, req.files, req.account);
       res.location(req.baseUrl + '/' + data.id).status(201).json({ success: true, data, meta: null });
     } catch (error) {
       next(error);
@@ -69,7 +73,7 @@ export function asyncResourceRoutes({
 
   router.patch('/:id', validate(idSchema, 'params'), receive, validate(updateInput, 'body'), async (req, res, next) => {
     try {
-      const data = await repository.update(req.validated.params.id, req.validated.body, req.files);
+      const data = await repository.update(req.validated.params.id, req.validated.body, req.files, req.account);
       if (!data) throw new AppError(404, 'NOT_FOUND', 'Không tìm thấy dữ liệu');
       res.json({ success: true, data, meta: null });
     } catch (error) {

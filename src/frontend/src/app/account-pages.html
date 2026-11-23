@@ -1,26 +1,10 @@
 <header class="page-heading portal-heading">
   <div>
     <span class="role-kicker"
-      ><i
-        class="bi"
-        [class]="
-          page() === 'profile'
-            ? 'bi-person-circle'
-            : page() === 'settings'
-              ? 'bi-gear'
-              : page() === 'backup'
-                ? 'bi-database'
-                : 'bi-bell'
-        "
-        aria-hidden="true"
-      ></i
-      >{{ 'demo_workspace' | t }}</span
+      ><i class="bi" [class]="page() === 'settings' ? 'bi-gear' : 'bi-bell'" aria-hidden="true"></i
+      >{{ (session.account() ? 'workspace' : 'demo_workspace') | t }}</span
     >
     @switch (page()) {
-      @case ('profile') {
-        <h1>{{ 'profile' | t }}</h1>
-        <p>{{ 'profile_intro' | t }}</p>
-      }
       @case ('notifications') {
         <h1>{{ 'notifications' | t }}</h1>
         <p>{{ 'notifications_intro' | t }}</p>
@@ -29,21 +13,14 @@
         <h1>{{ 'settings' | t }}</h1>
         <p>{{ 'settings_intro' | t }}</p>
       }
-      @case ('backup') {
-        <h1>{{ 'backups' | t }}</h1>
-        <p>{{ 'backup_intro' | t }}</p>
-      }
     }
   </div>
 </header>
 
-@if (feedback()) {
-  <p class="notice success" role="status">{{ feedback() | t }}</p>
-}
 @if (error()) {
   <p class="notice error" role="alert">
     {{ error() | t }}
-    @if (!users() && page() !== 'backup') {
+    @if (!users()) {
       <button type="button" class="text-button" (click)="load()">{{ 'try_again' | t }}</button>
     }
   </p>
@@ -83,18 +60,26 @@
           <button
             class="secondary"
             type="button"
-            [attr.aria-pressed]="preferences.theme() === 'light'"
-            (click)="preferences.theme.set('light')"
+            [attr.aria-pressed]="preferences.appearance() === 'light'"
+            (click)="preferences.appearance.set('light')"
           >
             <i class="bi bi-sun" aria-hidden="true"></i>{{ 'light_theme' | t }}
           </button>
           <button
             class="secondary"
             type="button"
-            [attr.aria-pressed]="preferences.theme() === 'dark'"
-            (click)="preferences.theme.set('dark')"
+            [attr.aria-pressed]="preferences.appearance() === 'dark'"
+            (click)="preferences.appearance.set('dark')"
           >
             <i class="bi bi-moon-stars" aria-hidden="true"></i>{{ 'dark_theme' | t }}
+          </button>
+          <button
+            class="secondary"
+            type="button"
+            [attr.aria-pressed]="preferences.appearance() === 'system'"
+            (click)="preferences.appearance.set('system')"
+          >
+            <i class="bi bi-display" aria-hidden="true"></i>{{ 'system_theme' | t }}
           </button>
         </div>
         <label class="checkbox-field">
@@ -107,20 +92,38 @@
         </label>
       </section>
       <section class="panel portal-card">
-        <h2><i class="bi bi-person" aria-hidden="true"></i>{{ 'demo_account' | t }}</h2>
-        <p class="muted">{{ 'account_preference' | t }}</p>
-        @if (users(); as rows) {
-          <label class="field"
-            ><span>{{ 'default_account' | t }}</span>
-            <select
-              [ngModel]="preferences.account()"
-              (ngModelChange)="preferences.account.set($event)"
-            >
-              @for (user of rows; track user.id) {
-                <option [ngValue]="user.id">{{ i18n.personKey(user) | t }}</option>
-              }
-            </select>
-          </label>
+        <h2><i class="bi bi-bell" aria-hidden="true"></i>{{ 'notifications' | t }}</h2>
+        <label class="checkbox-field">
+          <input
+            type="checkbox"
+            [checked]="preferences.notificationToasts()"
+            (change)="preferences.notificationToasts.set($any($event.target).checked)"
+          />
+          {{ 'toast_notifications_setting' | t }}
+        </label>
+        <p class="muted">{{ 'toast_notifications_description' | t }}</p>
+        <a class="text-button" routerLink="/notifications">{{ 'view_all_notifications' | t }}</a>
+      </section>
+      <section class="panel portal-card">
+        <h2>
+          <i class="bi bi-person" aria-hidden="true"></i
+          >{{ (session.account() ? 'account_information' : 'demo_account') | t }}
+        </h2>
+        @if (!session.account()) {
+          <p class="muted">{{ 'account_preference' | t }}</p>
+          @if (users(); as rows) {
+            <label class="field"
+              ><span>{{ 'default_account' | t }}</span>
+              <select
+                [ngModel]="preferences.account()"
+                (ngModelChange)="preferences.account.set($event)"
+              >
+                @for (user of rows; track user.id) {
+                  <option [ngValue]="user.id">{{ i18n.personKey(user) | t }}</option>
+                }
+              </select>
+            </label>
+          }
         }
         <div class="portal-choices">
           <a class="text-button" routerLink="/profile">{{ 'profile' | t }}</a>
@@ -129,144 +132,98 @@
       </section>
     </div>
   }
-  @case ('backup') {
-    <div class="portal-grid">
-      <section class="panel portal-card">
-        <h2>
-          <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i>{{ 'backup_new' | t }}
-        </h2>
-        <p class="muted">{{ 'backup_scope' | t }}</p>
-        <button type="button" class="primary" [disabled]="busy()" (click)="downloadBackup()">
-          <i class="bi bi-download" aria-hidden="true"></i
-          >{{ (busy() ? 'backup_preparing' : 'backup_download') | t }}
-        </button>
-      </section>
-      <section class="panel portal-card">
-        <h2><i class="bi bi-clock-history" aria-hidden="true"></i>{{ 'backup_last' | t }}</h2>
-        @if (lastBackup(); as date) {
-          <p>
-            <time [attr.datetime]="date">{{ date | date: 'dd/MM/yyyy HH:mm' : '+0700' }}</time>
-          </p>
-        } @else {
-          <p class="muted">{{ 'backup_none' | t }}</p>
-        }
-        <p class="muted">{{ 'backup_local' | t }}</p>
-      </section>
-    </div>
-  }
-  @default {
+  @case ('notifications') {
     @if (users(); as rows) {
-      <div class="portal-grid">
-        <section class="panel portal-card">
-          <h2><i class="bi bi-person-badge" aria-hidden="true"></i>{{ 'demo_account' | t }}</h2>
-          <label class="field"
-            ><span>{{ 'choose_account' | t }}</span>
-            <select
-              [ngModel]="account()"
-              (ngModelChange)="selectAccount($event)"
-              [disabled]="busy()"
-            >
-              @for (user of rows; track user.id) {
-                <option [ngValue]="user.id">{{ i18n.personKey(user) | t }}</option>
-              }
-            </select>
-          </label>
-          @if (profile(); as user) {
-            <div class="portal-profile">
-              <strong>{{ i18n.personKey(user) | t }}</strong
-              ><span class="badge">{{ role(user['role']) | t }}</span>
-            </div>
-          } @else {
-            <p class="muted">{{ 'no_account' | t }}</p>
-          }
-        </section>
-        @if (page() === 'profile') {
-          @if (profile()) {
-            <form class="panel portal-card" #profileForm="ngForm" (ngSubmit)="saveProfile()">
-              <h2>
-                <i class="bi bi-person-lines-fill" aria-hidden="true"></i
-                >{{ 'account_information' | t }}
-              </h2>
-              <label class="field"
-                ><span>{{ 'full_name' | t }}</span
-                ><input name="name" maxlength="150" required [(ngModel)]="name" [readOnly]="busy()"
-              /></label>
-              <label class="field"
-                ><span>{{ 'email' | t }}</span
-                ><input
-                  name="email"
-                  type="email"
-                  email
-                  maxlength="254"
-                  required
-                  [(ngModel)]="email"
-                  [readOnly]="busy()"
-              /></label>
-              <button type="submit" class="primary" [disabled]="profileForm.invalid || busy()">
-                {{ (busy() ? 'saving' : 'save_changes') | t }}
-              </button>
-            </form>
-          }
-        } @else {
-          <section class="panel portal-card">
-            <div class="section-heading">
-              <h2><i class="bi bi-bell" aria-hidden="true"></i>{{ 'recent_updates' | t }}</h2>
-              <span class="badge">{{ 'unread_count' | t: { count: unread().length } }}</span>
-            </div>
-            <div class="portal-choices">
-              <button
-                type="button"
-                class="secondary"
-                [attr.aria-pressed]="unreadOnly()"
-                (click)="unreadOnly.set(!unreadOnly())"
-              >
-                {{ 'unread_only' | t }}
-              </button>
-              <button
-                type="button"
-                class="text-button"
-                [disabled]="!unread().length"
-                (click)="markRead(unreadIds())"
-              >
-                {{ 'mark_all_read' | t }}
-              </button>
-            </div>
-            <ul class="portal-updates">
-              @for (update of shown(); track update.id) {
-                <li [class.unread]="!seen().has(update.id)">
-                  <div>
-                    <a
-                      [routerLink]="['/tickets', update.row.id, update.assigned ? 'edit' : 'view']"
-                      [queryParams]="
-                        update.assigned ? { assigneeId: account() } : { requesterId: account() }
-                      "
-                      (click)="markRead([update.id])"
-                      >{{ update.row['title'] }}</a
-                    >
-                    <div class="update-meta">
-                      <span class="badge" [attr.data-tone]="update.status?.tone">{{
-                        update.status?.label | t
-                      }}</span>
-                      <time [attr.datetime]="update.row['updatedAt']">{{
-                        update.row['updatedAt']?.toString() | date: 'dd/MM/yyyy HH:mm' : '+0700'
-                      }}</time>
-                    </div>
-                  </div>
-                  @if (!seen().has(update.id)) {
-                    <button type="button" class="text-button" (click)="markRead([update.id])">
-                      {{ 'mark_read' | t }}
-                    </button>
-                  }
-                </li>
-              } @empty {
-                <li class="muted">{{ (unreadOnly() ? 'no_unread_updates' : 'no_updates') | t }}</li>
-              }
-            </ul>
-          </section>
-        }
-      </div>
-    } @else if (!error()) {
-      <app-loading />
+      @if (!session.account()) {
+        <label class="field notification-account">
+          <span>{{ 'choose_account' | t }}</span>
+          <select
+            [ngModel]="inbox.demoAccount()"
+            (ngModelChange)="chooseNotificationAccount($event)"
+          >
+            @for (user of rows; track user.id) {
+              <option [ngValue]="user.id">{{ i18n.personKey(user) | t }}</option>
+            }
+          </select>
+        </label>
+      }
     }
+    <section class="panel portal-card">
+      <div class="section-heading">
+        <h2><i class="bi bi-bell" aria-hidden="true"></i>{{ 'recent_updates' | t }}</h2>
+        <span class="badge">{{ 'unread_count' | t: { count: inbox.unread().length } }}</span>
+      </div>
+      <div class="portal-choices">
+        <button
+          type="button"
+          class="secondary"
+          [attr.aria-pressed]="unreadOnly()"
+          (click)="unreadOnly.set(!unreadOnly())"
+        >
+          {{ 'unread_only' | t }}
+        </button>
+        <button
+          type="button"
+          class="text-button"
+          [disabled]="!inbox.unread().length || inbox.saving()"
+          (click)="inbox.readAll()"
+        >
+          {{ 'mark_all_read' | t }}
+        </button>
+      </div>
+      @if (inbox.readFailed()) {
+        <p class="notice error" role="alert">{{ 'notification_read_error' | t }}</p>
+      }
+      @if (inbox.failed()) {
+        <p role="alert">
+          {{ 'we_couldnt_load_your_data' | t }}
+          <button type="button" class="text-button" (click)="inbox.refresh()">
+            {{ 'try_again' | t }}
+          </button>
+        </p>
+      }
+      @if (inbox.loading()) {
+        <app-loading />
+      } @else {
+        <ul class="portal-updates">
+          @for (item of shown(); track item.id) {
+            <li [class.unread]="!item.read">
+              <div>
+                @if (item.ticketId) {
+                  <a
+                    [routerLink]="['/tickets', item.ticketId, item.assigned ? 'edit' : 'view']"
+                    [queryParams]="inbox.ticketQuery(item)"
+                    (click)="inbox.markRead([item.id])"
+                    >{{ item.title }}</a
+                  >
+                } @else {
+                  <strong>{{ item.title }}</strong>
+                }
+                <div class="update-meta">
+                  <span class="badge">{{ item.label | t }}</span>
+                  <time [attr.datetime]="item.createdAt">{{
+                    item.createdAt | date: 'dd/MM/yyyy HH:mm' : '+0700'
+                  }}</time>
+                </div>
+              </div>
+              @if (!item.read) {
+                <button
+                  type="button"
+                  class="text-button"
+                  [disabled]="inbox.saving()"
+                  (click)="inbox.markRead([item.id])"
+                >
+                  {{ 'mark_read' | t }}
+                </button>
+              }
+            </li>
+          } @empty {
+            @if (!inbox.failed()) {
+              <li class="muted">{{ (unreadOnly() ? 'no_unread_updates' : 'no_updates') | t }}</li>
+            }
+          }
+        </ul>
+      }
+    </section>
   }
 }

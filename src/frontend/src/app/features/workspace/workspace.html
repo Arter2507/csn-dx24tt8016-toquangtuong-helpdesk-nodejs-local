@@ -287,36 +287,49 @@
                     </td>
                   }
                   <td class="aux-cell">
-                    <div class="row-actions">
+                    <app-row-menu
+                      [menuId]="resource() + '-actions-' + row.id"
+                      [rowName]="
+                        isTicket ? (row[displayField]?.toString() ?? '') : (i18n.personKey(row) | t)
+                      "
+                    >
                       <a
-                        class="text-button"
-                        [routerLink]="['/', resource(), row.id, requesterId ? 'view' : 'edit']"
+                        class="row-menu-item"
+                        [routerLink]="['/', resource(), row.id, itemMode(row)]"
                         [queryParams]="scope"
                       >
-                        {{
-                          (requesterId || row['status'] === 'CLOSED' ? 'view_action' : 'edit') | t
-                        }}
+                        <i
+                          class="bi"
+                          [class]="itemMode(row) === 'view' ? 'bi-eye' : 'bi-pencil'"
+                          aria-hidden="true"
+                        ></i>
+                        {{ (itemMode(row) === 'view' ? 'view_action' : 'edit') | t }}
                       </a>
                       @if (canDelete) {
                         <button
-                          class="danger-button"
+                          class="row-menu-item is-danger"
                           type="button"
                           [disabled]="bulk()?.busy()"
                           (click)="bulk()?.ask([row.id])"
                         >
-                          {{ 'delete_action' | t }}
+                          <i class="bi bi-trash" aria-hidden="true"></i>{{ 'delete_action' | t }}
                         </button>
                       } @else if (!isTicket) {
                         <button
-                          class="secondary"
+                          class="row-menu-item"
                           type="button"
                           [disabled]="statusSaving"
                           (click)="toggleUser(row)"
                         >
+                          <i
+                            class="bi"
+                            [class]="row['isActive'] ? 'bi-pause-circle' : 'bi-play-circle'"
+                            aria-hidden="true"
+                          ></i>
                           {{ (row['isActive'] ? 'deactivate_action' : 'activate_action') | t }}
                         </button>
                       }
-                    </div>
+                    </app-row-menu>
                   </td>
                 </tr>
               }
@@ -382,6 +395,20 @@
           }}
         </p>
       </div>
+      @if (isTicket && mode() === 'create') {
+        <div class="field wide">
+          <strong>{{ 'ticket_sender_account' | t }}</strong>
+          @if (sender; as identity) {
+            <div class="requester-identity">
+              <span>{{ identity.name | t }}</span>
+              @for (role of identity.roles; track role) {
+                <span class="badge">{{ senderRole(role) | t }}</span>
+              }
+            </div>
+          }
+          <p class="muted">{{ 'priority_automatic' | t }}</p>
+        </div>
+      }
       @for (field of fields; track field.key) {
         @let control = editor.controls[field.key];
         @let invalid = control?.invalid && (control?.touched || editor.submitted);
@@ -398,7 +425,7 @@
                 [id]="field.key"
                 [name]="field.key"
                 [(ngModel)]="form[field.key]"
-                [disabled]="readOnly || saving || (field.key === 'requesterId' && fixedRequester)"
+                [disabled]="readOnly || saving || lockedField(field)"
                 [required]="!field.optional"
                 [attr.aria-invalid]="invalid ? 'true' : null"
                 [attr.aria-describedby]="invalid ? field.key + '-error' : null"
@@ -416,7 +443,7 @@
                 [id]="field.key"
                 [name]="field.key"
                 [(ngModel)]="form[field.key]"
-                [readOnly]="readOnly || saving"
+                [readOnly]="readOnly || saving || lockedField(field)"
                 [placeholder]="field.placeholder | t"
                 [maxlength]="field.maxLength ?? 10000"
                 [attr.aria-invalid]="invalid ? 'true' : null"
@@ -427,11 +454,13 @@
               <input
                 required
                 [id]="field.key"
-                [type]="field.kind === 'email' ? 'email' : 'text'"
+                [type]="field.kind === 'email' || field.kind === 'password' ? field.kind : 'text'"
+                [attr.autocomplete]="field.kind === 'password' ? 'new-password' : null"
+                [minlength]="field.kind === 'password' ? 12 : 0"
                 [email]="field.kind === 'email'"
                 [name]="field.key"
                 [(ngModel)]="form[field.key]"
-                [readOnly]="readOnly || saving"
+                [readOnly]="readOnly || saving || lockedField(field)"
                 [placeholder]="field.placeholder | t"
                 [maxlength]="field.maxLength ?? 200"
                 [attr.aria-invalid]="invalid ? 'true' : null"
@@ -447,6 +476,12 @@
             }}</small>
           }
         </div>
+      }
+      @if (transitionNoteRequired && !readOnly) {
+        <label class="field wide">
+          <span>{{ 'transition_note' | t }}</span>
+          <textarea name="note" [(ngModel)]="form['note']" maxlength="2000" required></textarea>
+        </label>
       }
       @if (isTicket) {
         <section class="attachments field wide" aria-labelledby="attachment-title">
@@ -501,7 +536,7 @@
                   <a [href]="'/api/v1/tickets/' + editing?.id + '/attachments/' + file.id">{{
                     file.name
                   }}</a>
-                  @if (!readOnly) {
+                  @if (!readOnly && session.allows('ADMIN')) {
                     <button
                       type="button"
                       class="icon-button"
@@ -540,11 +575,23 @@
         </section>
       }
       <div class="form-actions">
+        @if (secured && mode() === 'view' && editing && !closed) {
+          <a
+            class="primary"
+            [routerLink]="['/tickets', editing.id, 'edit']"
+            [queryParams]="scope"
+            >{{ 'edit' | t }}</a
+          >
+        }
         <a class="secondary" [routerLink]="['/', resource()]" [queryParams]="scope">{{
           readOnly ? ('go_back' | t) : ('cancel' | t)
         }}</a>
         @if (!readOnly) {
-          <button class="primary" type="submit" [disabled]="saving">
+          <button
+            class="primary"
+            type="submit"
+            [disabled]="saving || (isTicket && mode() === 'create' && !sender)"
+          >
             {{
               saving
                 ? ('saving' | t)
@@ -577,6 +624,9 @@
                       event.at | date: 'dd/MM/yyyy HH:mm' : '+0700'
                     }}</time>
                   </p>
+                  @if (event.note) {
+                    <p>{{ event.note }}</p>
+                  }
                 </div>
               </li>
             }
@@ -596,6 +646,72 @@
       </section>
     }
   </div>
+  @if (!isTicket && (specialties || specialtyFeedback)) {
+    <section class="panel portal-card">
+      <h2>{{ 'technician_specialties' | t }}</h2>
+      @if (specialtyFeedback) {
+        <p role="status">{{ specialtyFeedback | t }}</p>
+      }
+      @if (specialties; as options) {
+        <div class="portal-choices">
+          @for (category of options.categories; track category.id) {
+            <label>
+              <input
+                type="checkbox"
+                [checked]="options.selected.has(category.id)"
+                [disabled]="saving"
+                (change)="toggleSpecialty(category.id, $any($event.target).checked)"
+              />
+              {{ i18n.category(category) }}
+            </label>
+          }
+        </div>
+        <button class="secondary" type="button" [disabled]="saving" (click)="saveSpecialties()">
+          {{ 'save_changes' | t }}
+        </button>
+      }
+    </section>
+  }
+  @if (isTicket && secured && editing) {
+    <section class="panel portal-card ticket-conversation" aria-labelledby="conversation-title">
+      <h2 id="conversation-title">{{ 'conversation' | t }}</h2>
+      @if (commentError) {
+        <p class="notice error" role="alert">{{ commentError | t }}</p>
+      }
+      <ul class="portal-updates">
+        @for (item of comments; track item.id) {
+          <li>
+            <div>
+              <strong>{{ item.authorName }}</strong>
+              <time [attr.datetime]="item.createdAt">{{
+                item.createdAt | date: 'dd/MM/yyyy HH:mm' : '+0700'
+              }}</time>
+              <p>{{ item.body }}</p>
+            </div>
+          </li>
+        } @empty {
+          <li class="muted">{{ 'no_comments' | t }}</li>
+        }
+      </ul>
+      @if (!closed) {
+        <form class="field" (ngSubmit)="sendComment()">
+          <label for="ticket-comment">{{ 'conversation' | t }}</label>
+          <textarea
+            id="ticket-comment"
+            name="comment"
+            [(ngModel)]="comment"
+            [readOnly]="commentSaving"
+            maxlength="5000"
+          ></textarea>
+          <div>
+            <button type="submit" class="secondary" [disabled]="commentSaving || !comment.trim()">
+              {{ 'send_comment' | t }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+  }
   @if (isTicket && mode() !== 'view') {
     <section class="panel today-tickets" aria-labelledby="today-title">
       <div class="section-heading">

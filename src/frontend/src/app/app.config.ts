@@ -3,11 +3,12 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { Preferences } from './preferences';
 import { trackProgress } from './loading';
+import { renewSession } from './session';
 import { routes } from './app.routes';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideHttpClient(withInterceptors([trackProgress])),
+    provideHttpClient(withInterceptors([trackProgress, renewSession])),
     provideRouter(
       routes,
       withComponentInputBinding(),

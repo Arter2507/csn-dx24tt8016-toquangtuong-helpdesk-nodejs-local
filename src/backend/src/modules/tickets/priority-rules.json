@@ -1,0 +1,54 @@
+[
+  {
+    "priority": "URGENT",
+    "phrases": [
+      "rò rỉ dữ liệu",
+      "lộ dữ liệu",
+      "mất dữ liệu hàng loạt",
+      "mất mạng toàn công ty",
+      "mất mạng toàn trường",
+      "sập toàn hệ thống",
+      "sập hệ thống",
+      "hệ thống ngừng hoạt động",
+      "data breach",
+      "ransomware",
+      "sitewide outage",
+      "system wide outage",
+      "all users affected"
+    ]
+  },
+  {
+    "priority": "HIGH",
+    "phrases": [
+      "không thể làm việc",
+      "không đăng nhập được",
+      "không thể đăng nhập",
+      "không truy cập được",
+      "mất kết nối cả phòng",
+      "lỗi nhiều người dùng",
+      "ứng dụng liên tục bị treo",
+      "không thể nộp bài",
+      "cannot work",
+      "cannot sign in",
+      "cannot log in",
+      "multiple users affected",
+      "work is blocked"
+    ]
+  },
+  {
+    "priority": "LOW",
+    "phrases": [
+      "đề xuất cải tiến",
+      "yêu cầu hướng dẫn",
+      "xin hướng dẫn",
+      "đổi giao diện",
+      "cập nhật tài liệu",
+      "khi nào thuận tiện",
+      "không gấp",
+      "feature request",
+      "how to",
+      "documentation update",
+      "not urgent"
+    ]
+  }
+]

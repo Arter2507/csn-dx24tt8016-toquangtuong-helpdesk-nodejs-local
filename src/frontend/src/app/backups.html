@@ -1,0 +1,179 @@
+<header class="page-heading">
+  <div>
+    <h1>{{ 'backups' | t }}</h1>
+    <p>{{ 'backup_process_intro' | t }}</p>
+  </div>
+</header>
+
+@if (actionError() || systemError()) {
+  <div class="notice error" role="alert">
+    {{ (actionError() ? 'backup_action_error' : 'we_couldnt_load_your_data') | t }}
+    @if (systemError()) {
+      <button class="text-button" type="button" (click)="refresh()">{{ 'try_again' | t }}</button>
+    }
+  </div>
+}
+
+@if (restoreStatus()) {
+  <p
+    class="notice"
+    [attr.role]="restoreStatus() === 'backup_restored' || restoring() ? 'status' : 'alert'"
+  >
+    {{ restoreStatus() | t }}
+  </p>
+}
+
+<div class="backup-grid">
+  <section class="panel portal-card">
+    <h2><i class="bi bi-database-add" aria-hidden="true"></i> {{ 'backup_manual' | t }}</h2>
+    <p>{{ 'backup_archive_scope' | t }}</p>
+    <button
+      type="button"
+      class="primary"
+      (click)="start()"
+      [disabled]="!index() || pending() || !!working() || restoring()"
+    >
+      <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i> {{ 'backup_now' | t }}
+    </button>
+    <div class="backup-progress" aria-live="polite">
+      @if (working(); as job) {
+        <span class="badge">{{ 'backup_status_' + job.status | t }}</span>
+        <progress [attr.aria-label]="'backup_status_' + job.status | t"></progress>
+      } @else if (index()?.jobs?.[0]; as job) {
+        <span class="badge" [attr.data-tone]="job.status === 'completed' ? 'success' : 'danger'">{{
+          'backup_status_' + job.status | t
+        }}</span>
+        @if (job.error) {
+          <p class="muted">{{ 'backup_error_' + job.error | t }}</p>
+        }
+      } @else {
+        <p class="muted">{{ (index() ? 'backup_no_archives' : 'loading') | t }}</p>
+      }
+    </div>
+    @if (lastSuccess(); as job) {
+      <p class="muted">
+        {{ 'backup_last_success' | t }}
+        <time [attr.datetime]="job.finishedAt">{{
+          job.finishedAt | date: 'dd/MM/yyyy HH:mm' : '+0700'
+        }}</time>
+      </p>
+    }
+  </section>
+
+  <section class="panel portal-card">
+    <h2><i class="bi bi-clock-history" aria-hidden="true"></i> {{ 'backup_automatic' | t }}</h2>
+    <p>{{ 'backup_schedule_help' | t }}</p>
+    @if (schedule(); as value) {
+      <form class="backup-schedule" (ngSubmit)="saveSchedule()">
+        <label class="checkbox-field">
+          <input
+            type="checkbox"
+            [ngModel]="value.enabled"
+            name="enabled"
+            (ngModelChange)="setEnabled($event)"
+            [disabled]="pending()"
+          />
+          {{ 'backup_enable_auto' | t }}
+        </label>
+        <label class="field">
+          <span>{{ 'backup_interval' | t }}</span>
+          <select
+            name="interval"
+            [ngModel]="value.intervalMinutes"
+            (ngModelChange)="setInterval($event)"
+            [disabled]="pending()"
+          >
+            @for (interval of intervals; track interval) {
+              <option [ngValue]="interval">{{ 'backup_interval_' + interval | t }}</option>
+            }
+          </select>
+        </label>
+        <div class="backup-schedule-actions">
+          <button class="secondary" type="submit" [disabled]="!draft() || pending()">
+            {{ 'backup_save_schedule' | t }}
+          </button>
+          @if (saved()) {
+            <span role="status">{{ 'backup_schedule_saved' | t }}</span>
+          }
+        </div>
+      </form>
+      @if (index()?.schedule?.nextAt; as date) {
+        <p class="muted">
+          {{ 'backup_next' | t }}
+          <time [attr.datetime]="date">{{ date | date: 'dd/MM/yyyy HH:mm' : '+0700' }}</time>
+        </p>
+      }
+    }
+  </section>
+</div>
+
+<section class="panel portal-card backup-history" aria-labelledby="backup-history-title">
+  <h2 id="backup-history-title">
+    <i class="bi bi-archive" aria-hidden="true"></i> {{ 'backup_history' | t }}
+  </h2>
+  @if (index()?.jobs?.length) {
+    <div class="table-scroll" role="region" tabindex="0" [attr.aria-label]="'backup_history' | t">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">{{ 'backup_created_at' | t }}</th>
+            <th scope="col">{{ 'backup_method' | t }}</th>
+            <th scope="col">{{ 'status' | t }}</th>
+            <th scope="col">{{ 'backup_size' | t }}</th>
+            <th scope="col">{{ 'actions' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (job of index()?.jobs; track job.id) {
+            <tr>
+              <td>
+                <time [attr.datetime]="job.createdAt">{{
+                  job.createdAt | date: 'dd/MM/yyyy HH:mm:ss' : '+0700'
+                }}</time>
+              </td>
+              <td>{{ 'backup_' + job.kind | t }}</td>
+              <td>
+                <span class="badge">{{ 'backup_status_' + job.status | t }}</span>
+                @if (job.error) {
+                  <small class="muted backup-error">{{ 'backup_error_' + job.error | t }}</small>
+                }
+              </td>
+              <td>{{ job.size === null ? '—' : (job.size / 1024 | number: '1.0-1') + ' KB' }}</td>
+              <td>
+                @if (job.status === 'completed') {
+                  <a class="text-button" [href]="downloadUrl(job.id)" download
+                    ><i class="bi bi-download" aria-hidden="true"></i>
+                    {{ 'backup_download_zip' | t }}</a
+                  >
+                  <button
+                    class="text-button"
+                    type="button"
+                    [disabled]="restoring() || !!working()"
+                    (click)="askRestore(job)"
+                  >
+                    {{ 'backup_restore' | t }}
+                  </button>
+                } @else {
+                  <span class="muted">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="muted">{{ (index() ? 'backup_no_archives' : 'loading') | t }}</p>
+  }
+</section>
+
+<dialog #restoreDialog class="task-editor-dialog" aria-labelledby="backup-restore-title">
+  <h2 id="backup-restore-title">{{ 'backup_restore_confirm' | t }}</h2>
+  <p>{{ 'backup_restore_details' | t }}</p>
+  <div class="portal-choices">
+    <button class="secondary" type="button" autofocus (click)="cancelRestore()">
+      {{ 'cancel' | t }}
+    </button>
+    <button class="primary" type="button" (click)="restore()">{{ 'backup_restore' | t }}</button>
+  </div>
+</dialog>

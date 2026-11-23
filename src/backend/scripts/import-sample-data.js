@@ -17,13 +17,16 @@ const connection = await mysql.createConnection({
   multipleStatements: true,
 });
 
-await connection.query(sql);
-const [rows] = await connection.query(`
-  SELECT
-    (SELECT COUNT(*) FROM users) AS users,
-    (SELECT COUNT(*) FROM categories) AS categories,
-    (SELECT COUNT(*) FROM tickets) AS tickets,
-    (SELECT COUNT(*) FROM ticket_events) AS events
-`);
-console.log('Imported sample data:', rows[0]);
-await connection.end();
+try {
+  await connection.query(sql);
+  const [rows] = await connection.query(`
+    SELECT
+      (SELECT COUNT(*) FROM users) AS users,
+      (SELECT COUNT(*) FROM categories) AS categories,
+      (SELECT COUNT(*) FROM tickets) AS tickets,
+      (SELECT COUNT(*) FROM ticket_events) AS events
+  `);
+  console.log('Imported sample data:', rows[0]);
+} finally {
+  await connection.end();
+}

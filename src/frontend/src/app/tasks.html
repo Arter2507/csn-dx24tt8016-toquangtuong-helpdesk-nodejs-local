@@ -1,0 +1,237 @@
+<header class="page-heading">
+  <div>
+    <h1>{{ 'team_tasks' | t }}</h1>
+    <p>{{ 'tasks_intro' | t }}</p>
+  </div>
+  <button class="primary" type="button" (click)="open()" [disabled]="loading()">
+    <i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'tasks_new' | t }}
+  </button>
+</header>
+@if (error()) {
+  <p class="notice error" role="alert">
+    {{ error() | t }} <button class="text-button" (click)="load()">{{ 'try_again' | t }}</button>
+  </p>
+}
+<div class="bookmark-tabs" role="group" [attr.aria-label]="'tasks_views' | t">
+  @for (mode of views; track mode) {
+    <button type="button" [attr.aria-pressed]="view() === mode" (click)="view.set(mode)">
+      {{ 'tasks_' + mode | t }}
+    </button>
+  }
+</div>
+@if (loading()) {
+  <p role="status">{{ 'loading' | t }}</p>
+} @else {
+  @switch (view()) {
+    @case ('board') {
+      <div class="task-board">
+        @for (column of columns(); track column.status) {
+          <section
+            class="panel task-column"
+            [class.drag-over]="over() === column.status"
+            [attr.data-status]="column.status"
+            (dragover)="dragOver($event, column.status)"
+            (drop)="drop($event, column.status)"
+          >
+            <header>
+              <h2>{{ 'tasks_status_' + column.status | t }}</h2>
+              <span class="badge">{{ column.tasks.length }}</span>
+            </header>
+            @for (task of column.tasks; track task.id) {
+              <article
+                class="task-card"
+                [attr.draggable]="task.canEdit"
+                (dragstart)="startDrag($event, task)"
+                (dragend)="over.set(null)"
+              >
+                <div class="task-card-heading">
+                  <input
+                    type="checkbox"
+                    [checked]="task.status === 'DONE'"
+                    [disabled]="!task.canEdit || pending()"
+                    [attr.aria-label]="'tasks_done_label' | t: { title: task.title }"
+                    (change)="toggleDone($event, task)"
+                  />
+                  <button type="button" class="task-card-title" (click)="open(task)">
+                    {{ task.title }}
+                  </button>
+                </div>
+                @if (task.description) {
+                  <p>{{ task.description }}</p>
+                }
+                <div class="task-meta">
+                  <span
+                    ><i class="bi bi-person" aria-hidden="true"></i>
+                    {{ memberName(task.assigneeId) }}</span
+                  >
+                  @if (task.dueDate) {
+                    <time [attr.datetime]="task.dueDate"
+                      ><i class="bi bi-calendar3" aria-hidden="true"></i>
+                      {{ task.dueDate | date: 'dd/MM' }}</time
+                    >
+                  }
+                </div>
+              </article>
+            } @empty {
+              <p class="task-empty">{{ 'tasks_empty_column' | t }}</p>
+            }
+          </section>
+        }
+      </div>
+    }
+    @case ('calendar') {
+      <section class="panel portal-card task-calendar">
+        <header class="section-heading">
+          <button
+            type="button"
+            class="secondary"
+            (click)="moveMonth(-1)"
+            [attr.aria-label]="'tasks_previous_month' | t"
+          >
+            <i class="bi bi-chevron-left" aria-hidden="true"></i>
+          </button>
+          <h2>{{ month() | date: 'MM/yyyy' }}</h2>
+          <button
+            type="button"
+            class="secondary"
+            (click)="moveMonth(1)"
+            [attr.aria-label]="'tasks_next_month' | t"
+          >
+            <i class="bi bi-chevron-right" aria-hidden="true"></i>
+          </button>
+        </header>
+        <div class="table-scroll">
+          <div class="task-calendar-grid">
+            @for (day of weekDays; track day) {
+              <strong class="task-calendar-day">{{ day | t }}</strong>
+            }
+            @for (cell of calendar(); track cell.key) {
+              <div class="task-calendar-cell" [class.outside-month]="!cell.inMonth">
+                <button
+                  type="button"
+                  class="task-calendar-date"
+                  (click)="open(null, cell.key)"
+                  [attr.aria-label]="'tasks_add_on_date' | t: { date: cell.key }"
+                >
+                  {{ cell.date | date: 'd' }}
+                </button>
+                @for (task of cell.tasks; track task.id) {
+                  <button
+                    type="button"
+                    class="task-calendar-event"
+                    [class.done]="task.status === 'DONE'"
+                    (click)="open(task)"
+                  >
+                    {{ task.title }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+    @case ('table') {
+      <div
+        class="panel table-scroll"
+        role="region"
+        tabindex="0"
+        [attr.aria-label]="'tasks_table' | t"
+      >
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">{{ 'tasks_status_DONE' | t }}</th>
+              <th scope="col">{{ 'title' | t }}</th>
+              <th scope="col">{{ 'tasks_assignee' | t }}</th>
+              <th scope="col">{{ 'tasks_due' | t }}</th>
+              <th scope="col">{{ 'status' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (task of tasks(); track task.id) {
+              <tr>
+                <td>
+                  <input
+                    type="checkbox"
+                    [checked]="task.status === 'DONE'"
+                    [disabled]="!task.canEdit || pending()"
+                    [attr.aria-label]="'tasks_done_label' | t: { title: task.title }"
+                    (change)="toggleDone($event, task)"
+                  />
+                </td>
+                <td>
+                  <button type="button" class="task-card-title" (click)="open(task)">
+                    {{ task.title }}
+                  </button>
+                </td>
+                <td>{{ memberName(task.assigneeId) }}</td>
+                <td>{{ task.dueDate ? (task.dueDate | date: 'dd/MM/yyyy') : '—' }}</td>
+                <td>
+                  <span class="badge">{{ 'tasks_status_' + task.status | t }}</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5">{{ 'tasks_empty_column' | t }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+}
+<dialog #editor class="task-editor-dialog" aria-labelledby="task-editor-title">
+  <form class="profile-fields" #form="ngForm" (ngSubmit)="save()">
+    <h2 id="task-editor-title" class="wide">
+      {{ (editing() ? 'tasks_details' : 'tasks_new') | t }}
+    </h2>
+    @if (editError()) {
+      <p class="notice error wide" role="alert">{{ editError() | t }}</p>
+    }
+    <fieldset
+      class="task-editor-fields wide"
+      [disabled]="pending() || editing()?.canEdit === false"
+    >
+      <label class="field wide"
+        >{{ 'title' | t }}<input name="title" [(ngModel)]="draft.title" required maxlength="160"
+      /></label>
+      <label class="field wide"
+        >{{ 'tasks_description' | t
+        }}<textarea name="description" [(ngModel)]="draft.description" maxlength="3000"></textarea>
+      </label>
+      <label class="field"
+        >{{ 'tasks_assignee' | t }}
+        <select name="assignee" [(ngModel)]="draft.assigneeId">
+          <option [ngValue]="null">{{ 'unassigned' | t }}</option>
+          @if (draft.assigneeId && memberName(draft.assigneeId).startsWith('#')) {
+            <option [ngValue]="draft.assigneeId">{{ memberName(draft.assigneeId) }}</option>
+          }
+          @for (member of members(); track member.id) {
+            <option [ngValue]="member.id">{{ member.fullName }}</option>
+          }
+        </select>
+      </label>
+      <label class="field"
+        >{{ 'tasks_due' | t }}<input type="date" name="due" [(ngModel)]="draft.dueDate"
+      /></label>
+      <label class="field"
+        >{{ 'status' | t }}
+        <select name="status" [(ngModel)]="draft.status">
+          @for (status of states; track status) {
+            <option [ngValue]="status">{{ 'tasks_status_' + status | t }}</option>
+          }
+        </select>
+      </label>
+    </fieldset>
+    <div class="form-actions wide">
+      <button class="secondary" type="button" (click)="close()">{{ 'close' | t }}</button>
+      @if (editing()?.canEdit !== false) {
+        <button class="primary" type="submit" [disabled]="pending() || form.invalid">
+          {{ 'save_changes' | t }}
+        </button>
+      }
+    </div>
+  </form>
+</dialog>

@@ -1398,5 +1398,461 @@
   "confirm_delete_one": {
     "vi": "Xóa yêu cầu này?",
     "en": "Delete this request?"
+  },
+  "actions_for_row": {
+    "vi": "Thao tác cho {name}",
+    "en": "Actions for {name}"
+  },
+  "sign_in": {
+    "vi": "Đăng nhập",
+    "en": "Sign in"
+  },
+  "sign_out": {
+    "vi": "Đăng xuất",
+    "en": "Sign out"
+  },
+  "sign_in_help": {
+    "vi": "Dùng tài khoản Trạm Mèo của bạn để tiếp tục.",
+    "en": "Use your Trạm Mèo account to continue."
+  },
+  "password": {
+    "vi": "Mật khẩu",
+    "en": "Password"
+  },
+  "initial_password": {
+    "vi": "Mật khẩu ban đầu (ít nhất 12 ký tự)",
+    "en": "Initial password (at least 12 characters)"
+  },
+  "invalid_credentials": {
+    "vi": "Email hoặc mật khẩu chưa đúng.",
+    "en": "The email or password is incorrect."
+  },
+  "login_limit": {
+    "vi": "Bạn đã thử quá nhiều lần. Hãy đợi rồi thử lại.",
+    "en": "Too many attempts. Wait before trying again."
+  },
+  "api_FORBIDDEN": {
+    "vi": "Bạn không có quyền thực hiện thao tác này.",
+    "en": "You do not have permission to do this."
+  },
+  "api_NOTE_REQUIRED": {
+    "vi": "Vui lòng nhập nội dung phản hồi.",
+    "en": "Please add a note."
+  },
+  "transition_note": {
+    "vi": "Nội dung phản hồi",
+    "en": "Status update note"
+  },
+  "conversation": {
+    "vi": "Trao đổi",
+    "en": "Conversation"
+  },
+  "send_comment": {
+    "vi": "Gửi trao đổi",
+    "en": "Send message"
+  },
+  "no_comments": {
+    "vi": "Chưa có trao đổi nào.",
+    "en": "There are no messages yet."
+  },
+  "notification_comment": {
+    "vi": "Có trao đổi mới",
+    "en": "New message"
+  },
+  "current_password": {
+    "vi": "Mật khẩu hiện tại",
+    "en": "Current password"
+  },
+  "new_password": {
+    "vi": "Mật khẩu mới (ít nhất 12 ký tự)",
+    "en": "New password (at least 12 characters)"
+  },
+  "change_password": {
+    "vi": "Đổi mật khẩu",
+    "en": "Change password"
+  },
+  "api_INVALID_CREDENTIALS": {
+    "vi": "Mật khẩu hiện tại chưa đúng.",
+    "en": "Your current password is incorrect."
+  },
+  "technician_specialties": {
+    "vi": "Danh mục chuyên môn",
+    "en": "Technical specialties"
+  },
+  "specialties_saved": {
+    "vi": "Đã lưu danh mục chuyên môn.",
+    "en": "Technical specialties saved."
+  },
+  "system_theme": {
+    "vi": "Theo thiết bị",
+    "en": "Match device"
+  },
+  "toast_notifications_setting": {
+    "vi": "Hiện thông báo nổi khi có cập nhật mới",
+    "en": "Show a pop-up when a new update arrives"
+  },
+  "toast_notifications_description": {
+    "vi": "Tùy chọn này lưu trên trình duyệt. Bạn vẫn xem được thông báo trong bảng chuông và trang Thông báo.",
+    "en": "This preference is saved in this browser. Updates still appear in the bell panel and on the Notifications page."
+  },
+  "notification_read_error": {
+    "vi": "Chưa đánh dấu được thông báo. Hãy thử lại.",
+    "en": "We couldn't mark these notifications as read. Try again."
+  },
+  "notification_assigned": {
+    "vi": "Yêu cầu được phân công",
+    "en": "Request assigned"
+  },
+  "notification_ticket_update": {
+    "vi": "Yêu cầu có cập nhật",
+    "en": "Request updated"
+  },
+  "view_all_notifications": {
+    "vi": "Xem tất cả thông báo",
+    "en": "View all notifications"
+  },
+  "dismiss_notification": {
+    "vi": "Đóng thông báo",
+    "en": "Dismiss notification"
+  },
+  "backup_process_intro": {
+    "vi": "Tạo bản sao dữ liệu và tệp đính kèm, theo dõi tiến độ rồi tải về khi sẵn sàng.",
+    "en": "Back up your data and attachments, follow the progress, and download when ready."
+  },
+  "backup_manual": {
+    "vi": "Sao lưu thủ công",
+    "en": "Manual backup"
+  },
+  "backup_now": {
+    "vi": "Sao lưu ngay",
+    "en": "Back up now"
+  },
+  "backup_automatic": {
+    "vi": "Sao lưu tự động",
+    "en": "Automatic backup"
+  },
+  "backup_archive_scope": {
+    "vi": "Bản sao ZIP gồm dữ liệu nghiệp vụ, lịch sử và các tệp đính kèm. Mật khẩu và phiên đăng nhập được loại khỏi bản sao.",
+    "en": "The ZIP includes workspace data, history, and attachments. Passwords and sign-in sessions are excluded."
+  },
+  "backup_schedule_help": {
+    "vi": "Lịch chạy khi bạn đăng nhập và đang mở Trạm Mèo. Khi đến hạn trong lúc vắng mặt, bản sao sẽ được tạo ở lần mở tiếp theo.",
+    "en": "The schedule runs while you are signed in with Trạm Mèo open. A missed backup runs the next time you open the site."
+  },
+  "backup_enable_auto": {
+    "vi": "Bật sao lưu tự động",
+    "en": "Enable automatic backup"
+  },
+  "backup_interval": {
+    "vi": "Lặp lại mỗi",
+    "en": "Repeat every"
+  },
+  "backup_interval_30": {
+    "vi": "30 phút",
+    "en": "30 minutes"
+  },
+  "backup_interval_60": {
+    "vi": "1 giờ",
+    "en": "1 hour"
+  },
+  "backup_interval_180": {
+    "vi": "3 giờ",
+    "en": "3 hours"
+  },
+  "backup_interval_360": {
+    "vi": "6 giờ",
+    "en": "6 hours"
+  },
+  "backup_interval_1440": {
+    "vi": "24 giờ",
+    "en": "24 hours"
+  },
+  "backup_save_schedule": {
+    "vi": "Lưu lịch sao lưu",
+    "en": "Save backup schedule"
+  },
+  "backup_schedule_saved": {
+    "vi": "Đã lưu lịch sao lưu.",
+    "en": "Backup schedule saved."
+  },
+  "backup_next": {
+    "vi": "Lần chạy kế tiếp",
+    "en": "Next run"
+  },
+  "backup_last_success": {
+    "vi": "Lần sao lưu thành công gần nhất",
+    "en": "Last successful backup"
+  },
+  "backup_history": {
+    "vi": "Lịch sử sao lưu",
+    "en": "Backup history"
+  },
+  "backup_created_at": {
+    "vi": "Bắt đầu",
+    "en": "Started"
+  },
+  "backup_method": {
+    "vi": "Cách sao lưu",
+    "en": "Backup method"
+  },
+  "backup_size": {
+    "vi": "Dung lượng",
+    "en": "Size"
+  },
+  "backup_no_archives": {
+    "vi": "Chưa có bản sao nào.",
+    "en": "There are no backups yet."
+  },
+  "backup_download_zip": {
+    "vi": "Tải ZIP",
+    "en": "Download ZIP"
+  },
+  "backup_action_error": {
+    "vi": "Chưa thực hiện được thao tác sao lưu. Vui lòng thử lại.",
+    "en": "The backup action failed. Please try again."
+  },
+  "backup_status_queued": {
+    "vi": "Đang chờ",
+    "en": "Queued"
+  },
+  "backup_status_collecting": {
+    "vi": "Đang lấy dữ liệu",
+    "en": "Collecting data"
+  },
+  "backup_status_packing": {
+    "vi": "Đang đóng gói tệp",
+    "en": "Packing files"
+  },
+  "backup_status_completed": {
+    "vi": "Hoàn tất",
+    "en": "Completed"
+  },
+  "backup_status_failed": {
+    "vi": "Thất bại",
+    "en": "Failed"
+  },
+  "backup_error_missing_file": {
+    "vi": "Thiếu tệp đính kèm. Kiểm tra thư mục tệp trước khi sao lưu lại.",
+    "en": "An attachment is missing. Check the upload directory before retrying."
+  },
+  "backup_error_interrupted": {
+    "vi": "Máy chủ dừng khi bản sao đang được tạo.",
+    "en": "The server stopped while creating the backup."
+  },
+  "backup_error_write": {
+    "vi": "Không lưu được bản sao. Hãy thử lại.",
+    "en": "The backup could not be saved. Try again."
+  },
+  "priority_automatic": {
+    "vi": "Mức ưu tiên được gợi ý tự động theo nội dung khi bạn gửi yêu cầu.",
+    "en": "Priority is suggested automatically from the request details when you submit."
+  },
+  "ticket_sender_account": {
+    "vi": "Người gửi",
+    "en": "Requester"
+  },
+  "team_tasks": {
+    "vi": "Nhiệm vụ nhóm",
+    "en": "Team tasks"
+  },
+  "tasks_intro": {
+    "vi": "Tạo, phân công và theo dõi công việc của nhóm hỗ trợ.",
+    "en": "Create, assign, and track work across your support team."
+  },
+  "tasks_new": {
+    "vi": "Tạo nhiệm vụ",
+    "en": "New task"
+  },
+  "tasks_details": {
+    "vi": "Chi tiết nhiệm vụ",
+    "en": "Task details"
+  },
+  "tasks_views": {
+    "vi": "Kiểu xem nhiệm vụ",
+    "en": "Task views"
+  },
+  "tasks_board": {
+    "vi": "Bảng công việc",
+    "en": "Board"
+  },
+  "tasks_calendar": {
+    "vi": "Lịch",
+    "en": "Calendar"
+  },
+  "tasks_table": {
+    "vi": "Danh sách",
+    "en": "List"
+  },
+  "tasks_status_TODO": {
+    "vi": "Cần làm",
+    "en": "To do"
+  },
+  "tasks_status_DOING": {
+    "vi": "Đang làm",
+    "en": "In progress"
+  },
+  "tasks_status_DONE": {
+    "vi": "Hoàn thành",
+    "en": "Done"
+  },
+  "tasks_done_label": {
+    "vi": "Đánh dấu hoàn thành {title}",
+    "en": "Mark {title} complete"
+  },
+  "tasks_assignee": {
+    "vi": "Người phụ trách",
+    "en": "Assignee"
+  },
+  "tasks_due": {
+    "vi": "Hạn hoàn thành",
+    "en": "Due date"
+  },
+  "tasks_description": {
+    "vi": "Mô tả nhiệm vụ",
+    "en": "Task description"
+  },
+  "tasks_empty_column": {
+    "vi": "Chưa có nhiệm vụ.",
+    "en": "No tasks yet."
+  },
+  "tasks_previous_month": {
+    "vi": "Tháng trước",
+    "en": "Previous month"
+  },
+  "tasks_next_month": {
+    "vi": "Tháng sau",
+    "en": "Next month"
+  },
+  "tasks_add_on_date": {
+    "vi": "Tạo nhiệm vụ ngày {date}",
+    "en": "Add a task on {date}"
+  },
+  "profile_full_intro": {
+    "vi": "Quản lý ảnh đại diện, thông tin cá nhân và bảo mật tài khoản.",
+    "en": "Manage your profile photo, personal details, and account security."
+  },
+  "profile_tab_details": {
+    "vi": "Thông tin chi tiết",
+    "en": "Details"
+  },
+  "profile_tab_roles": {
+    "vi": "Vai trò",
+    "en": "Roles"
+  },
+  "profile_tab_security": {
+    "vi": "Bảo mật",
+    "en": "Security"
+  },
+  "profile_upload_avatar": {
+    "vi": "Đổi ảnh",
+    "en": "Change photo"
+  },
+  "profile_view_avatar": {
+    "vi": "Xem ảnh đại diện",
+    "en": "View profile photo"
+  },
+  "profile_download_avatar": {
+    "vi": "Tải ảnh về",
+    "en": "Download photo"
+  },
+  "profile_avatar_saved": {
+    "vi": "Đã cập nhật ảnh đại diện.",
+    "en": "Profile photo updated."
+  },
+  "profile_photo_hint": {
+    "vi": "PNG, JPEG hoặc WebP · Tối đa 2 MB",
+    "en": "PNG, JPEG, or WebP · Up to 2 MB"
+  },
+  "profile_email_policy": {
+    "vi": "Chỉ quản trị viên khác mới có thể đổi email của tài khoản này.",
+    "en": "Only another administrator can change this account’s email."
+  },
+  "profile_phone": {
+    "vi": "Số điện thoại",
+    "en": "Phone number"
+  },
+  "profile_birth": {
+    "vi": "Ngày sinh",
+    "en": "Date of birth"
+  },
+  "profile_department": {
+    "vi": "Phòng ban",
+    "en": "Department"
+  },
+  "profile_job": {
+    "vi": "Chức danh",
+    "en": "Job title"
+  },
+  "profile_location": {
+    "vi": "Địa chỉ hoặc nơi làm việc",
+    "en": "Address or work location"
+  },
+  "profile_bio": {
+    "vi": "Giới thiệu",
+    "en": "About"
+  },
+  "profile_security_demo": {
+    "vi": "Đổi mật khẩu có sẵn khi đăng nhập bằng tài khoản MySQL.",
+    "en": "Password changes are available when signed in with a MySQL account."
+  },
+  "profile_role_USER": {
+    "vi": "Gửi và theo dõi yêu cầu của mình.",
+    "en": "Submit and track your requests."
+  },
+  "profile_role_TECHNICIAN": {
+    "vi": "Xử lý yêu cầu được giao và tham gia nhiệm vụ nhóm.",
+    "en": "Handle assigned requests and collaborate on team tasks."
+  },
+  "profile_role_ADMIN": {
+    "vi": "Quản lý tài khoản, nhiệm vụ và dữ liệu hệ thống.",
+    "en": "Manage accounts, tasks, and workspace data."
+  },
+  "api_AVATAR_INVALID": {
+    "vi": "Chọn ảnh PNG, JPEG hoặc WebP dung lượng tối đa 2 MB.",
+    "en": "Select a PNG, JPEG, or WebP image up to 2 MB."
+  },
+  "backup_restore": {
+    "vi": "Khôi phục",
+    "en": "Restore"
+  },
+  "backup_restore_confirm": {
+    "vi": "Xác nhận khôi phục",
+    "en": "Confirm restore"
+  },
+  "backup_restore_details": {
+    "vi": "Dữ liệu nghiệp vụ hiện tại sẽ được thay bằng dữ liệu trong bản sao này. Hệ thống tạo một bản sao trước khi thực hiện.",
+    "en": "Current workspace data will be replaced with this backup. A safety backup will be created first."
+  },
+  "backup_restoring": {
+    "vi": "Đang khôi phục dữ liệu…",
+    "en": "Restoring data…"
+  },
+  "backup_restored": {
+    "vi": "Đã khôi phục dữ liệu.",
+    "en": "Data restored."
+  },
+  "backup_pre_restore": {
+    "vi": "Trước khi khôi phục",
+    "en": "Before restore"
+  },
+  "api_RESTORE_BUSY": {
+    "vi": "Đợi thao tác sao lưu hoặc khôi phục đang chạy hoàn tất.",
+    "en": "Wait for the current backup or restore to finish."
+  },
+  "api_RESTORE_INVALID": {
+    "vi": "Bản sao thiếu dữ liệu, bị hỏng hoặc khác chế độ.",
+    "en": "This backup is incomplete, damaged, or belongs to another mode."
+  },
+  "api_RESTORE_ACCOUNTS": {
+    "vi": "Bản sao tham chiếu tài khoản chưa có trong hệ thống.",
+    "en": "The backup refers to accounts missing from this workspace."
+  },
+  "api_RESTORE_SAFETY": {
+    "vi": "Chưa tạo được bản sao trước khi khôi phục.",
+    "en": "The safety backup could not be created."
+  },
+  "close": {
+    "vi": "Đóng",
+    "en": "Close"
   }
 }

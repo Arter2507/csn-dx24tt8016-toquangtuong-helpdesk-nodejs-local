@@ -1,3 +1,4 @@
+import { RowMenu } from './row-menu';
 import { Loading } from './loading';
 import { Translate, I18n, errorKey } from './i18n';
 import { ChangeDetectorRef, Component, ElementRef, inject, input, OnInit } from '@angular/core';
@@ -8,7 +9,7 @@ import { CategoryService } from './features/categories/services/category.service
 import { Router, RouterLink } from '@angular/router';
 @Component({
   selector: 'app-categories',
-  imports: [Translate, Loading, FormsModule, RouterLink],
+  imports: [Translate, Loading, RowMenu, FormsModule, RouterLink],
   templateUrl: './app.html',
 })
 export class App implements OnInit {

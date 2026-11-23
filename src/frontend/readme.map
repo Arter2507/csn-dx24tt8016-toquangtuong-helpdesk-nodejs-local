@@ -10,14 +10,14 @@
 | Thêm đường dẫn hoặc trang trống | src/app/app.routes.ts đăng ký route, src/app/pages.ts chứa mẫu trang trống. |
 | Đổi dashboard và số liệu | src/app/dashboard.html hiển thị KPI và biểu đồ. Dashboard trong src/app/pages.ts tổng hợp từ API ticket. |
 | Đổi dashboard chuyên viên hoặc người gửi | src/app/role-dashboard.ts và src/app/role-dashboard.html. |
-| Đổi hồ sơ, thông báo, cài đặt hoặc sao lưu | src/app/account-pages.ts và src/app/account-pages.html. |
+| Đổi cài đặt hoặc trang danh sách thông báo | src/app/account-pages.ts và src/app/account-pages.html. |
 | Sửa nội dung tiếng Việt hoặc tiếng Anh | src/app/messages.json. |
 | Sửa thao tác chọn và xóa nhiều dòng | src/app/bulk-actions.ts. |
 | Đổi báo cáo, bộ lọc hoặc xuất CSV | src/app/reports.html và Reports trong src/app/pages.ts. |
 | Sửa bảng, bộ lọc hoặc form danh mục | src/app/app.html. Trạng thái và thao tác nằm trong src/app/app.ts. |
 | Đổi API hoặc kiểu dữ liệu danh mục | src/app/features/categories/services/category.service.ts và interfaces/category.ts trong cùng feature. |
 | Sửa form người dùng hoặc ticket | src/app/features/workspace/workspace.ts khai báo trường và chuẩn bị dữ liệu. workspace.html dựng bảng, bộ lọc và form. |
-| Đổi lựa chọn người gửi, kỹ thuật viên hoặc danh mục của ticket | ticketFields trong src/app/features/workspace/workspace.ts lấy danh sách từ API người dùng và danh mục. |
+| Đổi thông tin người gửi, kỹ thuật viên hoặc danh mục | ticketFields trong src/app/features/workspace/workspace.ts lấy danh tính từ phiên và các lựa chọn từ API. |
 | Đổi yêu cầu HTTP cho người dùng hoặc ticket | src/app/features/workspace/workspace.service.ts. |
 | Sửa lỗi Angular không gọi được backend | proxy.conf.json đặt đích cho /api, angular.json nạp proxy khi chạy dev server, src/app/app.config.ts đăng ký HttpClient. |
 | Đổi giao diện hoặc tài nguyên | src/styles.css chứa token sáng/tối và các kiểu dùng chung. public/ chứa tài nguyên tĩnh. |
@@ -44,7 +44,7 @@
 | .vscode/tasks.json | Tác vụ chạy từ VS Code. |
 | public/ | Tài nguyên được sao chép khi build. |
 | public/fonts/ | Font Chivo cục bộ và giấy phép SIL OFL. |
-| public/mascot/cat-support.webp | Mascot cho logo Trạm Mèo, favicon và khối chào. |
+| public/mascot/cat-support-cartoon-calico.webp | Mascot cho logo Trạm Mèo, favicon và khối chào. |
 | src/ | Mã nguồn Angular. |
 | src/index.html | Khung HTML chứa app-root. |
 | src/main.ts | Khởi động Angular bằng Shell và appConfig. |
@@ -74,3 +74,12 @@
 | src/app/features/workspace/workspace.types.ts | Kiểu dữ liệu dòng, tài nguyên và trường form. |
 
 Dữ liệu demo thay đổi qua API và mất khi khởi động lại backend. Cập nhật bản đồ này khi thêm, đổi tên hoặc chuyển trách nhiệm của file.
+
+## Hồ sơ, sao lưu và nhiệm vụ nhóm
+
+| Tính năng | Mã nguồn |
+| --- | --- |
+| Hồ sơ, ảnh và tab bảo mật | `src/app/profile.ts`, `src/app/profile.html` |
+| Sao lưu và khôi phục | `src/app/backups.ts`, `src/app/backups.html`, `src/app/backup-scheduler.ts` |
+| Nhiệm vụ bảng, lịch và danh sách | `src/app/tasks.ts`, `src/app/tasks.html` |
+| Bảng chuông và toast | `src/app/notification-bell.ts`, `src/app/notification-bell.html`, `src/app/notifications.ts` |

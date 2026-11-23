@@ -1,3 +1,4 @@
+import { Session } from './session';
 import { Loading } from './loading';
 import { Translate, I18n } from './i18n';
 import { NgTemplateOutlet } from '@angular/common';
@@ -38,7 +39,8 @@ export class RoleDashboard {
   private readonly route = inject(ActivatedRoute);
 
   // Hai tài khoản cố định đến từ dữ liệu seed của API demo.
-  readonly technicianId = 2;
+  readonly session = inject(Session);
+  readonly technicianId = this.session.account()?.id ?? 2;
   readonly requesterId = signal(1);
   readonly today = vietnamDay.format(new Date());
   readonly selectedDay = signal(this.today);
@@ -50,7 +52,10 @@ export class RoleDashboard {
   readonly noteChanged = signal(false);
 
   readonly technician = computed(() => this.role() === 'technician');
-  readonly account = computed(() => (this.technician() ? this.technicianId : this.requesterId()));
+  readonly account = computed(
+    () =>
+      this.session.account()?.id ?? (this.technician() ? this.technicianId : this.requesterId()),
+  );
   readonly profile = computed(() => this.data()?.users.find((row) => row.id === this.account()));
   readonly scope = computed(() =>
     this.technician() ? { assigneeId: this.account() } : { requesterId: this.account() },

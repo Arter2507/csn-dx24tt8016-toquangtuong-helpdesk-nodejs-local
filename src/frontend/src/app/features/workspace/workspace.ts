@@ -1,3 +1,4 @@
+import { RowMenu } from '../../row-menu';
 import { BulkActions, RowSelection } from '../../bulk-actions';
 import { Loading } from '../../loading';
 import { Translate, I18n, errorKey } from '../../i18n';
@@ -13,6 +14,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Preferences } from '../../preferences';
+import { Session } from '../../session';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, forkJoin } from 'rxjs';
@@ -20,7 +23,15 @@ import { Category } from '../categories/interfaces/category';
 import { CategoryService } from '../categories/services/category.service';
 import { ticketPriorities, ticketStatuses, userRoles } from './workspace-labels';
 import { WorkspaceService } from './workspace.service';
-import { Attachment, Field, Resource, Row, TicketEvent, Value } from './workspace.types';
+import {
+  Attachment,
+  Field,
+  Resource,
+  Row,
+  TicketComment,
+  TicketEvent,
+  Value,
+} from './workspace.types';
 
 const MAX_FILES = 5;
 const MAX_BYTES = 50_000_000;
@@ -28,7 +39,7 @@ const FILE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'appli
 
 @Component({
   selector: 'app-workspace',
-  imports: [Translate, Loading, BulkActions, FormsModule, RouterLink, DatePipe],
+  imports: [Translate, Loading, RowMenu, BulkActions, FormsModule, RouterLink, DatePipe],
   templateUrl: './workspace.html',
 })
 export class Workspace implements OnInit {
@@ -92,10 +103,62 @@ export class Workspace implements OnInit {
     return this.rows.map((row) => row.id);
   }
   readonly bulk = viewChild(BulkActions);
+  readonly session = inject(Session);
+  private readonly preferences = inject(Preferences);
+  sender: { id: number; name: string; roles: unknown[] } | null = null;
+  comments: TicketComment[] = [];
+  comment = '';
+  commentError = '';
+  commentSaving = false;
+  specialties: { categories: Category[]; selected: Set<number> } | null = null;
+  specialtyFeedback = '';
+
+  get secured() {
+    return this.session.mode() === 'mysql';
+  }
+
+  get transitionNoteRequired() {
+    const previous = this.editing?.['status'];
+    const next = this.form['status'];
+    return (
+      this.secured &&
+      previous !== next &&
+      (next === 'RESOLVED' || (previous === 'RESOLVED' && next === 'IN_PROGRESS'))
+    );
+  }
+
+  lockedField(field: Field) {
+    if (
+      !this.isTicket &&
+      field.key === 'email' &&
+      this.editing?.id === (this.session.account()?.id ?? 3)
+    )
+      return true;
+    if (!this.secured || !this.isTicket || !this.editing || this.session.hasRole('ADMIN'))
+      return false;
+    if (field.key === 'status') return false;
+    return (
+      field.key !== 'priority' ||
+      !this.session.hasRole('TECHNICIAN') ||
+      this.session.account()?.id !== this.editing['assigneeId']
+    );
+  }
+
+  itemMode(row: Row) {
+    if (!this.isTicket) return 'edit';
+    if (row['status'] === 'CLOSED') return 'view';
+    return !this.secured && this.requesterId ? 'view' : 'edit';
+  }
+
   statusSaving = false;
   statusError = '';
   get canDelete() {
-    return this.isTicket && !this.requesterId && !(Number(this.assigneeId) > 0);
+    return (
+      this.isTicket &&
+      this.session.allows('ADMIN') &&
+      !this.requesterId &&
+      !(Number(this.assigneeId) > 0)
+    );
   }
   get isTicket() {
     return this.resource() === 'tickets';
@@ -105,9 +168,6 @@ export class Workspace implements OnInit {
   }
   get displayField() {
     return this.isTicket ? 'title' : 'fullName';
-  }
-  get fixedRequester() {
-    return !!this.requesterId && Number(this.requesterId) === this.form['requesterId'];
   }
   get readOnly() {
     return this.mode() === 'view' || this.closed;
@@ -155,12 +215,18 @@ export class Workspace implements OnInit {
     this.busy = true;
     this.error = '';
     this.editing = null;
+    this.sender = null;
     this.attachments = [];
     this.files = [];
     this.removed = [];
     this.fileError = '';
     this.dragging = false;
     this.history = [];
+    this.comments = [];
+    this.specialties = null;
+    this.specialtyFeedback = '';
+    this.comment = '';
+    this.commentError = '';
     try {
       const row = id ? (await firstValueFrom(this.service.find(this.resource(), id))).data : null;
       const fields: Field[] = this.isTicket
@@ -180,6 +246,16 @@ export class Workspace implements OnInit {
               maxLength: 254,
             },
             { key: 'role', label: 'role', kind: 'select', options: userRoles },
+            ...(!row && this.secured
+              ? [
+                  {
+                    key: 'password',
+                    label: 'initial_password',
+                    kind: 'password' as const,
+                    maxLength: 72,
+                  },
+                ]
+              : []),
             ...(row
               ? [
                   {
@@ -199,6 +275,10 @@ export class Workspace implements OnInit {
       this.attachments = row?.attachments ?? [];
       this.history = row?.history ?? [];
       this.fields = fields;
+      if (row && this.secured) {
+        if (this.isTicket) void this.loadComments(row.id, request);
+        else if (row['role'] === 'TECHNICIAN') void this.loadSpecialties(row.id, request);
+      }
       this.form = Object.fromEntries(
         fields.map((field) => [
           field.key,
@@ -211,15 +291,7 @@ export class Workspace implements OnInit {
                 : (field.options?.[0]?.value ?? ''),
         ]),
       );
-      const requesters = fields.find((field) => field.key === 'requesterId')?.options;
-      if (requesters && this.requesterId) {
-        this.form['requesterId'] = requesters.some(
-          (option) => option.value === Number(this.requesterId),
-        )
-          ? Number(this.requesterId)
-          : null;
-        if (this.form['requesterId'] === null) this.error = 'api_INVALID_REQUESTER';
-      }
+      if (this.isTicket && !row && !this.sender) this.error = 'api_INVALID_REQUESTER';
     } catch (error) {
       if (request === this.request) this.showError(error);
     } finally {
@@ -262,6 +334,76 @@ export class Workspace implements OnInit {
   pickFiles(input: HTMLInputElement) {
     this.addFiles(Array.from(input.files ?? []));
     input.value = '';
+  }
+
+  private async loadSpecialties(id: number, request: number) {
+    try {
+      const { categories, assigned } = await firstValueFrom(
+        forkJoin({
+          categories: this.categories.listAll(),
+          assigned: this.service.specialties(id),
+        }),
+      );
+      if (request === this.request)
+        this.specialties = { categories, selected: new Set(assigned.data) };
+    } catch (error) {
+      if (request === this.request) this.specialtyFeedback = errorKey(error);
+    } finally {
+      if (request === this.request && !this.destroy.destroyed) this.view.markForCheck();
+    }
+  }
+
+  toggleSpecialty(id: number, selected: boolean) {
+    if (selected) this.specialties?.selected.add(id);
+    else this.specialties?.selected.delete(id);
+    this.specialtyFeedback = '';
+  }
+
+  async saveSpecialties() {
+    if (!this.editing || !this.specialties || this.saving) return;
+    this.saving = true;
+    this.specialtyFeedback = '';
+    try {
+      await firstValueFrom(
+        this.service.saveSpecialties(this.editing.id, [...this.specialties.selected]),
+      );
+      this.specialtyFeedback = 'specialties_saved';
+    } catch (error) {
+      this.specialtyFeedback = errorKey(error);
+    } finally {
+      this.saving = false;
+      if (!this.destroy.destroyed) this.view.markForCheck();
+    }
+  }
+
+  private async loadComments(id: number, request = this.request) {
+    try {
+      const response = await firstValueFrom(this.service.comments(id));
+      if (request === this.request) this.comments = response.data;
+    } catch (error) {
+      if (request === this.request) this.commentError = errorKey(error);
+    } finally {
+      if (request === this.request && !this.destroy.destroyed) this.view.markForCheck();
+    }
+  }
+
+  async sendComment() {
+    const id = this.editing?.id;
+    if (!id || this.commentSaving || !this.comment.trim()) return;
+    this.commentSaving = true;
+    this.commentError = '';
+    try {
+      const { data } = await firstValueFrom(this.service.addComment(id, this.comment.trim()));
+      if (this.editing?.id === id) {
+        this.comments = [...this.comments, data];
+        this.comment = '';
+      }
+    } catch (error) {
+      this.commentError = errorKey(error);
+    } finally {
+      this.commentSaving = false;
+      if (!this.destroy.destroyed) this.view.markForCheck();
+    }
   }
 
   dragFiles(event: DragEvent) {
@@ -314,11 +456,24 @@ export class Workspace implements OnInit {
     return users;
   }
 
+  senderRole(role: unknown) {
+    return userRoles.find((item) => item.value === role)?.label ?? '';
+  }
+
   private async ticketFields(row: Row | null): Promise<Field[]> {
     const accounts = await this.loadOptions();
     const accountOptions = (rows: Row[]) =>
       rows.map((row) => ({ value: row.id, label: this.i18n.personKey(row) }));
-    const active = accounts.filter((user) => user['isActive']);
+    if (!row) {
+      const signedIn = this.session.account();
+      const demoId = Number(this.requesterId) || this.preferences.account();
+      const demo = accounts.find((user) => user.id === demoId && user['isActive']);
+      this.sender = signedIn
+        ? { id: signedIn.id, name: signedIn.fullName, roles: signedIn.roleCodes }
+        : demo
+          ? { id: demo.id, name: this.i18n.personKey(demo), roles: [demo['role']] }
+          : null;
+    }
     const categories = this.categoryOptions.filter(
       (category) => category.isActive || category.id === row?.['categoryId'],
     );
@@ -343,7 +498,6 @@ export class Workspace implements OnInit {
           ...categories.map((row) => ({ value: row.id, label: row.name })),
         ],
       },
-      { key: 'priority', label: 'priority_level', kind: 'select', options: ticketPriorities },
       {
         key: 'description',
         label: 'describe_the_issue',
@@ -355,25 +509,44 @@ export class Workspace implements OnInit {
       ...(row
         ? [
             {
+              key: 'priority',
+              label: 'priority_level',
+              kind: 'select' as const,
+              options: ticketPriorities,
+            },
+            {
               key: 'assigneeId',
               label: 'technician_2',
               kind: 'select' as const,
               optional: true,
               options: [{ value: null, label: 'unassigned' }, ...accountOptions(assignees)],
             },
-            { key: 'status', label: 'status', kind: 'select' as const, options: ticketStatuses },
-          ]
-        : [
             {
-              key: 'requesterId',
-              label: 'demo_requester',
+              key: 'status',
+              label: 'status',
               kind: 'select' as const,
-              options: accountOptions(
-                active.filter((user) => !this.requesterId || user.id === Number(this.requesterId)),
-              ),
+              options: this.statusOptions(row),
             },
-          ]),
+          ]
+        : []),
     ];
+  }
+
+  private statusOptions(row: Row) {
+    if (!this.secured) return ticketStatuses;
+    const current = row['status'];
+    const account = this.session.account();
+    const owner = account?.id === row['requesterId'];
+    const handling =
+      this.session.hasRole('ADMIN') ||
+      (this.session.hasRole('TECHNICIAN') && account?.id === row['assigneeId']);
+    return ticketStatuses.filter(
+      ({ value }) =>
+        value === current ||
+        (handling && current === 'NEW' && value === 'IN_PROGRESS') ||
+        (handling && current === 'IN_PROGRESS' && value === 'RESOLVED') ||
+        (owner && current === 'RESOLVED' && (value === 'CLOSED' || value === 'IN_PROGRESS')),
+    );
   }
 
   applyFilters() {
@@ -480,7 +653,13 @@ export class Workspace implements OnInit {
   }
 
   async save(editor: NgForm) {
-    if (this.busy || this.saving || this.readOnly) return;
+    if (
+      this.busy ||
+      this.saving ||
+      this.readOnly ||
+      (this.isTicket && !this.editing && !this.sender)
+    )
+      return;
     if (editor.invalid) {
       editor.form.markAllAsTouched();
       this.host.nativeElement.querySelector<HTMLElement>('.editor .ng-invalid:not(form)')?.focus();
@@ -491,7 +670,12 @@ export class Workspace implements OnInit {
     const payload = Object.fromEntries(
       this.fields.map((field) => [field.key, this.form[field.key]]),
     );
-    if (this.isTicket && this.editing) payload['version'] = this.editing['version'];
+    if (this.isTicket && !this.editing && !this.secured && this.sender)
+      payload['requesterId'] = this.sender.id;
+    if (this.isTicket && this.editing) {
+      payload['version'] = this.editing['version'];
+      if (this.transitionNoteRequired) payload['note'] = this.form['note'];
+    }
     try {
       const { data } = await firstValueFrom(
         this.service.save(

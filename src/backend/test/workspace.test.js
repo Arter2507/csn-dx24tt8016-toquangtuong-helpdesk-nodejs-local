@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { test } from 'node:test';
-import { app } from '../src/app.js';
+process.env.DATA_SOURCE = 'demo';
+const { app } = await import('../src/app.js');
 
 test('demo user and ticket management preserves state on a stale update', async () => {
   const server = app.listen(0, '127.0.0.1');

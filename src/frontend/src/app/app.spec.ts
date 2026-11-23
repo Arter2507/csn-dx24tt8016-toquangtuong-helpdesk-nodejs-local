@@ -5,6 +5,7 @@ import { App } from './app';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
+import { vi } from 'vitest';
 describe('App', () => {
   it('opens a category edit URL and loads only the selected category', async () => {
     TestBed.configureTestingModule({
@@ -14,8 +15,16 @@ describe('App', () => {
         provideHttpClientTesting(),
       ],
     });
-    const harness = await RouterTestingHarness.create('/categories/3/edit');
+    const navigation = RouterTestingHarness.create('/categories/3/edit');
     const http = TestBed.inject(HttpTestingController);
+    await vi.waitFor(() =>
+      http.expectOne('/api/v1/auth/mode').flush({
+        success: true,
+        data: 'demo',
+        meta: null,
+      }),
+    );
+    const harness = await navigation;
     http.expectOne('/api/v1/categories/3').flush({
       success: true,
       data: { id: 3, code: 'NETWORK', name: 'Mạng', isActive: true },

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { app } from '../src/app.js';
+process.env.DATA_SOURCE = 'demo';
+const { app } = await import('../src/app.js');
 test('category API validates, creates, filters, updates and reports errors', async () => {
   const server = app.listen(0, '127.0.0.1'); await new Promise(resolve => server.once('listening', resolve));
   const base = 'http://127.0.0.1:' + server.address().port + '/api/v1/categories';

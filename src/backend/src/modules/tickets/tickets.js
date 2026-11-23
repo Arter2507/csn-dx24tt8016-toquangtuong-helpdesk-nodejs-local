@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { estimatePriority } from './priority.js';
 import { AppError } from '../../shared/errors.js';
 import { demoRepository } from '../categories/demo.repository.js';
 import { users } from '../users/users.js';
@@ -44,7 +45,7 @@ export async function createTicket(input, files = []) {
   const id = tickets.length + 1;
   const now = new Date().toISOString();
   const ticket = {
-    ...input, id, code: 'HD-' + String(id).padStart(3, '0'), status: 'NEW',
+    ...input, priority: estimatePriority(input), id, code: 'HD-' + String(id).padStart(3, '0'), status: 'NEW',
     assigneeId: null, version: 1, createdAt: now, updatedAt: now, attachments,
     history: [{ status: 'NEW', at: now }]
   };

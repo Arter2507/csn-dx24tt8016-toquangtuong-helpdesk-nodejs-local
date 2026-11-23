@@ -1,22 +1,21 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { open, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import multer from 'multer';
+import { config } from '../../configs/env.js';
 import { AppError } from '../../shared/errors.js';
 
 const maxFiles = 5;
 const maxBytes = 50_000_000;
-let directory;
+const persistent = config.dataSource === 'mysql';
+let directory = persistent ? resolve(config.uploadDir) : undefined;
 
 const receive = multer({
   storage: multer.diskStorage({
     destination(req, file, done) {
       try {
-        if (!directory) {
-          directory = mkdtempSync(join(tmpdir(), 'helpdesk-demo-'));
-          process.once('exit', () => rmSync(directory, { recursive: true, force: true }));
-        }
+        ensureAttachmentDirectory();
         done(null, directory);
       } catch (error) { done(error); }
     }
@@ -25,6 +24,18 @@ const receive = multer({
   defParamCharset: 'utf8',
   limits: { files: maxFiles, fileSize: maxBytes + 1, fields: 1, fieldSize: 100_000, fieldNestingDepth: 0 }
 }).array('attachments', maxFiles);
+
+export function ensureAttachmentDirectory() {
+  if (persistent) mkdirSync(directory, { recursive: true });
+  if (!directory) {
+    directory = mkdtempSync(join(tmpdir(), 'helpdesk-demo-'));
+    process.once('exit', () => rmSync(directory, { recursive: true, force: true }));
+  }
+}
+
+export function getAttachmentPath(id) {
+  return directory && typeof id === 'string' && /^[a-f0-9]{32}$/.test(id) ? join(directory, id) : null;
+}
 
 export async function discardAttachments(ids) {
   if (!directory) return;
@@ -54,11 +65,11 @@ export function receiveTicket(req, res, next) {
 }
 
 export async function discardFailedUpload(error, req, res, next) {
-  await discardAttachments((req.files ?? []).map(file => file.filename));
+  await discardAttachments((req.files ?? []).filter(file => !file.committed).map(file => file.filename));
   next(error);
 }
 
-function fileType(bytes) {
+export function fileType(bytes) {
   if (bytes.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))) return 'image/png';
   if (bytes.subarray(0, 3).equals(Buffer.from('ffd8ff', 'hex'))) return 'image/jpeg';
   if (['GIF87a', 'GIF89a'].includes(bytes.toString('ascii', 0, 6))) return 'image/gif';
@@ -97,9 +108,10 @@ export async function prepareAttachments(existing, files, removed = []) {
 export function sendAttachment(tickets, req, res, next) {
   const ticket = tickets.find(item => item.id === Number(req.params.ticketId) && !item.archivedAt);
   const file = ticket?.attachments?.find(item => item.id === req.params.attachmentId);
-  if (!file || !directory) return next(new AppError(404, 'NOT_FOUND', 'Không tìm thấy tệp đính kèm.'));
+  const path = getAttachmentPath(file?.id);
+  if (!path) return next(new AppError(404, 'NOT_FOUND', 'Không tìm thấy tệp đính kèm.'));
   res.set({ 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store', 'Content-Type': file.type });
-  res.download(join(directory, file.id), file.name, error => {
+  res.download(path, file.name, error => {
     if (error) next(error.status === 404 ? new AppError(404, 'NOT_FOUND', 'Không tìm thấy tệp đính kèm.') : error);
   });
 }

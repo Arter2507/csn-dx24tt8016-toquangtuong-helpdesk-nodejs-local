@@ -154,7 +154,7 @@ Mặc định `GET /tickets` trả hợp của ticket do người gọi tạo v�
 {"title":"Không đăng nhập được email","description":"Thông báo sai mật khẩu khi đăng nhập.","categoryId":4}
 ```
 
-Server đặt `requesterId` theo phiên, `status=NEW`, `priority=MEDIUM`, `assigneeId=null`, `version=1`. Tiêu đề 1–200 ký tự, mô tả 1–10.000 ký tự; `categoryId` phải tồn tại và hoạt động. Không chấp nhận client tự đặt requester, trạng thái hay người phụ trách.
+Server đặt `requesterId` theo phiên, `status=NEW`, mức ưu tiên theo quy tắc tiêu đề/mô tả (mặc định `MEDIUM`), `assigneeId=null`, `version=1`. Tiêu đề 1–200 ký tự, mô tả 1–10.000 ký tự; `categoryId` phải tồn tại và hoạt động. Không chấp nhận client tự đặt requester, trạng thái hay người phụ trách.
 
 **Cập nhật phân loại và ưu tiên** `PATCH /tickets/12`:
 
@@ -216,3 +216,16 @@ Phạm vi đề tài yêu cầu sao lưu, phục hồi website và CSDL. Phươn
 - Tệp đề tài `05-de-tai-do-an-co-so-nganh.xlsx`, dòng đề tài 1; quy định báo cáo `03-01_MOT_SO_QUY_DINH_CHUNG-2026.pdf` và mẫu báo cáo dự án.
 - [OWASP REST Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html).
 - [MDN HTTP response status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status).
+
+### Tạo và tải bản sao
+
+MySQL yêu cầu vai trò ADMIN. Chế độ demo cho phép thử toàn bộ luồng. Bản sao được đóng gói ở máy chủ và chỉ có liên kết tải sau khi hoàn tất.
+
+| Phương thức | Đường dẫn dưới `/api/v1` | Chức năng |
+| --- | --- | --- |
+| GET | `/backups` | 50 lượt gần nhất và lịch của tài khoản hiện tại |
+| POST | `/backups` | Bắt đầu sao lưu thủ công, trả 202 |
+| PUT | `/backups/schedule` | Lưu `{enabled, intervalMinutes}`, chu kỳ 30, 60, 180, 360 hoặc 1440 phút |
+| POST | `/backups/schedule/check` | Tạo bản sao tự động khi đến hạn, trả 202 nếu đã nhận công việc hoặc 204 nếu chưa cần tạo |
+| GET | `/backups/{id}/download` | Tải ZIP khi quá trình đã hoàn tất |
+| POST | `/backups/{id}/restore` | Quản trị viên xác nhận bằng `{confirmed: true}`. Tạo bản dự phòng rồi khôi phục dữ liệu nghiệp vụ từ bản đã lưu. |

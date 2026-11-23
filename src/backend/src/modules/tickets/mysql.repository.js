@@ -1,6 +1,9 @@
 import { pool } from '../../database/pool.js';
 import { AppError } from '../../shared/errors.js';
+import { estimatePriority } from './priority.js';
 import { prepareAttachments } from './attachments.js';
+import { authorizeUpdate, isAdmin, isTechnician } from './ticket-access.js';
+import { notify } from '../accounts/accounts.routes.js';
 
 const transitions = {
   NEW: ['IN_PROGRESS'],
@@ -21,8 +24,8 @@ function toIso(value) {
 function mapAttachment(row) {
   return {
     id: row.storageKey,
-    originalName: row.originalName,
-    mimeType: row.mimeType,
+    name: row.originalName,
+    type: row.mimeType,
     size: Number(row.sizeBytes),
   };
 }
@@ -31,7 +34,7 @@ async function loadAttachments(ticketId) {
   const [rows] = await pool.execute(
     `SELECT storage_key AS storageKey, original_name AS originalName,
             mime_type AS mimeType, size_bytes AS sizeBytes
-     FROM ticket_attachments WHERE ticket_id = ? ORDER BY id ASC`,
+     FROM ticket_attachments WHERE ticket_id = ? AND archived_at IS NULL ORDER BY id ASC`,
     [ticketId],
   );
   return rows.map(mapAttachment);
@@ -39,7 +42,7 @@ async function loadAttachments(ticketId) {
 
 async function loadHistory(ticketId) {
   const [rows] = await pool.execute(
-    `SELECT event_type AS eventType, new_value AS newValue, created_at AS createdAt
+    `SELECT event_type AS eventType, new_value AS newValue, note, created_at AS createdAt
      FROM ticket_events
      WHERE ticket_id = ? AND event_type IN ('CREATED', 'STATUS_CHANGED')
      ORDER BY created_at ASC, id ASC`,
@@ -51,7 +54,7 @@ async function loadHistory(ticketId) {
       const value = typeof row.newValue === 'string' ? JSON.parse(row.newValue) : row.newValue;
       status = value.status || status;
     }
-    return { status, at: toIso(row.createdAt) };
+    return { status, at: toIso(row.createdAt), note: row.note };
   });
 }
 
@@ -101,14 +104,15 @@ async function assertActiveRequester(requesterId) {
   if (!rows[0]) throw new AppError(422, 'INVALID_REQUESTER', 'Người gửi không hoạt động');
 }
 
-async function assertActiveTechnician(assigneeId) {
+async function assertActiveTechnician(assigneeId, categoryId) {
   const [rows] = await pool.execute(
     `SELECT u.id
      FROM users u
      JOIN user_roles ur ON ur.user_id = u.id
      JOIN roles r ON r.id = ur.role_id
-     WHERE u.id = ? AND u.is_active = 1 AND r.code = 'TECHNICIAN'`,
-    [assigneeId],
+     JOIN technician_categories tc ON tc.user_id = u.id
+     WHERE u.id = ? AND u.is_active = 1 AND r.code = 'TECHNICIAN' AND tc.category_id = ?`,
+    [assigneeId, categoryId],
   );
   if (!rows[0]) throw new AppError(422, 'INVALID_ASSIGNEE', 'Chọn kỹ thuật viên đang hoạt động');
 }
@@ -117,7 +121,7 @@ async function insertEvent(conn, ticketId, actorId, eventType, oldValue, newValu
   await conn.execute(
     `INSERT INTO ticket_events
       (ticket_id, actor_id, event_type, old_value, new_value, note, created_at)
-     VALUES (?, ?, ?, CAST(? AS JSON), CAST(? AS JSON), ?, UTC_TIMESTAMP(3))`,
+     VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`,
     [
       ticketId,
       actorId,
@@ -129,23 +133,28 @@ async function insertEvent(conn, ticketId, actorId, eventType, oldValue, newValu
   );
 }
 
-async function saveAttachmentRows(conn, ticketId, uploaderId, attachments) {
-  await conn.execute('DELETE FROM ticket_attachments WHERE ticket_id = ?', [ticketId]);
+async function saveAttachmentRows(conn, ticketId, uploaderId, attachments, removed = []) {
+  for (const id of removed) {
+    await conn.execute('UPDATE ticket_attachments SET archived_at = UTC_TIMESTAMP(3) WHERE ticket_id = ? AND storage_key = ?', [ticketId, id]);
+  }
   for (const file of attachments) {
     await conn.execute(
       `INSERT INTO ticket_attachments
         (ticket_id, uploader_id, original_name, storage_key, mime_type, size_bytes, created_at)
        VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`,
-      [ticketId, uploaderId, file.originalName, file.id, file.mimeType, file.size],
+      [ticketId, uploaderId, file.name, file.id, file.type, file.size],
     );
   }
 }
 
 export const ticketsMysql = {
-  async list(q) {
+  async list(q, account) {
     const conditions = ['archived_at IS NULL'];
     const values = [];
-    const day = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+    if (account && !isAdmin(account)) {
+      conditions.push('(requester_id = ? OR (? = 1 AND assignee_id = ?))');
+      values.push(account.id, isTechnician(account), account.id);
+    }
 
     if (q.search) {
       conditions.push('(LOCATE(?, title) > 0 OR LOCATE(?, description) > 0)');
@@ -197,16 +206,17 @@ export const ticketsMysql = {
       [...values, q.pageSize, (q.page - 1) * q.pageSize],
     );
 
-    // createdOn already filtered in SQL; day kept for parity with demo path
-    void day;
     const items = [];
     for (const row of rows) items.push(await mapTicket(row));
     return { items, total: Number(countRows[0].total) };
   },
 
-  async find(id) {
+  async find(id, account) {
     const [rows] = await pool.execute(`${selectBase} WHERE id = ? AND archived_at IS NULL`, [id]);
-    return mapTicket(rows[0]);
+    const row = rows[0];
+    if (row && account && !isAdmin(account) && Number(row.requesterId) !== account.id
+      && (!isTechnician(account) || Number(row.assigneeId) !== account.id)) return null;
+    return mapTicket(row);
   },
 
   async create(input, files = []) {
@@ -222,12 +232,13 @@ export const ticketsMysql = {
           (requester_id, assignee_id, category_id, title, description, priority, status, version,
            resolved_at, closed_at, archived_at, created_at, updated_at)
          VALUES (?, NULL, ?, ?, ?, ?, 'NEW', 1, NULL, NULL, NULL, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
-        [input.requesterId, input.categoryId, input.title, input.description, input.priority],
+        [input.requesterId, input.categoryId, input.title, input.description, estimatePriority(input)],
       );
       const ticketId = result.insertId;
       await insertEvent(conn, ticketId, input.requesterId, 'CREATED', null, { status: 'NEW' });
       await saveAttachmentRows(conn, ticketId, input.requesterId, attachments);
       await conn.commit();
+      for (const file of files) file.committed = true;
       return this.find(ticketId);
     } catch (error) {
       await conn.rollback();
@@ -237,11 +248,13 @@ export const ticketsMysql = {
     }
   },
 
-  async update(id, input, files = []) {
-    const current = await this.find(id);
+  async update(id, patch, files = [], account) {
+    const current = await this.find(id, account);
     if (!current) return null;
 
-    const { version, removeAttachments = [], ...changes } = input;
+    const { title, description, categoryId, assigneeId, priority, status } = current;
+    const input = { title, description, categoryId, assigneeId, priority, status, ...patch };
+    const { version, note, removeAttachments = [], ...changes } = input;
     if (
       current.version !== version ||
       current.status === 'CLOSED' ||
@@ -249,30 +262,32 @@ export const ticketsMysql = {
     ) {
       throw new AppError(409, 'CONFLICT', 'Phiên bản hoặc chuyển trạng thái không hợp lệ');
     }
+    authorizeUpdate(account, current, input);
     if (input.categoryId !== current.categoryId) await assertActiveCategory(input.categoryId);
     if (input.status !== 'NEW' && input.assigneeId === null) {
       throw new AppError(422, 'INVALID_ASSIGNEE', 'Chọn kỹ thuật viên đang hoạt động');
     }
-    if (input.assigneeId !== null && input.assigneeId !== current.assigneeId) {
-      await assertActiveTechnician(input.assigneeId);
+    if (input.assigneeId !== null && (input.assigneeId !== current.assigneeId || input.categoryId !== current.categoryId)) {
+      await assertActiveTechnician(input.assigneeId, input.categoryId);
     }
 
     const attachments = await prepareAttachments(current.attachments ?? [], files, removeAttachments);
-    const actorId = input.assigneeId || current.requesterId;
+    const actorId = account.id;
 
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
       const [result] = await conn.execute(
         `UPDATE tickets SET
-           title = ?, description = ?, category_id = ?, assignee_id = ?, priority = ?, status = ?,
+           title = ?, description = ?, category_id = ?, assignee_id = ?, priority = ?,
            version = version + 1,
            resolved_at = CASE
-             WHEN ? = 'RESOLVED' THEN UTC_TIMESTAMP(3)
+             WHEN ? = 'RESOLVED' AND status <> 'RESOLVED' THEN UTC_TIMESTAMP(3)
              WHEN ? = 'IN_PROGRESS' AND status = 'RESOLVED' THEN NULL
              ELSE resolved_at
            END,
            closed_at = CASE WHEN ? = 'CLOSED' THEN UTC_TIMESTAMP(3) ELSE closed_at END,
+           status = ?,
            updated_at = UTC_TIMESTAMP(3)
          WHERE id = ? AND version = ? AND archived_at IS NULL`,
         [
@@ -301,7 +316,14 @@ export const ticketsMysql = {
           'STATUS_CHANGED',
           { status: current.status },
           { status: input.status },
+          note,
         );
+        const recipients = new Set([current.requesterId, input.assigneeId]);
+        for (const userId of recipients) {
+          if (userId && userId !== actorId) {
+            await notify(conn, { userId, ticketId: id, type: 'STATUS_CHANGED', title: input.title, status: input.status });
+          }
+        }
       }
       if (current.assigneeId !== input.assigneeId) {
         await insertEvent(
@@ -312,6 +334,9 @@ export const ticketsMysql = {
           { assigneeId: current.assigneeId },
           { assigneeId: input.assigneeId },
         );
+        if (input.assigneeId && input.assigneeId !== actorId) {
+          await notify(conn, { userId: input.assigneeId, ticketId: id, type: 'ASSIGNEE_CHANGED', title: input.title, status: input.status });
+        }
       }
       if (current.categoryId !== input.categoryId) {
         await insertEvent(
@@ -334,9 +359,10 @@ export const ticketsMysql = {
         );
       }
 
-      await saveAttachmentRows(conn, id, actorId, attachments);
+      await saveAttachmentRows(conn, id, actorId, attachments.filter(file => files.some(upload => upload.filename === file.id)), removeAttachments);
       await conn.commit();
-      return this.find(id);
+      for (const file of files) file.committed = true;
+      return this.find(id, account);
     } catch (error) {
       await conn.rollback();
       throw error;
@@ -346,18 +372,26 @@ export const ticketsMysql = {
   },
 
   async archive(ids) {
-    if (!ids.length) return 0;
-    const placeholders = ids.map(() => '?').join(',');
-    const [existing] = await pool.execute(
-      `SELECT id FROM tickets WHERE id IN (${placeholders}) AND archived_at IS NULL`,
-      ids,
-    );
-    if (existing.length !== ids.length) throw new AppError(404, 'RECORD_MISSING');
-    const [result] = await pool.execute(
-      `UPDATE tickets SET archived_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3)
-       WHERE id IN (${placeholders}) AND archived_at IS NULL`,
-      ids,
-    );
-    return result.affectedRows;
+    const selected = [...new Set(ids)];
+    const placeholders = selected.map(() => '?').join(',');
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [existing] = await conn.execute(
+        `SELECT id FROM tickets WHERE id IN (${placeholders}) ORDER BY id FOR UPDATE`, selected,
+      );
+      if (existing.length !== selected.length) throw new AppError(404, 'RECORD_MISSING');
+      const [result] = await conn.execute(
+        `UPDATE tickets SET archived_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3)
+         WHERE id IN (${placeholders}) AND archived_at IS NULL`, selected,
+      );
+      await conn.commit();
+      return result.affectedRows;
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
   },
 };

@@ -2,7 +2,7 @@
   <div>
     <span class="role-kicker"
       ><i class="bi" [class]="technician() ? 'bi-tools' : 'bi-headset'" aria-hidden="true"></i>
-      {{ 'demo_workspace' | t }}</span
+      {{ (session.mode() === 'demo' ? 'demo_workspace' : 'workspace') | t }}</span
     >
     <h1>{{ technician() ? ('technician_workspace' | t) : ('my_support_requests' | t) }}</h1>
     <p>
@@ -43,7 +43,13 @@
     </div>
     @if (!technician()) {
       <div class="heading-actions">
-        @if (account() === technicianId) {
+        @if (session.account()) {
+          @if (session.hasRole('TECHNICIAN')) {
+            <a class="secondary" routerLink="/dashboard/technician">{{
+              'back_to_technician_workspace' | t
+            }}</a>
+          }
+        } @else if (account() === technicianId) {
           <a class="secondary" routerLink="/dashboard/technician"
             ><i class="bi bi-arrow-left-right" aria-hidden="true"></i>
             {{ 'back_to_technician_workspace' | t }}</a

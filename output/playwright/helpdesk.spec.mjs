@@ -51,12 +51,13 @@ test('desktop: ticket create, update, and reload through real demo API', async (
   await page.goto('/tickets');
   await page.getByRole('link', { name: 'Tạo yêu cầu' }).click();
   await page.getByLabel('Tiêu đề').fill(title);
-  await page.getByLabel('Mô tả sự cố').fill('Kiểm tra gửi yêu cầu qua Angular, proxy và Express.');
+  await page.getByLabel('Mô tả sự cố').fill('Không đăng nhập được vào mạng làm việc.');
   await page.getByRole('button', { name: 'Gửi yêu cầu' }).click();
   await expect(page.getByLabel('Loại yêu cầu')).toBeFocused();
   await expect(page.getByLabel('Loại yêu cầu')).toHaveAttribute('aria-invalid', 'true');
   await page.getByLabel('Loại yêu cầu').selectOption({ label: 'Mạng' });
-  await page.getByLabel('Mức ưu tiên').selectOption({ label: 'Cao' });
+  await expect(page.getByText('Người gửi mẫu', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Mức ưu tiên')).toHaveCount(0);
   await capture(page, '04-create-ticket.png');
 
   const created = page.waitForResponse(r => r.url().endsWith('/api/v1/tickets') && r.request().method() === 'POST');
@@ -67,10 +68,13 @@ test('desktop: ticket create, update, and reload through real demo API', async (
   await expect(page).toHaveURL(/\/tickets$/);
   await expect(page.getByText('Đã gửi yêu cầu ' + data.code + '.', { exact: true })).toBeVisible();
   expect(data.priority).toBe('HIGH');
+  expect(data.requesterId).toBe(1);
   await expect(page.getByRole('row').filter({ hasText: title })).toBeVisible();
   await capture(page, '05-ticket-table.png');
 
-  await page.getByRole('row').filter({ hasText: title }).getByRole('link').click();
+  const ticketRow = page.getByRole('row').filter({ hasText: title });
+  await ticketRow.getByRole('button', { name: /^Thao tác cho/ }).click();
+  await ticketRow.getByRole('link', { name: 'Sửa', exact: true }).click();
   await expect(page.getByLabel('Tiêu đề')).toHaveValue(title);
   await page.getByLabel('Kỹ thuật viên').selectOption({ label: 'Kỹ thuật viên mẫu' });
   await page.getByLabel('Trạng thái').selectOption({ label: 'Đang xử lý' });
@@ -103,7 +107,9 @@ test('desktop: user manager and category filter and edit', async ({ page }) => {
   await page.getByLabel('Tìm kiếm').fill('NETWORK');
   await page.getByRole('button', { name: 'Tìm', exact: true }).click();
   await expect(page.getByRole('row')).toHaveCount(2);
-  await page.getByRole('row').filter({ hasText: 'NETWORK' }).getByRole('link', { name: 'Sửa' }).click();
+  const categoryRow = page.getByRole('row').filter({ hasText: 'NETWORK' });
+  await categoryRow.getByRole('button', { name: /^Thao tác cho/ }).click();
+  await categoryRow.getByRole('link', { name: 'Sửa', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Tên', exact: true })).toHaveValue('Mạng');
 });
 
@@ -164,4 +170,97 @@ test('reports: filters and exports data from the demo API', async ({ page }) => 
   await expect(page.getByRole('button', { name: 'Xuất CSV' })).toBeDisabled();
   await page.getByRole('button', { name: 'Xóa bộ lọc' }).click();
   await expect(page.getByRole('button', { name: 'Xuất CSV' })).toBeEnabled();
+});
+
+test('notifications: bell opens in place, toast follows new updates and preferences', async ({ page }) => {
+  const feed = (response) => response.url().includes('/api/v1/notifications') && response.request().method() === 'GET';
+  const refreshInbox = () => Promise.all([
+    page.waitForResponse(feed),
+    page.evaluate(() => window.dispatchEvent(new Event('focus'))),
+  ]);
+  const makeTicket = async (title) => {
+    const result = await page.request.post('/api/v1/tickets', {
+      data: { title, description: 'Kiểm tra thông báo trên trình duyệt.', categoryId: 3, requesterId: 1 },
+    });
+    expect(result.status()).toBe(201);
+  };
+  const title = 'Thông báo thử ' + Date.now();
+  await Promise.all([page.waitForResponse(feed), page.goto('/')]);
+  const bell = page.getByRole('button', { name: 'Thông báo', exact: true });
+  const preview = page.getByRole('region', { name: 'Thông báo', exact: true }).filter({ has: page.getByRole('heading') });
+  const toast = page.locator('.notification-toast').filter({ hasText: title });
+  await makeTicket(title);
+  await refreshInbox();
+  await expect(toast).toBeVisible();
+  await toast.getByRole('button', { name: 'Đóng thông báo' }).click();
+  await expect(toast).toHaveCount(0);
+  await bell.click();
+  await expect(preview.getByRole('link', { name: title })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
+  await page.keyboard.press('Escape');
+  await expect(preview).toBeHidden();
+  await expect(bell).toBeFocused();
+
+  await page.setViewportSize({ width: 320, height: 750 });
+  await bell.click();
+  await expect(preview).toBeVisible();
+  const bounds = await preview.boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
+  await expect(preview.getByRole('link', { name: 'Xem tất cả thông báo' })).toBeInViewport();
+  await capture(page, 'bang-thong-bao-320px.png');
+  await preview.getByRole('button', { name: 'Đánh dấu tất cả đã đọc' }).click();
+  await expect(preview.locator('li.unread')).toHaveCount(0);
+  await preview.getByRole('link', { name: 'Xem tất cả thông báo' }).click();
+  await expect(page).toHaveURL(/\/notifications$/);
+  await expect(page.getByRole('link', { name: title })).toBeVisible();
+  await expect(page.locator('.portal-updates li.unread')).toHaveCount(0);
+
+  await page.goto('/settings');
+  const toastSetting = page.getByRole('checkbox', { name: 'Hiện thông báo nổi khi có cập nhật mới' });
+  await toastSetting.uncheck();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.getByRole('button', { name: 'Theo thiết bị' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await Promise.all([page.waitForResponse(feed), page.reload()]);
+  await expect(toastSetting).not.toBeChecked();
+  await makeTicket(title + ' đã tắt toast');
+  await refreshInbox();
+  await expect(page.locator('.notification-toast')).toHaveCount(0);
+  await bell.click();
+  await expect(preview.getByRole('link', { name: title + ' đã tắt toast' })).toBeVisible();
+});
+
+test('wide layout and manual and scheduled backups', async ({ page }) => {
+  test.setTimeout(90000);
+  await page.setViewportSize({ width: 1920, height: 960 });
+  await page.goto('/backup');
+  const toolbar = await page.locator('.topbar').boundingBox();
+  expect(toolbar.width).toBeGreaterThan(1820);
+  const start = page.getByRole('button', { name: 'Sao lưu ngay' });
+  await expect(start).toBeEnabled();
+  await start.click();
+  const history = page.getByRole('table');
+  const manual = history.getByRole('row').filter({ hasText: 'Sao lưu thủ công' }).first();
+  await expect(manual.getByRole('link', { name: 'Tải ZIP' })).toBeVisible({ timeout: 25000 });
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    manual.getByRole('link', { name: 'Tải ZIP' }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/\.zip$/);
+
+  await page.getByRole('checkbox', { name: 'Bật sao lưu tự động' }).check();
+  await page.getByLabel('Lặp lại mỗi').selectOption({ label: '30 phút' });
+  await page.getByRole('button', { name: 'Lưu lịch sao lưu' }).click();
+  await expect(history.getByRole('row').filter({ hasText: 'Sao lưu tự động' }).first().getByRole('link')).toBeVisible({ timeout: 25000 });
+  await page.reload();
+  await expect(page.getByRole('checkbox', { name: 'Bật sao lưu tự động' })).toBeChecked();
+  await expect(page.getByLabel('Lặp lại mỗi').locator('option:checked')).toHaveText('30 phút');
+  await expect(page.getByText('Lần chạy kế tiếp', { exact: false })).toBeVisible();
+  await capture(page, 'sao-luu-man-hinh-rong.png');
+  await page.getByRole('checkbox', { name: 'Bật sao lưu tự động' }).uncheck();
+  await page.getByRole('button', { name: 'Lưu lịch sao lưu' }).click();
+  await expect(page.getByText('Đã lưu lịch sao lưu.')).toBeVisible();
 });

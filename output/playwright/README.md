@@ -38,10 +38,14 @@ Angular build thành công. Kết quả gồm 2/2 kiểm thử Angular, 4/4 ki�
 
 Angular build thành công. Kết quả gồm 2/2 kiểm thử Angular, 5/5 kiểm thử API và 5/5 ca hồi quy Playwright. Đã kiểm tra xóa mềm từng yêu cầu hoặc nhiều yêu cầu, xác nhận/hủy xóa, bật/ngưng sử dụng người dùng và danh mục, bảo vệ quản trị viên hoạt động cuối cùng và animation sidebar desktop/mobile. API giữ liên kết của yêu cầu đã có khi danh mục hoặc kỹ thuật viên ngưng sử dụng.
 
+## Kiểm thử ngày 23/11/2026
+
+Bộ demo gồm 7 ca, thêm bảng chuông, toast, tùy chọn giao diện, màn hình rộng và sao lưu theo lịch. Các luồng hồ sơ, nhiệm vụ nhóm và khôi phục được kiểm tra riêng trên Edge. [Báo cáo nội bộ](../../progress-report/bao-cao-tien-do-local-2026-11-23.md)
+
 ## Chạy lại
 
-1. Khởi chạy Express ở cổng 3000 với DATA_SOURCE=demo và Angular ở cổng 4200. Giữ biến PORT của backend trong terminal riêng để Angular không lấy cổng 3000.
+1. Từ thư mục gốc nhánh `local`, chạy `pnpm dev` để khởi động API demo cổng 3000 và Angular cổng 4200.
 2. Trong thư mục này, chạy `npm ci` rồi `npx playwright test`. Máy cần có Microsoft Edge. Đặt biến `HELPDESK_SCREENSHOTS` thành đường dẫn thư mục ảnh chụp nếu cần lưu ảnh của lần chạy mới ở vị trí khác.
 3. Chạy `npx playwright show-report report` để mở báo cáo HTML. Script ở [helpdesk.spec.mjs](helpdesk.spec.mjs), cấu hình ở [playwright.config.mjs](playwright.config.mjs).
 
-Bộ test tạo ticket mẫu trong bộ nhớ, được xóa khi khởi động lại backend. Kết quả áp dụng cho chế độ demo và viewport mô phỏng. MySQL, phân quyền và thiết bị thật chưa được kiểm thử.
+Bộ test tạo ticket mẫu trong bộ nhớ, được xóa khi khởi động lại backend. Kết quả áp dụng cho chế độ demo và viewport mô phỏng. Xem báo cáo nội bộ để đối chiếu phạm vi kiểm thử MySQL. Các kích thước mobile trong bộ này là viewport mô phỏng.

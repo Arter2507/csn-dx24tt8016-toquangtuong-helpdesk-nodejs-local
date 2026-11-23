@@ -5,6 +5,8 @@
   "description": "Trạm Mèo — workspace lệnh pnpm cho frontend và backend",
   "packageManager": "pnpm@12.16.1",
   "scripts": {
+    "dev": "node setup/dev.mjs demo",
+    "dev:mysql": "node setup/dev.mjs mysql",
     "typecheck:lint-frontend": "pnpm --dir src/frontend run typecheck:lint",
     "typecheck:lint-backend": "pnpm --dir src/backend run typecheck:lint",
     "build-frontend": "pnpm --dir src/frontend run build",

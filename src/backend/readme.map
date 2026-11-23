@@ -13,7 +13,7 @@
 | Đổi vai trò hoặc vô hiệu hóa người dùng | src/modules/users/users.js. Tìm kiếm và lọc danh sách nằm trong src/shared/demo-resource.routes.js, với cấu hình tại src/app.js. |
 | Đổi phân công, mức ưu tiên hoặc chuyển trạng thái ticket | src/modules/tickets/tickets.js. Kiểm thử luồng và xung đột phiên bản ở test/workspace.test.js. |
 | Đổi định dạng lỗi | src/shared/errors.js → src/middlewares/error.js. Lỗi đầu vào được tạo ở src/middlewares/validate.js. |
-| Chuẩn bị schema MySQL | sql/categories.sql trước, sau đó sql/users-tickets.sql. Cấu hình kết nối ở src/database/pool.js. |
+| Chuẩn bị schema MySQL | prisma/schema.prisma và prisma/migrations/. Xem [hướng dẫn chạy](../README.md). Cấu hình kết nối ở src/database/pool.js. |
 
 ## Thư mục và file
 
@@ -37,6 +37,10 @@
 | src/middlewares/validate.js | Chạy schema Zod và đưa dữ liệu hợp lệ vào req.validated. |
 | src/middlewares/error.js | Chuyển lỗi thành JSON và gắn requestId. |
 | src/modules/ | Mã chia theo nghiệp vụ. |
+| src/modules/auth/ | Đăng nhập, làm mới, thu hồi phiên, hồ sơ và mật khẩu. |
+| src/modules/accounts/ | Danh bạ theo phạm vi, chuyên môn và thông báo. |
+| src/modules/tickets/ticket-access.js | Quyền cập nhật và chuyển trạng thái trên MySQL. |
+| test/mysql-workflow.test.js | Kiểm thử tích hợp có schema và thư mục tệp riêng. |
 | src/modules/categories/ | API và hai cách lưu trữ danh mục. |
 | src/modules/categories/category.routes.js | Gắn endpoint danh mục, validation và kiểm soát chế độ chạy. |
 | src/modules/categories/category.controller.js | Nhận dữ liệu đã kiểm tra, gọi service và trả HTTP response. |
@@ -44,9 +48,9 @@
 | src/modules/categories/category.validator.js | Schema ID, truy vấn danh sách, tạo và cập nhật. |
 | src/modules/categories/demo.repository.js | Lưu danh mục mẫu trong bộ nhớ. |
 | src/modules/categories/mysql.repository.js | Truy vấn danh mục bằng SQL tham số hóa. |
-| src/modules/users/ | Mã nghiệp vụ người dùng ở chế độ demo. |
+| src/modules/users/ | Dữ liệu demo, repository MySQL và nghiệp vụ tài khoản. |
 | src/modules/users/users.js | Dữ liệu mẫu, schema, tạo và cập nhật người dùng, kiểm tra email và quản trị viên cuối cùng. |
-| src/modules/tickets/ | Mã nghiệp vụ ticket ở chế độ demo. |
+| src/modules/tickets/ | Nghiệp vụ ticket, tệp, nhật ký, trao đổi và repository MySQL. |
 | src/modules/tickets/tickets.js | Dữ liệu demo, mã và thời gian ticket, lọc loại/ưu tiên, phân công, trạng thái và phiên bản. |
 | src/shared/ | Mã dùng chung giữa các module. |
 | src/shared/demo-resource.routes.js | Route danh sách, chi tiết, tạo và sửa dùng chung cho người dùng và ticket, kèm tìm kiếm, lọc, sắp xếp và phân trang. |
@@ -55,4 +59,13 @@
 | test/categories.test.js | Tạo, lọc, sửa danh mục và kiểm tra lỗi. |
 | test/workspace.test.js | Tạo người dùng, tạo và phân công ticket, từ chối cập nhật phiên bản cũ. |
 
-Chế độ demo lưu trong bộ nhớ. API MySQL hiện bị chặn trong lúc chờ xác thực và phân quyền. Xem [thiết kế API](../../documents/markdown/api-contract-demo.md) và [thiết kế cơ sở dữ liệu](../../documents/markdown/database-demo.md) trước khi mở rộng. Cập nhật bản đồ này khi thêm, đổi tên hoặc chuyển trách nhiệm của file.
+Chế độ demo lưu trong bộ nhớ. MySQL sử dụng JWT, phiên trong `auth_sessions` và kiểm tra quyền trên từng yêu cầu. Xem [hướng dẫn chạy](../README.md).
+
+## Các module bổ sung
+
+| Tính năng | Mã nguồn |
+| --- | --- |
+| Hồ sơ và ảnh đại diện | `src/modules/accounts/profile.routes.js` |
+| Phân công và trạng thái nhiệm vụ nhóm | `src/modules/tasks/task.routes.js` |
+| Sao lưu, lịch và khôi phục | `src/modules/backups/` |
+| Quy tắc mức ưu tiên yêu cầu | `src/modules/tickets/priority-rules.json`, `src/modules/tickets/priority.js` |

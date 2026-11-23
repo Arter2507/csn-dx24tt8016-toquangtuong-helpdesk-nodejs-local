@@ -1,0 +1,185 @@
+<header class="page-heading">
+  <div>
+    <h1>{{ 'profile' | t }}</h1>
+    <p>{{ 'profile_full_intro' | t }}</p>
+  </div>
+</header>
+@if (error()) {
+  <p class="notice error" role="alert">{{ error() | t }}</p>
+}
+@if (feedback()) {
+  <p class="notice success" role="status">{{ feedback() | t }}</p>
+}
+@if (profile(); as user) {
+  <div class="profile-overview">
+    <section class="panel portal-card profile-photo">
+      @if (user.avatarMime) {
+        <button
+          type="button"
+          class="profile-avatar-button"
+          (click)="viewAvatar()"
+          [attr.aria-label]="'profile_view_avatar' | t"
+        >
+          <img [src]="avatarUrl()" alt="" width="112" height="112" />
+        </button>
+      } @else {
+        <span class="profile-avatar-placeholder" aria-hidden="true">{{ user.fullName[0] }}</span>
+      }
+      <input
+        #imageInput
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        hidden
+        (change)="upload(imageInput)"
+      />
+      <div class="portal-choices">
+        <button type="button" class="secondary" (click)="imageInput.click()" [disabled]="pending()">
+          {{ 'profile_upload_avatar' | t }}
+        </button>
+        @if (user.avatarMime) {
+          <a class="text-button" [href]="avatarUrl(true)" download>{{
+            'profile_download_avatar' | t
+          }}</a>
+        }
+      </div>
+      <small class="muted">{{ 'profile_photo_hint' | t }}</small>
+    </section>
+    <section class="panel portal-card profile-summary">
+      <h2>{{ user.fullName }}</h2>
+      <p>{{ user.email }}</p>
+      @if (user.details.jobTitle || user.details.department) {
+        <p class="muted">
+          {{ user.details.jobTitle }}
+          @if (user.details.jobTitle && user.details.department) {
+            ·
+          }
+          {{ user.details.department }}
+        </p>
+      }
+      <div class="portal-choices">
+        @for (role of user.roleCodes; track role) {
+          <span class="badge">{{ roleLabel(role) | t }}</span>
+        }
+      </div>
+    </section>
+  </div>
+
+  <div class="bookmark-tabs" role="tablist" [attr.aria-label]="'profile' | t">
+    @for (item of tabs; track item) {
+      <button
+        type="button"
+        role="tab"
+        [id]="'profile-tab-' + item"
+        aria-controls="profile-content"
+        [attr.aria-selected]="tab() === item"
+        [attr.tabindex]="tab() === item ? 0 : -1"
+        (click)="tab.set(item)"
+        (keydown)="moveTab($event, item)"
+      >
+        {{ 'profile_tab_' + item | t }}
+      </button>
+    }
+  </div>
+  <section
+    id="profile-content"
+    class="panel portal-card"
+    role="tabpanel"
+    [attr.aria-labelledby]="'profile-tab-' + tab()"
+  >
+    @switch (tab()) {
+      @case ('details') {
+        <form class="profile-fields" #details="ngForm" (ngSubmit)="save()">
+          <label class="field"
+            >{{ 'full_name' | t
+            }}<input name="name" [(ngModel)]="draft.fullName" maxlength="150" required
+          /></label>
+          <label class="field"
+            >{{ 'email' | t }}<input type="email" [value]="user.email" readonly /><small
+              class="muted"
+              >{{ 'profile_email_policy' | t }}</small
+            ></label
+          >
+          <label class="field"
+            >{{ 'profile_phone' | t
+            }}<input type="tel" name="phone" [(ngModel)]="draft.phone" maxlength="30"
+          /></label>
+          <label class="field"
+            >{{ 'profile_birth' | t }}<input type="date" name="birth" [(ngModel)]="draft.birthDate"
+          /></label>
+          <label class="field"
+            >{{ 'profile_department' | t
+            }}<input name="department" [(ngModel)]="draft.department" maxlength="100"
+          /></label>
+          <label class="field"
+            >{{ 'profile_job' | t }}<input name="job" [(ngModel)]="draft.jobTitle" maxlength="100"
+          /></label>
+          <label class="field wide"
+            >{{ 'profile_location' | t
+            }}<input name="location" [(ngModel)]="draft.location" maxlength="200"
+          /></label>
+          <label class="field wide"
+            >{{ 'profile_bio' | t
+            }}<textarea name="bio" [(ngModel)]="draft.bio" maxlength="1000"></textarea>
+          </label>
+          <div class="wide">
+            <button class="primary" type="submit" [disabled]="pending() || details.invalid">
+              {{ 'save_changes' | t }}
+            </button>
+          </div>
+        </form>
+      }
+      @case ('roles') {
+        <h2>{{ 'profile_tab_roles' | t }}</h2>
+        <ul class="portal-updates">
+          @for (role of user.roleCodes; track role) {
+            <li>
+              <strong>{{ roleLabel(role) | t }}</strong
+              ><span class="muted">{{ 'profile_role_' + role | t }}</span>
+            </li>
+          }
+        </ul>
+      }
+      @case ('security') {
+        @if (session.account()) {
+          <form #passwordForm="ngForm" class="profile-fields" (ngSubmit)="password()">
+            <label class="field"
+              >{{ 'current_password' | t
+              }}<input
+                type="password"
+                autocomplete="current-password"
+                name="current"
+                [(ngModel)]="currentPassword"
+                required
+            /></label>
+            <label class="field"
+              >{{ 'new_password' | t
+              }}<input
+                type="password"
+                autocomplete="new-password"
+                name="new"
+                [(ngModel)]="nextPassword"
+                minlength="12"
+                maxlength="72"
+                required
+            /></label>
+            <div class="wide">
+              <button type="submit" class="primary" [disabled]="passwordForm.invalid || pending()">
+                {{ 'change_password' | t }}
+              </button>
+            </div>
+          </form>
+        } @else {
+          <p class="muted">{{ 'profile_security_demo' | t }}</p>
+        }
+      }
+    }
+  </section>
+  @if (user.avatarMime) {
+    <dialog #avatarDialog class="profile-avatar-view" [attr.aria-label]="'profile_view_avatar' | t">
+      <button type="button" class="secondary" (click)="closeAvatar()">{{ 'close' | t }}</button>
+      <img [src]="avatarUrl()" [alt]="user.fullName" />
+    </dialog>
+  }
+} @else if (!error()) {
+  <p role="status">{{ 'loading' | t }}</p>
+}

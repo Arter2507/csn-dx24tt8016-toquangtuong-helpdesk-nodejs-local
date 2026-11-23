@@ -135,19 +135,27 @@
                     >
                   </td>
                   <td class="aux-cell">
-                    <div class="row-actions">
-                      <a class="text-button" [routerLink]="['/categories', row.id, 'edit']">{{
-                        'edit' | t
-                      }}</a>
+                    <app-row-menu
+                      [menuId]="'category-actions-' + row.id"
+                      [rowName]="i18n.category(row)"
+                    >
+                      <a class="row-menu-item" [routerLink]="['/categories', row.id, 'edit']">
+                        <i class="bi bi-pencil" aria-hidden="true"></i>{{ 'edit' | t }}
+                      </a>
                       <button
-                        class="secondary"
+                        class="row-menu-item"
                         type="button"
                         [disabled]="saving"
                         (click)="toggleCategory(row)"
                       >
+                        <i
+                          class="bi"
+                          [class]="row.isActive ? 'bi-pause-circle' : 'bi-play-circle'"
+                          aria-hidden="true"
+                        ></i>
                         {{ (row.isActive ? 'deactivate_action' : 'activate_action') | t }}
                       </button>
-                    </div>
+                    </app-row-menu>
                   </td>
                 </tr>
               }
