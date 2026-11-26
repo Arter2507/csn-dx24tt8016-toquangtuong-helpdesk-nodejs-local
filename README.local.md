@@ -77,7 +77,7 @@ Bấm chuông để mở bảng xem nhanh. Thông báo mới xuất hiện dư�
 | Danh mục chung | Tập trung danh sách người dùng và loại phiếu. |
 | Phòng ban và quyền theo phòng | Hồ sơ lưu phòng ban và chức danh. Danh mục phòng ban, hàng đợi và quyền theo phòng thuộc giai đoạn tiếp theo. |
 
-Xem [báo cáo tiến độ hiện hành](progress-report/bao-cao-tien-do-local-2026-11-26.md) và [bảng phân công](documents/markdown/tram-meo-tien-do-va-phan-cong.md).
+Xem [báo cáo tiến độ hiện hành](progress-report/bao-cao-tien-do-local-2026-11-26.md), [bảng phân công](documents/markdown/tram-meo-tien-do-va-phan-cong.md) và [nhiệm vụ thiết kế lại giao diện](documents/markdown/nhiem-vu-thiet-ke-lai-giao-dien.md).
 
 ### Cấp quyền cho nhân sự
 

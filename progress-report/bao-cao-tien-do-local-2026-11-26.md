@@ -29,4 +29,6 @@ Nhánh cộng tác `local` · Phiên bản **v0.2.0**
 - Cơ sở dữ liệu hiện phục vụ một tổ chức mỗi bản cài đặt. Danh mục đơn vị trực thuộc, hàng đợi và phạm vi theo phòng ban thuộc giai đoạn sau.
 - Chuẩn bị nghiệm thu máy chủ và tên miền đích, sao lưu ngoài máy và xác nhận số liệu báo cáo bằng dữ liệu thực tế.
 
+Chi tiết các đầu việc sửa Cài đặt, thao tác nhiều dòng và bảng cây nằm trong [nhiệm vụ thiết kế lại giao diện](../documents/markdown/nhiem-vu-thiet-ke-lai-giao-dien.md).
+
 [Hướng dẫn chạy local](../README.local.md) · [Phân công dự án](../documents/markdown/tram-meo-tien-do-va-phan-cong.md) · [Mốc trước ngày 25/11](bao-cao-tien-do-local-2026-11-25.md)

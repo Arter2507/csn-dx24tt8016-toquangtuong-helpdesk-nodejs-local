@@ -43,6 +43,8 @@ Trạng thái: **Chờ làm** · **Đang làm** · **Chờ kiểm tra** · **Đ�
 
 Xem [báo cáo tiến độ hiện hành](../../progress-report/bao-cao-tien-do-local-2026-11-26.md) và [kế hoạch IAM/RBAC dành cho hai người](ke-hoach-iam-rbac.md).
 
+Đợt giao diện sau ưu tiên lỗi bố cục Cài đặt, bảng Quy tắc đánh số, thanh thao tác khi chọn dòng và bảng cây tổ chức. [Nhiệm vụ, người phụ trách và tiêu chí nghiệm thu](nhiem-vu-thiet-ke-lai-giao-dien.md)
+
 ### Mốc 16/11/2026
 
 - **B1:** `prisma/migrations`, `sql/helpdesk-schema.sql`, `sql/helpdesk-sample-data.sql`, `pnpm db:sample`, repository MySQL users/tickets/categories, `DATA_SOURCE=mysql` đã chạy với 5 ticket trên web.
