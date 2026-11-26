@@ -158,22 +158,67 @@
         </header>
         <p class="role-description">
           {{ shortDate(weekStart()) }} – {{ shortDate(week()[6].date) }}
-          {{ 'requests_by_last_update' | t }}
+          {{ 'weekly_calendar_intro' | t }}
         </p>
         <div class="week-days">
           @for (day of week(); track day.date) {
             <button
               type="button"
               [attr.aria-pressed]="selectedDay() === day.date"
+              [attr.aria-current]="day.date === today ? 'date' : null"
               [attr.aria-label]="
-                (day.label | t) + ' ' + shortDate(day.date) + ', ' + day.count + ('requests_2' | t)
+                'calendar_day_summary'
+                  | t
+                    : {
+                        day: (day.label | t) + ' ' + shortDate(day.date),
+                        tickets: day.count,
+                        tasks: day.taskCount,
+                      }
               "
               (click)="selectedDay.set(day.date)"
             >
               <span>{{ day.label | t }}</span
               ><strong>{{ shortDate(day.date) }}</strong
-              ><small>{{ day.count }}</small>
+              ><small>
+                @if (day.date === today) {
+                  {{ 'today' | t }}
+                } @else {
+                  {{ day.count }}
+                }
+              </small>
+              <span class="calendar-dots" aria-hidden="true">
+                @for (state of day.statuses; track state) {
+                  <span [attr.data-task-state]="state"></span>
+                }
+              </span>
             </button>
+          }
+        </div>
+        <div class="week-agenda">
+          <h3>{{ 'tasks_for_date' | t: { date: shortDate(selectedDay()) } }}</h3>
+          @if (calendarError()) {
+            <p role="alert">
+              {{ 'we_couldnt_load_your_data' | t }}
+              <button class="text-button" type="button" (click)="loadWeekTasks()">
+                {{ 'try_again' | t }}
+              </button>
+            </p>
+          } @else if (teamTasks() === null) {
+            <p role="status">{{ 'loading' | t }}</p>
+          } @else {
+            @for (task of selectedTasks(); track task.id) {
+              <a
+                class="task-calendar-event"
+                [attr.data-task-state]="task.status"
+                routerLink="/tasks"
+                [queryParams]="{ task: task.id, view: 'calendar' }"
+              >
+                <strong>{{ task.title }}</strong>
+                <small>{{ 'tasks_status_' + task.status | t }}</small>
+              </a>
+            } @empty {
+              <p class="muted">{{ 'no_tasks_on_date' | t }}</p>
+            }
           }
         </div>
       </section>
@@ -314,7 +359,7 @@
             [routerLink]="['/tickets', row.id, technician() ? 'edit' : 'view']"
             [queryParams]="scope()"
           >
-            <span class="ticket-reference">{{ row['code'] ?? '#' + row.id }}</span>
+            <span class="ticket-reference">{{ ticketReference(row) }}</span>
             <span class="ticket-name">{{ row['title'] }}</span>
           </a>
           <div class="ticket-tags">

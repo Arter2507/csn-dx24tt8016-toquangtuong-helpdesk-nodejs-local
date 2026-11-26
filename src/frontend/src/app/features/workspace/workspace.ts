@@ -21,7 +21,13 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { Category } from '../categories/interfaces/category';
 import { CategoryService } from '../categories/services/category.service';
-import { ticketPriorities, ticketStatuses, userRoles } from './workspace-labels';
+import {
+  formatTicketCode,
+  ticketPriorities,
+  ticketReference,
+  ticketStatuses,
+  userRoles,
+} from './workspace-labels';
 import { WorkspaceService } from './workspace.service';
 import {
   Attachment,
@@ -29,6 +35,7 @@ import {
   Resource,
   Row,
   TicketComment,
+  TicketDetails,
   TicketEvent,
   Value,
 } from './workspace.types';
@@ -56,7 +63,9 @@ export class Workspace implements OnInit {
   private readonly destroy = inject(DestroyRef);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private request = 0;
+  private numberRequest = 0;
   private optionsLoaded = false;
+  private searchTimer?: ReturnType<typeof setTimeout>;
 
   readonly fileTypes = FILE_TYPES.join(',');
   attachments: Attachment[] = [];
@@ -74,15 +83,30 @@ export class Workspace implements OnInit {
   todayPages = 0;
 
   readonly statuses = ticketStatuses;
+  readonly ticketReference = ticketReference;
+  readonly formatTicketCode = formatTicketCode;
   readonly priorities = ticketPriorities;
   rows: Row[] = [];
   fields: Field[] = [];
   form: Record<string, Value> = {};
-  editing: Row | null = null;
+  editing: (Row & TicketDetails) | null = null;
   categoryOptions: Category[] = [];
 
   accountNames = new Map<number, string>();
+  private accountRows = new Map<number, Row>();
+
+  get requesterProfile() {
+    if (
+      !this.editing ||
+      !this.session.hasRole('TECHNICIAN') ||
+      this.editing['assigneeId'] !== this.session.account()?.id
+    )
+      return undefined;
+    return this.accountRows.get(Number(this.editing['requesterId']));
+  }
   search = '';
+  searchOpen = false;
+  readonly pageSizes = [5, 10, 20, 50, 100];
   filter = '';
   priorityFilter = '';
   categoryFilter = 0;
@@ -105,9 +129,12 @@ export class Workspace implements OnInit {
   readonly bulk = viewChild(BulkActions);
   readonly session = inject(Session);
   private readonly preferences = inject(Preferences);
-  sender: { id: number; name: string; roles: unknown[] } | null = null;
+  senderId: number | null = null;
+  ticketNumber = '#0000';
+  ticketNumberError = '';
   comments: TicketComment[] = [];
   comment = '';
+  internalNote = false;
   commentError = '';
   commentSaving = false;
   specialties: { categories: Category[]; selected: Set<number> } | null = null;
@@ -121,9 +148,18 @@ export class Workspace implements OnInit {
     const previous = this.editing?.['status'];
     const next = this.form['status'];
     return (
-      this.secured &&
       previous !== next &&
-      (next === 'RESOLVED' || (previous === 'RESOLVED' && next === 'IN_PROGRESS'))
+      (next === 'PENDING_CUSTOMER' ||
+        (this.secured &&
+          (next === 'RESOLVED' || (previous === 'RESOLVED' && next === 'IN_PROGRESS'))))
+    );
+  }
+
+  get canWriteInternalNote() {
+    return (
+      this.session.hasRole('ADMIN') ||
+      (this.session.hasRole('TECHNICIAN') &&
+        this.session.account()?.id === this.editing?.['assigneeId'])
     );
   }
 
@@ -156,8 +192,7 @@ export class Workspace implements OnInit {
     return (
       this.isTicket &&
       this.session.allows('ADMIN') &&
-      !this.requesterId &&
-      !(Number(this.assigneeId) > 0)
+      (this.secured || (!this.requesterId && !(Number(this.assigneeId) > 0)))
     );
   }
   get isTicket() {
@@ -170,7 +205,7 @@ export class Workspace implements OnInit {
     return this.isTicket ? 'title' : 'fullName';
   }
   get readOnly() {
-    return this.mode() === 'view' || this.closed;
+    return this.mode() === 'view' || this.closed || !!this.editing?.mergedInto;
   }
   get scope() {
     return { requesterId: this.requesterId || null, assigneeId: this.assigneeId || null };
@@ -183,6 +218,7 @@ export class Workspace implements OnInit {
   }
 
   ngOnInit() {
+    this.destroy.onDestroy(() => clearTimeout(this.searchTimer));
     const result = this.router.lastSuccessfulNavigation()?.extras.info as
       { notice?: string; ticketId?: number; code?: string } | undefined;
     this.notice = result?.notice ?? '';
@@ -215,7 +251,9 @@ export class Workspace implements OnInit {
     this.busy = true;
     this.error = '';
     this.editing = null;
-    this.sender = null;
+    this.senderId = null;
+    this.ticketNumber = '#0000';
+    this.ticketNumberError = '';
     this.attachments = [];
     this.files = [];
     this.removed = [];
@@ -226,6 +264,7 @@ export class Workspace implements OnInit {
     this.specialties = null;
     this.specialtyFeedback = '';
     this.comment = '';
+    this.internalNote = false;
     this.commentError = '';
     try {
       const row = id ? (await firstValueFrom(this.service.find(this.resource(), id))).data : null;
@@ -291,7 +330,7 @@ export class Workspace implements OnInit {
                 : (field.options?.[0]?.value ?? ''),
         ]),
       );
-      if (this.isTicket && !row && !this.sender) this.error = 'api_INVALID_REQUESTER';
+      if (this.isTicket && !row && !this.senderId) this.error = 'api_INVALID_REQUESTER';
     } catch (error) {
       if (request === this.request) this.showError(error);
     } finally {
@@ -390,13 +429,31 @@ export class Workspace implements OnInit {
   async sendComment() {
     const id = this.editing?.id;
     if (!id || this.commentSaving || !this.comment.trim()) return;
+    const request = this.request;
     this.commentSaving = true;
     this.commentError = '';
     try {
-      const { data } = await firstValueFrom(this.service.addComment(id, this.comment.trim()));
-      if (this.editing?.id === id) {
+      const { data } = await firstValueFrom(
+        this.service.addComment(
+          id,
+          this.comment.trim(),
+          this.canWriteInternalNote && this.internalNote,
+        ),
+      );
+      if (request === this.request && this.editing?.id === id) {
         this.comments = [...this.comments, data];
         this.comment = '';
+        const change = data.ticketUpdate;
+        if (change && this.editing['version'] === change.version - 1) {
+          this.editing['status'] = this.form['status'] = change.status;
+          this.editing['version'] = change.version;
+          this.history = [...this.history, { status: change.status, at: change.at }];
+          this.fields = this.fields.map((field) =>
+            field.key === 'status'
+              ? { ...field, options: this.statusOptions(this.editing!) }
+              : field,
+          );
+        }
       }
     } catch (error) {
       this.commentError = errorKey(error);
@@ -453,11 +510,33 @@ export class Workspace implements OnInit {
     this.categoryOptions = categories;
 
     this.accountNames = new Map(users.map((row) => [row.id, this.i18n.personKey(row)]));
+    this.accountRows = new Map(users.map((row) => [row.id, row]));
     return users;
   }
 
-  senderRole(role: unknown) {
-    return userRoles.find((item) => item.value === role)?.label ?? '';
+  async selectField(field: Field, value: Value) {
+    this.form[field.key] = value;
+    if (!this.isTicket || this.mode() !== 'create' || field.key !== 'categoryId') return;
+    const editorRequest = this.request;
+    const numberRequest = ++this.numberRequest;
+    const current = () =>
+      editorRequest === this.request &&
+      numberRequest === this.numberRequest &&
+      !this.destroy.destroyed;
+    this.ticketNumberError = '';
+    this.ticketNumber = typeof value === 'number' ? '…' : '#0000';
+    if (typeof value !== 'number') return;
+    try {
+      const { data } = await firstValueFrom(this.service.previewTicketNumber(value));
+      if (current()) this.ticketNumber = formatTicketCode(data.code);
+    } catch (error) {
+      if (current()) {
+        this.ticketNumber = '—';
+        this.ticketNumberError = errorKey(error, 'ticket_number_unavailable');
+      }
+    } finally {
+      if (current()) this.view.markForCheck();
+    }
   }
 
   private async ticketFields(row: Row | null): Promise<Field[]> {
@@ -468,11 +547,7 @@ export class Workspace implements OnInit {
       const signedIn = this.session.account();
       const demoId = Number(this.requesterId) || this.preferences.account();
       const demo = accounts.find((user) => user.id === demoId && user['isActive']);
-      this.sender = signedIn
-        ? { id: signedIn.id, name: signedIn.fullName, roles: signedIn.roleCodes }
-        : demo
-          ? { id: demo.id, name: this.i18n.personKey(demo), roles: [demo['role']] }
-          : null;
+      this.senderId = signedIn?.id ?? demo?.id ?? null;
     }
     const categories = this.categoryOptions.filter(
       (category) => category.isActive || category.id === row?.['categoryId'],
@@ -533,23 +608,27 @@ export class Workspace implements OnInit {
   }
 
   private statusOptions(row: Row) {
-    if (!this.secured) return ticketStatuses;
     const current = row['status'];
     const account = this.session.account();
-    const owner = account?.id === row['requesterId'];
+    const owner = !this.secured || account?.id === row['requesterId'];
     const handling =
+      !this.secured ||
       this.session.hasRole('ADMIN') ||
       (this.session.hasRole('TECHNICIAN') && account?.id === row['assigneeId']);
     return ticketStatuses.filter(
       ({ value }) =>
         value === current ||
         (handling && current === 'NEW' && value === 'IN_PROGRESS') ||
-        (handling && current === 'IN_PROGRESS' && value === 'RESOLVED') ||
+        (handling &&
+          current === 'IN_PROGRESS' &&
+          (value === 'RESOLVED' || value === 'PENDING_CUSTOMER')) ||
+        (handling && current === 'PENDING_CUSTOMER' && value === 'IN_PROGRESS') ||
         (owner && current === 'RESOLVED' && (value === 'CLOSED' || value === 'IN_PROGRESS')),
     );
   }
 
   applyFilters() {
+    clearTimeout(this.searchTimer);
     this.applied = {
       search: this.search.trim().slice(0, 100),
       filter: this.filter,
@@ -560,7 +639,20 @@ export class Workspace implements OnInit {
     void this.load(1);
   }
 
+  searchChanged(value: string) {
+    this.search = value;
+    this.searchOpen = true;
+    clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => this.applyFilters(), 220);
+  }
+
+  leaveSearch(event: FocusEvent) {
+    if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node | null))
+      this.searchOpen = false;
+  }
+
   clearFilters() {
+    clearTimeout(this.searchTimer);
     this.search = this.filter = this.priorityFilter = '';
     this.categoryFilter = 0;
     this.order = this.isTicket ? 'recent' : 'asc';
@@ -590,6 +682,7 @@ export class Workspace implements OnInit {
           priority,
           categoryId: categoryId || '',
           page,
+          pageSize: this.pageSize,
           requesterId: this.requesterId,
           assigneeId: this.assigneeId,
           sortBy: order === 'recent' ? 'id' : this.displayField,
@@ -657,7 +750,7 @@ export class Workspace implements OnInit {
       this.busy ||
       this.saving ||
       this.readOnly ||
-      (this.isTicket && !this.editing && !this.sender)
+      (this.isTicket && !this.editing && !this.senderId)
     )
       return;
     if (editor.invalid) {
@@ -670,8 +763,8 @@ export class Workspace implements OnInit {
     const payload = Object.fromEntries(
       this.fields.map((field) => [field.key, this.form[field.key]]),
     );
-    if (this.isTicket && !this.editing && !this.secured && this.sender)
-      payload['requesterId'] = this.sender.id;
+    if (this.isTicket && !this.editing && !this.secured && this.senderId)
+      payload['requesterId'] = this.senderId;
     if (this.isTicket && this.editing) {
       payload['version'] = this.editing['version'];
       if (this.transitionNoteRequired) payload['note'] = this.form['note'];
@@ -698,7 +791,7 @@ export class Workspace implements OnInit {
         info: {
           notice,
           ticketId: this.isTicket ? data.id : null,
-          code: data['code'] ?? '#' + data.id,
+          code: ticketReference(data),
         },
       });
     } catch (error) {

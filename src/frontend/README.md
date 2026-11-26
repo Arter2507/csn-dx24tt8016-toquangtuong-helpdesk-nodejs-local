@@ -1,59 +1,10 @@
-# Frontend
+# Giao diện Angular của Trạm Mèo
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.5.
+Chạy `pnpm dev` ở gốc repo để mở frontend cùng Express và MySQL. Mở [Trạm Mèo local](http://127.0.0.1:4200). Đăng nhập theo [tài khoản rà soát](../../README.local.md#tài-khoản-mẫu).
 
-## Development server
+- Trang và quyền điều hướng nằm trong `src/app/app.routes.ts`, `src/app/session.ts` và `src/app/shell.ts`.
+- Tiếng Việt và tiếng Anh lưu trong `src/app/messages.json`. Màu sáng và tối dùng token trong `src/styles.css`.
+- Mở danh sách người dùng và loại phiếu qua `src/app/directory-page.ts`. Lịch tháng và lịch tuần sử dụng API nhiệm vụ, ngày theo múi giờ Việt Nam và ID nhiệm vụ từ dữ liệu.
+- API gọi bằng đường dẫn cùng origin. Dev dùng proxy Angular, production dùng Caddy. Frontend tạo URL màn hình từ Angular Router và lấy tệp qua API có quyền.
 
-To start a local development server, run:
-
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Từ gốc repo, `pnpm build` build hai gói và `pnpm check` chạy kiểm tra kiểu, định dạng và lint. [Kiểm thử Docker](../README.md#kiểm-thử-thông-qua-docker) · [Bản đồ mã nguồn frontend](readme.map) · [Cấu hình production](../../docker/production.md)

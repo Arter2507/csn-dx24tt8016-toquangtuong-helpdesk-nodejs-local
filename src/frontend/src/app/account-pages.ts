@@ -10,9 +10,19 @@ import { Notifications } from './notifications';
 import { Preferences } from './preferences';
 import { WorkspaceService } from './features/workspace/workspace.service';
 import { Row } from './features/workspace/workspace.types';
+import { TicketNumberSettings } from './ticket-number-settings';
+import { SettingsNav } from './settings-nav';
 
 @Component({
-  imports: [DatePipe, FormsModule, RouterLink, Translate, Loading],
+  imports: [
+    DatePipe,
+    FormsModule,
+    RouterLink,
+    Translate,
+    Loading,
+    TicketNumberSettings,
+    SettingsNav,
+  ],
   templateUrl: './account-pages.html',
 })
 export class AccountPages implements OnInit {
@@ -28,9 +38,19 @@ export class AccountPages implements OnInit {
   readonly users = signal<Row[] | null>(null);
   readonly error = signal('');
   readonly unreadOnly = signal(false);
+  readonly settingsTab = signal<'general' | 'numbering'>('general');
   readonly shown = computed(() => (this.unreadOnly() ? this.inbox.unread() : this.inbox.updates()));
 
   ngOnInit() {
+    if (this.page() === 'settings') {
+      this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
+        this.settingsTab.set(
+          params.get('section') === 'numbering' && this.session.allows('OWNER')
+            ? 'numbering'
+            : 'general',
+        );
+      });
+    }
     this.load();
   }
 

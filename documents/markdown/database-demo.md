@@ -1,9 +1,12 @@
 # THIẾT KẾ CƠ SỞ DỮ LIỆU HELPDESK
 
 **Đề tài:** Thiết kế website quản lý yêu cầu hỗ trợ kỹ thuật  
-**Trạng thái:** Thiết kế dự kiến; chưa phải cơ sở dữ liệu đã triển khai.  
+**Trạng thái:** Tài liệu thiết kế nền. Schema thực thi nằm trong Prisma migration.
+
 **Hệ quản trị:** MySQL, bảng InnoDB, bộ mã `utf8mb4`.  
-**Tài liệu liên quan:** `API_Helpdesk.md`.
+**Tài liệu liên quan:** [API](api-contract-demo.md) · [Kế hoạch IAM/RBAC](ke-hoach-iam-rbac.md).
+
+Local và production cùng dùng [Prisma schema](../../src/backend/prisma/schema.prisma). Schema hiện có thêm mã phiếu duy nhất `display_code`, `ticket_number_rules`, `is_internal` của bình luận, `user_profiles` và `task_items`. Production giữ MySQL, tệp tải lên và bản sao trong volume tách riêng. Bảng phòng ban và thành viên thuộc kế hoạch IAM.
 
 ## 1. Phạm vi
 

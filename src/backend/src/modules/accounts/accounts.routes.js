@@ -3,18 +3,19 @@ import { z } from 'zod';
 import { AppError } from '../../shared/errors.js';
 import { pool } from '../../database/pool.js';
 import { validate } from '../../middlewares/validate.js';
+import { isTechnician } from '../organizations/permissions.js';
+import { manageableMember, manageOrganization, members } from '../organizations/members.repository.js';
 
 export async function accountsDirectory(req, res) {
-  const { id, roleCodes } = req.account;
+  const { id, organizationId } = req.account;
   const [rows] = await pool.execute(
-    `SELECT u.id, u.full_name AS fullName, u.is_active AS isActive,
-       COALESCE(MAX(CASE WHEN r.code = 'TECHNICIAN' THEN r.code END), 'USER') AS role
-     FROM users u LEFT JOIN user_roles ur ON ur.user_id = u.id LEFT JOIN roles r ON r.id = ur.role_id
-     WHERE u.id = ? OR EXISTS (
+    `SELECT u.id, u.full_name AS fullName, u.is_active AS isActive, m.role, m.department, m.position
+     FROM users u JOIN organization_members m ON m.user_id = u.id
+     WHERE m.organization_id = ? AND (u.id = ? OR EXISTS (
        SELECT 1 FROM tickets t WHERE t.archived_at IS NULL AND (u.id = t.requester_id OR u.id = t.assignee_id)
          AND (t.requester_id = ? OR (? = 1 AND t.assignee_id = ?))
-     ) GROUP BY u.id, u.full_name, u.is_active ORDER BY u.id`,
-    [id, id, roleCodes.includes('TECHNICIAN'), id],
+     )) ORDER BY u.id`,
+    [organizationId, id, id, isTechnician(req.account), id],
   );
   res.json({ success: true, data: rows.map(row => ({ ...row, id: Number(row.id), isActive: Boolean(row.isActive) })), meta: null });
 }
@@ -48,6 +49,7 @@ export async function notify(conn, { userId, ticketId, type, title, status = '' 
 
 export const technicianCategories = {
   async list(req, res) {
+    if (!await members.find(req.validated.params.id, req.account)) throw new AppError(404, 'NOT_FOUND');
     const [rows] = await pool.execute(
       'SELECT category_id AS id FROM technician_categories WHERE user_id = ? ORDER BY category_id',
       [req.validated.params.id],
@@ -57,15 +59,9 @@ export const technicianCategories = {
   async update(req, res) {
     const { id } = req.validated.params;
     const ids = [...new Set(req.validated.body.categoryIds)];
-    const conn = await pool.getConnection();
-    try {
-      await conn.beginTransaction();
-      const [users] = await conn.execute(
-        `SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id = u.id
-           JOIN roles r ON r.id = ur.role_id WHERE u.id = ? AND r.code = 'TECHNICIAN' FOR UPDATE`,
-        [id],
-      );
-      if (!users[0]) throw new AppError(422, 'INVALID_ASSIGNEE', 'Tài khoản cần có vai trò chuyên viên kỹ thuật');
+    await manageOrganization(req.account, async (conn, actor, organization) => {
+      const member = await manageableMember(conn, actor, id, organization.id);
+      if (member.role !== 'TECHNICIAN') throw new AppError(422, 'INVALID_ASSIGNEE', 'Tài khoản cần có vai trò chuyên viên kỹ thuật');
       if (ids.length) {
         const [categories] = await conn.execute(
           `SELECT id FROM categories WHERE id IN (${ids.map(() => '?').join(',')})`, ids,
@@ -78,13 +74,7 @@ export const technicianCategories = {
           'INSERT INTO technician_categories (user_id, category_id, created_at) VALUES (?, ?, UTC_TIMESTAMP(3))', [id, categoryId],
         );
       }
-      await conn.commit();
-      res.json({ success: true, data: ids, meta: null });
-    } catch (error) {
-      await conn.rollback();
-      throw error;
-    } finally {
-      conn.release();
-    }
+    });
+    res.json({ success: true, data: ids, meta: null });
   },
 };

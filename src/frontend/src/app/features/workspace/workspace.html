@@ -29,9 +29,11 @@
   </div>
   <div class="heading-actions">
     @if (editing && isTicket) {
-      <span class="badge">{{ editing['code'] ?? '#' + editing.id }}</span>
+      <span class="badge">{{ ticketReference(editing) }}</span>
     }
-    <span class="badge" data-tone="neutral">{{ 'demo_data' | t }}</span>
+    @if (!secured) {
+      <span class="badge" data-tone="neutral">{{ 'demo_data' | t }}</span>
+    }
     @if (mode() === 'list') {
       <a
         class="primary"
@@ -95,19 +97,51 @@
       [class.users-toolbar]="!isTicket"
       (ngSubmit)="applyFilters()"
     >
-      <label class="field search-field"
-        >{{ 'search' | t }}
+      <div
+        class="field search-field ticket-search-box"
+        (focusin)="searchOpen = true"
+        (focusout)="leaveSearch($event)"
+        (keydown.escape)="searchOpen = false"
+      >
+        <label for="workspace-search">{{ 'search' | t }}</label>
         <input
+          id="workspace-search"
           type="search"
           name="search"
           maxlength="100"
-          [placeholder]="isTicket ? ('code_title_or_description' | t) : ('name_or_email' | t)"
-          [(ngModel)]="search"
+          autocomplete="off"
+          [placeholder]="isTicket ? ('ticket_search_placeholder' | t) : ('name_or_email' | t)"
+          [ngModel]="search"
+          (ngModelChange)="searchChanged($event)"
         />
-      </label>
+        @if (
+          isTicket &&
+          searchOpen &&
+          search.trim() &&
+          applied.search === search.trim() &&
+          !busy &&
+          !error
+        ) {
+          <section class="ticket-search-results" aria-label="{{ 'ticket_suggestions' | t }}">
+            <strong>{{ 'ticket_suggestions' | t }}</strong>
+            <ul>
+              @for (row of rows.slice(0, 5); track row.id) {
+                <li>
+                  <a [routerLink]="['/tickets', row.id, itemMode(row)]" [queryParams]="scope">
+                    <span>{{ ticketReference(row) }} · {{ row['title'] }}</span>
+                    <small class="muted">{{ categoryName(+(row['categoryId'] ?? 0)) }}</small>
+                  </a>
+                </li>
+              } @empty {
+                <li class="muted">{{ 'no_matching_results' | t }}</li>
+              }
+            </ul>
+          </section>
+        }
+      </div>
       <label class="field"
         >{{ isTicket ? ('status' | t) : ('role' | t) }}
-        <select name="filter" [(ngModel)]="filter">
+        <select name="filter" [ngModel]="filter" (ngModelChange)="filter = $event; applyFilters()">
           <option value="">{{ 'all' | t }}</option>
           @for (item of filters; track item.value) {
             <option [value]="item.value">{{ item.label | t }}</option>
@@ -117,7 +151,11 @@
       @if (isTicket) {
         <label class="field"
           >{{ 'priority' | t }}
-          <select name="priorityFilter" [(ngModel)]="priorityFilter">
+          <select
+            name="priorityFilter"
+            [ngModel]="priorityFilter"
+            (ngModelChange)="priorityFilter = $event; applyFilters()"
+          >
             <option value="">{{ 'all' | t }}</option>
             @for (item of priorities; track item.value) {
               <option [value]="item.value">{{ item.label | t }}</option>
@@ -126,7 +164,11 @@
         </label>
         <label class="field"
           >{{ 'request_category' | t }}
-          <select name="categoryFilter" [(ngModel)]="categoryFilter">
+          <select
+            name="categoryFilter"
+            [ngModel]="categoryFilter"
+            (ngModelChange)="categoryFilter = $event; applyFilters()"
+          >
             <option [ngValue]="0">{{ 'all_categories' | t }}</option>
             @for (item of categoryOptions; track item.id) {
               <option [ngValue]="item.id">{{ i18n.category(item) }}</option>
@@ -136,7 +178,7 @@
       }
       <label class="field"
         >{{ 'sort_by' | t }}
-        <select name="order" [(ngModel)]="order">
+        <select name="order" [ngModel]="order" (ngModelChange)="order = $event; applyFilters()">
           @if (isTicket) {
             <option value="recent">{{ 'newest_first' | t }}</option>
           }
@@ -145,16 +187,28 @@
         </select>
       </label>
       <div class="toolbar-actions">
-        <button class="primary" type="submit" [disabled]="busy">
-          <i class="bi bi-search" aria-hidden="true"></i> {{ 'search_2' | t }}
-        </button>
         <button class="text-button" type="button" [disabled]="busy" (click)="clearFilters()">
           {{ 'clear_filters' | t }}
         </button>
       </div>
     </form>
+    @if (isTicket) {
+      <label class="field ticket-page-size">
+        <span>{{ 'rows_per_page' | t }}</span>
+        <select [ngModel]="pageSize" (ngModelChange)="pageSize = $event; applyFilters()">
+          @for (size of pageSizes; track size) {
+            <option [ngValue]="size">{{ size }}</option>
+          }
+        </select>
+      </label>
+    }
     @if (canDelete) {
-      <app-bulk-actions [selection]="selection" (archived)="load(1)" />
+      <app-bulk-actions
+        [selection]="selection"
+        [rows]="rows"
+        [batchEnabled]="secured"
+        (archived)="load(1)"
+      />
     }
     @if (busy) {
       <app-loading />
@@ -206,7 +260,7 @@
                     />
                   </th>
                 }
-                <th scope="col">{{ 'code' | t }}</th>
+                <th scope="col">{{ 'ticket_number_label' | t }}</th>
                 <th scope="col">{{ isTicket ? ('title' | t) : ('full_name' | t) }}</th>
                 @if (isTicket) {
                   <th scope="col">{{ 'category' | t }}</th>
@@ -245,7 +299,7 @@
                     </td>
                   }
                   <td>
-                    <span class="badge">{{ row['code'] ?? '#' + row.id }}</span>
+                    <span class="badge">{{ ticketReference(row) }}</span>
                   </td>
                   <td class="title-cell">
                     <strong>{{ isTicket ? row[displayField] : (i18n.personKey(row) | t) }}</strong>
@@ -381,6 +435,28 @@
 } @else if (busy) {
   <app-loading />
 } @else if (fields.length && (mode() === 'create' || editing)) {
+  @if (editing?.mergedInto; as target) {
+    <p class="notice">
+      {{ 'merged_into' | t }}
+      <a class="notice-link" [routerLink]="['/tickets', target.id, 'view']">{{
+        formatTicketCode(target.code)
+      }}</a>
+    </p>
+  }
+  @if (editing?.mergedTickets?.length) {
+    <section class="panel merged-ticket-list">
+      <h2>{{ 'merged_tickets' | t }}</h2>
+      <ul>
+        @for (source of editing?.mergedTickets; track source.id) {
+          <li>
+            <a [routerLink]="['/tickets', source.id, 'view']">{{
+              formatTicketCode(source.code)
+            }}</a>
+          </li>
+        }
+      </ul>
+    </section>
+  }
   <div class="editor-layout" [class.ticket-editor-layout]="isTicket">
     <form class="panel editor" #editor="ngForm" (ngSubmit)="save(editor)">
       <div class="editor-heading">
@@ -396,18 +472,28 @@
         </p>
       </div>
       @if (isTicket && mode() === 'create') {
-        <div class="field wide">
-          <strong>{{ 'ticket_sender_account' | t }}</strong>
-          @if (sender; as identity) {
-            <div class="requester-identity">
-              <span>{{ identity.name | t }}</span>
-              @for (role of identity.roles; track role) {
-                <span class="badge">{{ senderRole(role) | t }}</span>
-              }
-            </div>
+        <div class="wide">
+          <div class="ticket-number-preview" aria-live="polite">
+            <strong>{{ 'ticket_number_field' | t }}</strong>
+            <span class="badge">{{ ticketNumber }}</span>
+          </div>
+          @if (ticketNumberError) {
+            <small class="field-error">{{ ticketNumberError | t }}</small>
           }
-          <p class="muted">{{ 'priority_automatic' | t }}</p>
         </div>
+      }
+      @if (requesterProfile; as requester) {
+        <section class="wide iam-fieldset">
+          <h3>{{ 'requester_details' | t }}</h3>
+          <strong>{{ requester['fullName'] }}</strong>
+          @if (requester['department'] || requester['position']) {
+            <p class="muted">
+              {{ requester['department']
+              }}{{ requester['department'] && requester['position'] ? ' · ' : ''
+              }}{{ requester['position'] }}
+            </p>
+          }
+        </section>
       }
       @for (field of fields; track field.key) {
         @let control = editor.controls[field.key];
@@ -424,7 +510,8 @@
               <select
                 [id]="field.key"
                 [name]="field.key"
-                [(ngModel)]="form[field.key]"
+                [ngModel]="form[field.key]"
+                (ngModelChange)="selectField(field, $event)"
                 [disabled]="readOnly || saving || lockedField(field)"
                 [required]="!field.optional"
                 [attr.aria-invalid]="invalid ? 'true' : null"
@@ -479,7 +566,10 @@
       }
       @if (transitionNoteRequired && !readOnly) {
         <label class="field wide">
-          <span>{{ 'transition_note' | t }}</span>
+          <span>{{
+            (form['status'] === 'PENDING_CUSTOMER' ? 'request_more_information' : 'transition_note')
+              | t
+          }}</span>
           <textarea name="note" [(ngModel)]="form['note']" maxlength="2000" required></textarea>
         </label>
       }
@@ -575,7 +665,7 @@
         </section>
       }
       <div class="form-actions">
-        @if (secured && mode() === 'view' && editing && !closed) {
+        @if (secured && mode() === 'view' && editing && !closed && !editing.mergedInto) {
           <a
             class="primary"
             [routerLink]="['/tickets', editing.id, 'edit']"
@@ -590,7 +680,7 @@
           <button
             class="primary"
             type="submit"
-            [disabled]="saving || (isTicket && mode() === 'create' && !sender)"
+            [disabled]="saving || (isTicket && mode() === 'create' && !senderId)"
           >
             {{
               saving
@@ -635,11 +725,13 @@
           <p class="muted">{{ 'what_happens_after_you_send_a_request' | t }}</p>
           <ol class="timeline planned">
             @for (step of statuses; track step.value) {
-              <li>
-                <span class="timeline-dot" aria-hidden="true"
-                  ><i class="bi" [class]="step.icon"></i></span
-                ><strong>{{ step.label | t }}</strong>
-              </li>
+              @if (step.value !== 'PENDING_CUSTOMER') {
+                <li>
+                  <span class="timeline-dot" aria-hidden="true"
+                    ><i class="bi" [class]="step.icon"></i></span
+                  ><strong>{{ step.label | t }}</strong>
+                </li>
+              }
             }
           </ol>
         }
@@ -683,6 +775,9 @@
           <li>
             <div>
               <strong>{{ item.authorName }}</strong>
+              @if (item.internal) {
+                <span class="badge" data-tone="warning">{{ 'internal_note' | t }}</span>
+              }
               <time [attr.datetime]="item.createdAt">{{
                 item.createdAt | date: 'dd/MM/yyyy HH:mm' : '+0700'
               }}</time>
@@ -693,9 +788,22 @@
           <li class="muted">{{ 'no_comments' | t }}</li>
         }
       </ul>
-      @if (!closed) {
+      @if (!closed && !editing?.mergedInto) {
         <form class="field" (ngSubmit)="sendComment()">
-          <label for="ticket-comment">{{ 'conversation' | t }}</label>
+          <label for="ticket-comment">{{
+            (internalNote ? 'internal_note' : 'public_reply') | t
+          }}</label>
+          @if (canWriteInternalNote) {
+            <label class="checkbox-field">
+              <input
+                name="internalNote"
+                type="checkbox"
+                [(ngModel)]="internalNote"
+                [disabled]="commentSaving"
+              />
+              {{ 'internal_note_only' | t }}
+            </label>
+          }
           <textarea
             id="ticket-comment"
             name="comment"
@@ -739,7 +847,7 @@
           <table class="today-table">
             <thead>
               <tr>
-                <th scope="col">{{ 'code' | t }}</th>
+                <th scope="col">{{ 'ticket_number_label' | t }}</th>
                 <th scope="col">{{ 'title' | t }}</th>
                 <th scope="col">{{ 'status' | t }}</th>
                 <th scope="col">{{ 'time_created' | t }}</th>
@@ -753,7 +861,7 @@
                       class="badge"
                       [routerLink]="['/tickets', row.id, requesterId ? 'view' : 'edit']"
                       [queryParams]="scope"
-                      >{{ row['code'] }}</a
+                      >{{ ticketReference(row) }}</a
                     >
                   </td>
                   <td>{{ row['title'] }}</td>

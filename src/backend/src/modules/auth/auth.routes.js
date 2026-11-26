@@ -7,6 +7,9 @@ import { validate } from '../../middlewares/validate.js';
 import { AppError } from '../../shared/errors.js';
 import { config } from '../../configs/env.js';
 import { authRepository } from './auth.repository.js';
+import { activationHash, invalidActivation } from '../organizations/activation.js';
+import { forbidden } from '../organizations/permissions.js';
+export { requireAdmin } from '../organizations/permissions.js';
 
 const accessCookie = 'tram_meo_access';
 const refreshCookie = 'tram_meo_refresh';
@@ -14,6 +17,12 @@ const accessSeconds = 15 * 60;
 const secret = new TextEncoder().encode(config.auth.secret);
 const claims = { issuer: 'tram-meo', audience: 'tram-meo-web', algorithms: ['HS256'] };
 const attempts = new Map();
+const writeOrigins = new Set([config.auth.origin]);
+const loopback = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.exec(config.auth.origin);
+if (process.env.NODE_ENV === 'development' && loopback) {
+  const [, host, port = ''] = loopback;
+  writeOrigins.add('http://' + (host === 'localhost' ? '127.0.0.1' : 'localhost') + port);
+}
 if (config.dataSource === 'mysql' && (secret.length < 32 || !Number.isSafeInteger(config.auth.refreshDays)
   || config.auth.refreshDays < 1 || config.auth.refreshDays > 30)) {
   throw new Error('MySQL cần JWT_SECRET ít nhất 32 byte và REFRESH_TOKEN_DAYS từ 1 đến 30');
@@ -23,7 +32,6 @@ export const newPassword = password.refine(value => value.length >= 12);
 const digest = value => createHash('sha256').update(value).digest('hex');
 const refreshToken = () => randomBytes(32).toString('hex');
 const unauthorized = () => new AppError(401, 'UNAUTHENTICATED', 'Vui lòng đăng nhập');
-const forbidden = () => new AppError(403, 'FORBIDDEN', 'Bạn không có quyền thực hiện thao tác này');
 
 const cookies = { httpOnly: true, secure: config.auth.secureCookies, sameSite: 'strict' };
 const accessOptions = { ...cookies, path: '/api/v1' };
@@ -68,7 +76,7 @@ function clearCookies(res) {
 }
 
 export function sameOrigin(req, res, next) {
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && req.get('Origin') !== config.auth.origin) {
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method) && !writeOrigins.has(req.get('Origin'))) {
     return next(forbidden());
   }
   next();
@@ -83,28 +91,51 @@ export async function requireAccount(req, res, next) {
   next();
 }
 
-export function requireAdmin(req, res, next) {
-  if (!req.account.roleCodes.includes('ADMIN')) return next(forbidden());
-  next();
-}
-
 export const authRoutes = Router();
 authRoutes.use((req, res, next) => {
   res.set('Cache-Control', 'no-store');
   next();
 });
 
-authRoutes.post('/login', validate(z.object({ email: z.email().max(254), password }).strict(), 'body'), async (req, res) => {
+function checkRate(req, res, operation, limit) {
   const now = Date.now();
   for (const [address, attempt] of attempts) if (attempt.until <= now) attempts.delete(address);
-  const address = req.ip;
+  const address = operation + ':' + req.ip;
   const attempt = attempts.get(address) ?? { count: 0, until: now + accessSeconds * 1000 };
-  if (attempt.count >= 30) {
+  if (attempt.count >= limit) {
     res.set('Retry-After', String(Math.ceil((attempt.until - now) / 1000)));
     throw new AppError(429, 'LOGIN_LIMIT', 'Bạn đã thử đăng nhập quá nhiều lần');
   }
   attempt.count++;
   attempts.set(address, attempt);
+  return attempt;
+}
+
+const emailInput = z.email().max(254).transform(value => value.toLowerCase());
+
+authRoutes.post('/register', validate(z.object({
+  email: emailInput, fullName: z.string().trim().min(1).max(150), password: newPassword,
+}).strict(), 'body'), async (req, res) => {
+  checkRate(req, res, 'register', 10);
+  const input = req.validated.body;
+  await authRepository.register(input, await hash(input.password, 12));
+  res.status(201).json({ success: true, data: { status: 'UNASSIGNED' }, meta: null });
+});
+
+authRoutes.post('/activate', validate(z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/),
+  password: newPassword,
+}).strict(), 'body'), async (req, res) => {
+  checkRate(req, res, 'activate', 15);
+  const input = req.validated.body;
+  if (!await authRepository.activate(activationHash(input.token), await hash(input.password, 12))) {
+    throw invalidActivation();
+  }
+  res.status(204).end();
+});
+
+authRoutes.post('/login', validate(z.object({ email: emailInput, password }).strict(), 'body'), async (req, res) => {
+  const attempt = checkRate(req, res, 'login', 30);
   const { email, password: supplied } = req.validated.body;
   const credentials = await authRepository.credentials(email.toLowerCase());
   const matches = await compare(supplied, credentials?.passwordHash ?? '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');

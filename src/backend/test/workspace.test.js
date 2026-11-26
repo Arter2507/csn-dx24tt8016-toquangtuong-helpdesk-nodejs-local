@@ -18,10 +18,13 @@ test('demo user and ticket management preserves state on a stale update', async 
     assert.equal(account.status, 201);
     const { data: requester } = await account.json();
     const details = { title: 'Lỗi mạng', description: 'Mất kết nối', categoryId: 3 };
+    const preview = async categoryId => (await fetch(api + '/tickets/number-preview?categoryId=' + categoryId).then(res => res.json())).data.code;
+    assert.equal(await preview(3), '0001');
+    assert.equal(await preview(3), '0001');
     const created = await send('/tickets', 'POST', { ...details, requesterId: requester.id });
     assert.equal(created.status, 201);
     const { data: ticket } = await created.json();
-    assert.match(ticket.code, /^HD-\d+$/);
+    assert.equal(ticket.code, '0001');
     assert.equal(ticket.priority, 'MEDIUM');
     assert.ok(Date.parse(ticket.createdAt));
     assert.equal(ticket.updatedAt, ticket.createdAt);
@@ -29,7 +32,7 @@ test('demo user and ticket management preserves state on a stale update', async 
     const update = { ...details, assigneeId: 2, status: 'IN_PROGRESS', priority: 'HIGH', version: ticket.version };
     assert.equal((await send(path, 'PATCH', update)).status, 200);
     assert.equal((await send(path, 'PATCH', update)).status, 409);
-    const response = await fetch(api + '/tickets?filter=IN_PROGRESS&priority=HIGH&categoryId=3&search=' + ticket.code);
+    const response = await fetch(api + '/tickets?filter=IN_PROGRESS&priority=HIGH&categoryId=3&search=' + encodeURIComponent('#' + ticket.code));
     const result = await response.json();
     assert.equal(result.meta.totalItems, 1);
     assert.equal(result.data[0].version, 2);
@@ -37,6 +40,15 @@ test('demo user and ticket management preserves state on a stale update', async 
     assert.ok(Date.parse(result.data[0].updatedAt) >= Date.parse(ticket.createdAt));
     const unmatched = await fetch(api + '/tickets?priority=LOW&categoryId=3');
     assert.equal((await unmatched.json()).meta.totalItems, 0);
+    const rule = { prefix: 'PYCM', nextNumber: 1, digits: 5, suffix: '' };
+    assert.equal((await send('/settings/ticket-number-rules/3', 'PUT', rule)).status, 204);
+    assert.equal(await preview(3), 'PYCM00001');
+    assert.equal(await preview(2), '0002');
+    const numbered = await send('/tickets', 'POST', { ...details, requesterId: requester.id });
+    assert.equal(numbered.status, 201);
+    assert.equal((await numbered.json()).data.code, 'PYCM00001');
+    assert.equal(await preview(3), 'PYCM00002');
+    assert.equal((await fetch(api + path).then(res => res.json())).data.code, '0001');
   } finally {
     await new Promise(resolve => server.close(resolve));
   }

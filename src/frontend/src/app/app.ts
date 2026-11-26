@@ -135,7 +135,7 @@ export class App implements OnInit {
       next: () => {
         this.saving = false;
         const notice = this.editingId === null ? 'category_added' : 'category_updated';
-        void this.router.navigateByUrl('/categories', { info: { notice } });
+        void this.router.navigateByUrl('/categories/ticket-types', { info: { notice } });
       },
       error: (err) => {
         this.saving = false;

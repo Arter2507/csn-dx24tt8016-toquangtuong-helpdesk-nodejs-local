@@ -1,0 +1,270 @@
+<div class="settings-layout">
+  <app-settings-nav active="organization" />
+  <div class="settings-content">
+    <section class="panel iam-panel">
+      <div class="iam-section-heading">
+        <div>
+          <h1>{{ 'organization' | t }}</h1>
+          <p class="muted">{{ 'organization_help' | t }}</p>
+        </div>
+        <div class="iam-actions">
+          <a class="secondary" routerLink="/settings"
+            ><i class="bi bi-arrow-left" aria-hidden="true"></i>{{ 'back_to_settings' | t }}</a
+          >
+          <a class="primary" routerLink="/users"
+            ><i class="bi bi-people" aria-hidden="true"></i>{{ 'members' | t }}</a
+          >
+        </div>
+      </div>
+      @if (error()) {
+        <p class="notice error" role="alert">{{ error() | t }}</p>
+        @if (!organization()) {
+          <button type="button" class="secondary" (click)="load()">{{ 'try_again' | t }}</button>
+        }
+      }
+      @if (saved()) {
+        <p class="notice" role="status">{{ 'organization_saved' | t }}</p>
+      }
+      @if (organization(); as org) {
+        @if (editing()) {
+          <form class="iam-form" #fields="ngForm" (ngSubmit)="save()">
+            <div class="iam-fields">
+              <div class="field">
+                <label for="organization-name">{{ 'organization_name' | t }}</label>
+                <input
+                  id="organization-name"
+                  name="name"
+                  required
+                  maxlength="150"
+                  [(ngModel)]="form.name"
+                />
+              </div>
+              <div class="field">
+                <label for="organization-code">{{ 'organization_code' | t }}</label>
+                <input
+                  id="organization-code"
+                  name="code"
+                  required
+                  maxlength="30"
+                  pattern="[A-Za-z0-9_\-]+"
+                  [(ngModel)]="form.code"
+                />
+              </div>
+            </div>
+            <div class="field">
+              <label for="organization-description">{{ 'description' | t }}</label>
+              <textarea
+                id="organization-description"
+                name="description"
+                maxlength="1000"
+                [(ngModel)]="form.description"
+              ></textarea>
+            </div>
+            <div class="iam-actions">
+              <button class="primary" type="submit" [disabled]="fields.invalid || busy()">
+                {{ 'save_changes' | t }}
+              </button>
+              <button
+                class="secondary"
+                type="button"
+                [disabled]="busy()"
+                (click)="editing.set(false)"
+              >
+                {{ 'cancel' | t }}
+              </button>
+            </div>
+          </form>
+        } @else {
+          <dl class="iam-fields iam-metadata">
+            <div>
+              <dt>{{ 'organization_name' | t }}</dt>
+              <dd>{{ org.name }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'organization_code' | t }}</dt>
+              <dd>{{ org.code }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'member_role_owner' | t }}</dt>
+              <dd>{{ org.ownerName || '—' }}</dd>
+            </div>
+            <div>
+              <dt>{{ 'description' | t }}</dt>
+              <dd>{{ org.description || '—' }}</dd>
+            </div>
+          </dl>
+          @if (session.hasRole('OWNER')) {
+            <button class="secondary organization-edit" type="button" (click)="edit(org)">
+              {{ 'organization_edit' | t }}
+            </button>
+          }
+        }
+      } @else if (busy()) {
+        <p class="muted" role="status">{{ 'loading' | t }}</p>
+      }
+    </section>
+
+    @if (organization(); as org) {
+      <section class="panel iam-panel">
+        <h2>{{ 'organization_hierarchy' | t }}</h2>
+        <div class="org-view-layout">
+          <div
+            class="settings-nav org-view-nav"
+            role="group"
+            [attr.aria-label]="'organization_hierarchy' | t"
+          >
+            <button
+              type="button"
+              [attr.aria-pressed]="view() === 'list'"
+              (click)="view.set('list')"
+            >
+              <i class="bi bi-list-ul" aria-hidden="true"></i>{{ 'hierarchy_list' | t }}
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="view() === 'tree'"
+              (click)="view.set('tree')"
+            >
+              <i class="bi bi-diagram-3" aria-hidden="true"></i>{{ 'hierarchy_tree' | t }}
+            </button>
+            <button
+              type="button"
+              [attr.aria-pressed]="view() === 'graph'"
+              (click)="view.set('graph')"
+            >
+              <i class="bi bi-bezier2" aria-hidden="true"></i>{{ 'hierarchy_graph' | t }}
+            </button>
+          </div>
+          <div class="org-view-content">
+            @if (view() === 'list') {
+              <div class="iam-hierarchy-list">
+                @for (group of hierarchy(); track group.role) {
+                  <section>
+                    <h3>
+                      {{ roleLabel(group.role) | t }}
+                      <span class="muted">({{ group.members.length }})</span>
+                    </h3>
+                    <ul>
+                      @for (member of group.members; track member.id) {
+                        <li>
+                          {{ member.name }} <span class="muted">{{ member.department }}</span
+                          ><span class="iam-status">{{ statusLabel(member.status) | t }}</span>
+                        </li>
+                      } @empty {
+                        <li class="muted">{{ 'no_members' | t }}</li>
+                      }
+                    </ul>
+                  </section>
+                }
+              </div>
+            } @else if (view() === 'tree') {
+              <ul class="iam-tree">
+                <li>
+                  <details open>
+                    <summary>{{ org.name }}</summary>
+                    <ul>
+                      <ng-container
+                        *ngTemplateOutlet="branch; context: { $implicit: 0 }"
+                      ></ng-container>
+                    </ul>
+                  </details>
+                </li>
+              </ul>
+            } @else {
+              <ol class="org-graph">
+                @for (group of hierarchy(); track group.role) {
+                  <li>
+                    <button
+                      type="button"
+                      [attr.aria-pressed]="graphRole() === group.role"
+                      (click)="graphRole.set(group.role)"
+                    >
+                      <i
+                        class="bi"
+                        [class]="
+                          group.role === 'OWNER'
+                            ? 'bi-shield-check'
+                            : group.role === 'ADMIN'
+                              ? 'bi-person-gear'
+                              : group.role === 'TECHNICIAN'
+                                ? 'bi-tools'
+                                : 'bi-person'
+                        "
+                        aria-hidden="true"
+                      ></i>
+                      <strong>{{ roleLabel(group.role) | t }}</strong>
+                      <small>{{ 'graph_member_count' | t: { count: group.members.length } }}</small>
+                    </button>
+                  </li>
+                }
+              </ol>
+              @for (group of hierarchy(); track group.role) {
+                @if (graphRole() === group.role) {
+                  <section class="org-graph-detail">
+                    <h3>{{ roleLabel(group.role) | t }}</h3>
+                    <p class="muted">{{ roleLabel(group.role) + '_scope' | t }}</p>
+                    <ul class="org-graph-people">
+                      @for (member of group.members; track member.id) {
+                        <li>{{ member.name }}</li>
+                      } @empty {
+                        <li class="muted">{{ 'no_members' | t }}</li>
+                      }
+                    </ul>
+                  </section>
+                }
+              }
+            }
+          </div>
+        </div>
+        <ng-template #branch let-level>
+          @if (hierarchy()[level]; as group) {
+            <li>
+              <details [open]="level === 0">
+                <summary>
+                  <strong>{{ roleLabel(group.role) | t }}</strong>
+                  <span class="muted"> · {{ group.members.length }}</span>
+                </summary>
+                @if (group.members.length) {
+                  <ul>
+                    @for (member of group.members; track member.id) {
+                      <li>{{ member.name }}</li>
+                    }
+                  </ul>
+                }
+                @if (level + 1 < hierarchy().length) {
+                  <ul>
+                    <ng-container
+                      *ngTemplateOutlet="branch; context: { $implicit: level + 1 }"
+                    ></ng-container>
+                  </ul>
+                }
+              </details>
+            </li>
+          }
+        </ng-template>
+      </section>
+
+      <section class="panel iam-panel">
+        <h2>{{ 'permission_matrix' | t }}</h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">{{ 'role' | t }}</th>
+                <th scope="col">{{ 'permission_scope' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (role of roles; track role) {
+                <tr>
+                  <th scope="row">{{ roleLabel(role) | t }}</th>
+                  <td>{{ roleLabel(role) + '_scope' | t }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  </div>
+</div>

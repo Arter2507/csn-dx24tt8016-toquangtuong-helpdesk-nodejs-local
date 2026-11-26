@@ -1,4 +1,480 @@
 {
+  "back_to_settings": {
+    "vi": "Về trang cài đặt",
+    "en": "Back to settings"
+  },
+  "hierarchy_graph": {
+    "vi": "Sơ đồ liên kết",
+    "en": "Role graph"
+  },
+  "graph_member_count": {
+    "vi": "{count} thành viên",
+    "en": "{count} members"
+  },
+  "admin_welcome_description": {
+    "vi": "Xem tình hình hỗ trợ, phân công và tiến độ xử lý yêu cầu trong tổ chức.",
+    "en": "Review support requests, assignments and progress across your organization."
+  },
+  "ticket_search_placeholder": {
+    "vi": "Mã phiếu, tiêu đề, nội dung hoặc loại phiếu",
+    "en": "Ticket code, title, description or category"
+  },
+  "ticket_suggestions": {
+    "vi": "Phiếu gợi ý",
+    "en": "Matching tickets"
+  },
+  "rows_per_page": {
+    "vi": "Số dòng mỗi trang",
+    "en": "Rows per page"
+  },
+  "batch_assign": {
+    "vi": "Đổi người phụ trách",
+    "en": "Change assignee"
+  },
+  "batch_merge": {
+    "vi": "Gộp phiếu",
+    "en": "Merge tickets"
+  },
+  "batch_assign_help": {
+    "vi": "Chọn một chuyên viên phù hợp để phụ trách các phiếu đã chọn.",
+    "en": "Choose an eligible technician to handle the selected tickets."
+  },
+  "batch_merge_help": {
+    "vi": "Chọn phiếu chính. Các phiếu còn lại được lưu ở chế độ chỉ xem và liên kết với phiếu chính.",
+    "en": "Choose the primary ticket. The remaining tickets become read-only and are linked to it."
+  },
+  "batch_primary_ticket": {
+    "vi": "Phiếu chính",
+    "en": "Primary ticket"
+  },
+  "batch_choose": {
+    "vi": "Chọn một mục",
+    "en": "Choose an option"
+  },
+  "batch_no_technicians": {
+    "vi": "Chưa có chuyên viên phụ trách loại phiếu này.",
+    "en": "No technicians are available for this category."
+  },
+  "batch_assigned": {
+    "vi": "Đã phân công {count} phiếu.",
+    "en": "Assigned {count} tickets."
+  },
+  "batch_merged": {
+    "vi": "Đã gộp {count} phiếu vào phiếu chính.",
+    "en": "Merged {count} tickets into the primary ticket."
+  },
+  "api_BATCH_CATEGORY": {
+    "vi": "Hãy chọn các phiếu cùng loại để đổi người phụ trách hoặc gộp.",
+    "en": "Select tickets in the same category to reassign or merge them."
+  },
+  "api_BATCH_REQUESTER": {
+    "vi": "Chỉ gộp được các phiếu do cùng một người gửi.",
+    "en": "Only tickets from the same requester can be merged."
+  },
+  "api_BATCH_CLOSED": {
+    "vi": "Phiếu đã đóng không thể đổi người phụ trách.",
+    "en": "Closed tickets cannot be reassigned."
+  },
+  "api_BATCH_TARGET": {
+    "vi": "Hãy chọn một phiếu chính chưa đóng trong các phiếu đã chọn.",
+    "en": "Choose an open primary ticket from the selected tickets."
+  },
+  "merged_into": {
+    "vi": "Đã gộp vào phiếu",
+    "en": "Merged into ticket"
+  },
+  "merged_tickets": {
+    "vi": "Phiếu đã gộp",
+    "en": "Merged tickets"
+  },
+  "organization": {
+    "vi": "Tổ chức",
+    "en": "Organization"
+  },
+  "organization_help": {
+    "vi": "Xem thông tin, cơ cấu nhân sự và quyền trong tổ chức.",
+    "en": "View the organization, its members and their permissions."
+  },
+  "organization_name": {
+    "vi": "Tên tổ chức",
+    "en": "Organization name"
+  },
+  "organization_code": {
+    "vi": "Mã tổ chức",
+    "en": "Organization code"
+  },
+  "description": {
+    "vi": "Mô tả",
+    "en": "Description"
+  },
+  "organization_edit": {
+    "vi": "Sửa thông tin tổ chức",
+    "en": "Edit organization"
+  },
+  "organization_saved": {
+    "vi": "Đã lưu thông tin tổ chức.",
+    "en": "Organization details saved."
+  },
+  "organization_hierarchy": {
+    "vi": "Cơ cấu tổ chức",
+    "en": "Organization hierarchy"
+  },
+  "hierarchy_list": {
+    "vi": "Danh sách phân cấp",
+    "en": "Hierarchy list"
+  },
+  "hierarchy_tree": {
+    "vi": "Sơ đồ cây",
+    "en": "Tree view"
+  },
+  "permission_matrix": {
+    "vi": "Bảng phân quyền",
+    "en": "Permission matrix"
+  },
+  "permission_scope": {
+    "vi": "Quyền và phạm vi",
+    "en": "Permissions and scope"
+  },
+  "member_role_owner": {
+    "vi": "Chủ sở hữu",
+    "en": "Owner"
+  },
+  "member_role_admin": {
+    "vi": "Quản trị viên",
+    "en": "Administrator"
+  },
+  "member_role_technician": {
+    "vi": "Chuyên viên kỹ thuật",
+    "en": "Technician"
+  },
+  "member_role_user": {
+    "vi": "Người dùng nội bộ",
+    "en": "Staff member"
+  },
+  "member_role_owner_scope": {
+    "vi": "Quản lý tổ chức, cấu hình, sao lưu và tất cả vai trò cấp dưới.",
+    "en": "Manage the organization, settings, backups and all lower roles."
+  },
+  "member_role_admin_scope": {
+    "vi": "Quản lý chuyên viên và người dùng. Điều phối phiếu và công việc của tổ chức.",
+    "en": "Manage technicians and staff. Coordinate tickets and team tasks."
+  },
+  "member_role_technician_scope": {
+    "vi": "Xử lý phiếu được giao, xem thông tin cơ bản của người gửi và theo dõi phiếu của mình.",
+    "en": "Handle assigned tickets, view basic requester details and follow your own tickets."
+  },
+  "member_role_user_scope": {
+    "vi": "Gửi yêu cầu, theo dõi tiến độ và trao đổi trên phiếu mình đã tạo.",
+    "en": "Submit requests, track their progress and reply on your own tickets."
+  },
+  "member_status_active": {
+    "vi": "Đang hoạt động",
+    "en": "Active"
+  },
+  "member_status_pending_activation": {
+    "vi": "Chờ kích hoạt",
+    "en": "Pending activation"
+  },
+  "member_status_disabled": {
+    "vi": "Đã khóa",
+    "en": "Disabled"
+  },
+  "members": {
+    "vi": "Nhân sự",
+    "en": "Members"
+  },
+  "members_help": {
+    "vi": "Quản lý hồ sơ, vai trò và trạng thái truy cập của nhân sự.",
+    "en": "Manage member profiles, roles and access status."
+  },
+  "member_name": {
+    "vi": "Họ và tên",
+    "en": "Full name"
+  },
+  "member_department": {
+    "vi": "Phòng ban",
+    "en": "Department"
+  },
+  "member_position": {
+    "vi": "Chức danh",
+    "en": "Job title"
+  },
+  "member_phone": {
+    "vi": "Số điện thoại",
+    "en": "Phone number"
+  },
+  "employee_code": {
+    "vi": "Mã nhân viên",
+    "en": "Employee code"
+  },
+  "member_personal_details": {
+    "vi": "Thông tin cá nhân",
+    "en": "Personal information"
+  },
+  "member_work_details": {
+    "vi": "Thông tin công việc",
+    "en": "Work information"
+  },
+  "member_account_details": {
+    "vi": "Quyền và trạng thái truy cập",
+    "en": "Role and access status"
+  },
+  "no_members": {
+    "vi": "Chưa có nhân sự phù hợp.",
+    "en": "No matching members."
+  },
+  "add_member": {
+    "vi": "Thêm nhân sự",
+    "en": "Add member"
+  },
+  "edit_member": {
+    "vi": "Sửa hồ sơ nhân sự",
+    "en": "Edit member"
+  },
+  "member_saved": {
+    "vi": "Đã lưu hồ sơ nhân sự.",
+    "en": "Member profile saved."
+  },
+  "search_member_hint": {
+    "vi": "Tìm theo tên, email hoặc mã nhân viên",
+    "en": "Search by name, email or employee code"
+  },
+  "enable_member": {
+    "vi": "Mở khóa tài khoản",
+    "en": "Enable account"
+  },
+  "disable_member": {
+    "vi": "Khóa tài khoản",
+    "en": "Disable account"
+  },
+  "activation_link": {
+    "vi": "Liên kết kích hoạt",
+    "en": "Activation link"
+  },
+  "activation_link_help": {
+    "vi": "Gửi riêng cho nhân sự mới. Liên kết dùng một lần và hết hạn lúc {date}.",
+    "en": "Share privately with the new member. The single-use link expires on {date}."
+  },
+  "copy_activation_link": {
+    "vi": "Sao chép liên kết",
+    "en": "Copy link"
+  },
+  "renew_invitation": {
+    "vi": "Tạo lại liên kết kích hoạt",
+    "en": "Generate a new activation link"
+  },
+  "invitation_copied": {
+    "vi": "Đã sao chép liên kết kích hoạt.",
+    "en": "Activation link copied."
+  },
+  "invitation_copy_manual": {
+    "vi": "Chọn và sao chép liên kết trong ô phía trên.",
+    "en": "Select and copy the link in the field above."
+  },
+  "verify_employee_identity": {
+    "vi": "Xác nhận email đúng là tài khoản của nhân sự trước khi thêm. Tài khoản đã đăng ký sẽ được cấp quyền ngay.",
+    "en": "Confirm that the email belongs to the employee before adding them. An existing account will receive access immediately."
+  },
+  "register": {
+    "vi": "Đăng ký tài khoản",
+    "en": "Create an account"
+  },
+  "register_help": {
+    "vi": "Tạo tài khoản Trạm Mèo để quản trị viên có thể thêm bạn vào tổ chức.",
+    "en": "Create a Trạm Mèo account so an administrator can add you to the organization."
+  },
+  "registration_complete": {
+    "vi": "Đã tạo tài khoản. Hãy đăng nhập để xem trạng thái truy cập.",
+    "en": "Account created. Sign in to check your access status."
+  },
+  "activate": {
+    "vi": "Kích hoạt tài khoản",
+    "en": "Activate account"
+  },
+  "activate_help": {
+    "vi": "Đặt mật khẩu để bắt đầu sử dụng tài khoản được mời.",
+    "en": "Set a password to start using your invited account."
+  },
+  "activation_complete": {
+    "vi": "Tài khoản đã kích hoạt. Bạn có thể đăng nhập ngay.",
+    "en": "Your account is active. You can sign in now."
+  },
+  "initial_password_help": {
+    "vi": "Dùng ít nhất 12 ký tự. Mật khẩu có dấu hoặc emoji có thể có giới hạn ngắn hơn.",
+    "en": "Use at least 12 characters. Accents and emoji can shorten the maximum length."
+  },
+  "pending_assignment": {
+    "vi": "Chờ cấp quyền truy cập",
+    "en": "Waiting for access"
+  },
+  "pending_assignment_help": {
+    "vi": "Tài khoản của bạn hiện không nằm trong bất kỳ tổ chức nào hoặc chưa được cấp quyền truy cập. Vui lòng liên hệ Chủ sở hữu hoặc Quản trị viên của tổ chức để được thêm vào hệ thống.",
+    "en": "Your account does not belong to an organization or has not been granted access. Contact the organization owner or an administrator to be added."
+  },
+  "api_MEMBER_DUPLICATE": {
+    "vi": "Email hoặc mã nhân viên đã được sử dụng.",
+    "en": "This email or employee code is already in use."
+  },
+  "api_INVITATION_INVALID": {
+    "vi": "Liên kết kích hoạt đã hết hạn hoặc đã được dùng. Hãy liên hệ người mời để nhận liên kết mới.",
+    "en": "The link has expired or has already been used. Ask the person who invited you for a new one."
+  },
+  "api_INVITATION_UNAVAILABLE": {
+    "vi": "Chỉ tạo lại liên kết cho tài khoản đang chờ kích hoạt.",
+    "en": "A new link can only be issued for an account awaiting activation."
+  },
+  "api_ORGANIZATION_REQUIRED": {
+    "vi": "Tài khoản chưa được cấp quyền vào tổ chức.",
+    "en": "Your account has not been granted access to the organization."
+  },
+  "api_LOGIN_LIMIT": {
+    "vi": "Bạn đã thử quá nhiều lần. Hãy đợi rồi thử lại.",
+    "en": "Too many attempts. Wait and try again."
+  },
+  "requester_details": {
+    "vi": "Thông tin người gửi",
+    "en": "Requester details"
+  },
+  "profile_role_OWNER": {
+    "vi": "Quản lý tổ chức và phân quyền truy cập.",
+    "en": "Manage the organization and access."
+  },
+  "avatar": {
+    "vi": "Ảnh đại diện",
+    "en": "Profile photo"
+  },
+  "pagination": {
+    "vi": "Phân trang",
+    "en": "Pagination"
+  },
+  "previous": {
+    "vi": "Trang trước",
+    "en": "Previous page"
+  },
+  "next": {
+    "vi": "Trang sau",
+    "en": "Next page"
+  },
+  "directory_users": {
+    "vi": "Danh sách người dùng",
+    "en": "User directory"
+  },
+  "directory_users_description": {
+    "vi": "Quản lý tài khoản và vai trò trong không gian làm việc.",
+    "en": "Manage accounts and workspace roles."
+  },
+  "directory_description": {
+    "vi": "Mở danh sách cần quản lý.",
+    "en": "Open a directory to manage its entries."
+  },
+  "ticket_types": {
+    "vi": "Danh mục loại phiếu",
+    "en": "Ticket categories"
+  },
+  "weekly_calendar_intro": {
+    "vi": "Cập nhật phiếu và hạn nhiệm vụ trong tuần.",
+    "en": "Ticket updates and task due dates for the week."
+  },
+  "calendar_day_summary": {
+    "vi": "{day}, {tickets} phiếu cập nhật, {tasks} nhiệm vụ",
+    "en": "{day}, {tickets} updated tickets, {tasks} tasks"
+  },
+  "tasks_for_date": {
+    "vi": "Nhiệm vụ ngày {date}",
+    "en": "Tasks on {date}"
+  },
+  "no_tasks_on_date": {
+    "vi": "Bạn chưa có nhiệm vụ đến hạn trong ngày này.",
+    "en": "You have no tasks due on this date."
+  },
+  "task_not_found": {
+    "vi": "Không còn tìm thấy nhiệm vụ trong danh sách của bạn.",
+    "en": "This task is no longer in your list."
+  },
+  "general_settings": {
+    "vi": "Cài đặt chung",
+    "en": "General"
+  },
+  "ticket_number_rules": {
+    "vi": "Quy tắc đánh số phiếu",
+    "en": "Ticket numbering"
+  },
+  "ticket_number_description": {
+    "vi": "Đặt mã cho từng loại phiếu. Quy tắc áp dụng khi tạo phiếu mới. Hệ thống tự tăng số và bỏ qua mã đã dùng, kể cả phiếu đã lưu trữ.",
+    "en": "Set the format for each ticket type. Changes apply to new tickets. Numbers increase automatically and skip existing codes, including archived tickets."
+  },
+  "ticket_type": {
+    "vi": "Loại phiếu",
+    "en": "Ticket type"
+  },
+  "ticket_number_prefix": {
+    "vi": "Tiền tố",
+    "en": "Prefix"
+  },
+  "ticket_number_value": {
+    "vi": "Giá trị phần số",
+    "en": "Next number"
+  },
+  "ticket_number_digits": {
+    "vi": "Số ký tự phần số",
+    "en": "Number of digits"
+  },
+  "ticket_number_suffix": {
+    "vi": "Hậu tố",
+    "en": "Suffix"
+  },
+  "ticket_number_preview": {
+    "vi": "Hiển thị",
+    "en": "Preview"
+  },
+  "ticket_number_default": {
+    "vi": "Dùng mã mặc định",
+    "en": "Uses default numbering"
+  },
+  "ticket_number_saved": {
+    "vi": "Đã lưu quy tắc.",
+    "en": "Rule saved."
+  },
+  "ticket_number_no_categories": {
+    "vi": "Tạo danh mục để đặt quy tắc đánh số cho loại phiếu.",
+    "en": "Add a category to set a numbering rule for that ticket type."
+  },
+  "ticket_number_label": {
+    "vi": "Mã phiếu",
+    "en": "Ticket ID"
+  },
+  "ticket_number_field": {
+    "vi": "Số phiếu:",
+    "en": "Ticket number:"
+  },
+  "ticket_number_unavailable": {
+    "vi": "Chưa xem được số phiếu dự kiến.",
+    "en": "The next ticket number could not be loaded."
+  },
+  "api_TICKET_NUMBER_EXHAUSTED": {
+    "vi": "Đã hết số cho loại phiếu này. Hãy nhờ quản trị viên xem lại quy tắc đánh số.",
+    "en": "This ticket type has run out of numbers. Ask an administrator to update its numbering rule."
+  },
+  "waiting_for_customer": {
+    "vi": "Chờ người gửi phản hồi",
+    "en": "Waiting for requester"
+  },
+  "request_more_information": {
+    "vi": "Bạn cần người gửi bổ sung thông tin gì?",
+    "en": "What information do you need from the requester?"
+  },
+  "public_reply": {
+    "vi": "Phản hồi công khai",
+    "en": "Public reply"
+  },
+  "internal_note": {
+    "vi": "Ghi chú nội bộ",
+    "en": "Internal note"
+  },
+  "internal_note_only": {
+    "vi": "Chỉ quản trị viên và chuyên viên phụ trách xem được",
+    "en": "Visible only to administrators and the assigned technician"
+  },
   "categories": {
     "vi": "Danh mục",
     "en": "Categories"
@@ -1415,6 +1891,18 @@
     "vi": "Dùng tài khoản Trạm Mèo của bạn để tiếp tục.",
     "en": "Use your Trạm Mèo account to continue."
   },
+  "sign_in_unavailable": {
+    "vi": "Chưa kết nối được máy chủ đăng nhập.",
+    "en": "Unable to connect to the sign-in server."
+  },
+  "checking_sign_in": {
+    "vi": "Đang kiểm tra kết nối…",
+    "en": "Checking connection…"
+  },
+  "signing_in": {
+    "vi": "Đang đăng nhập…",
+    "en": "Signing in…"
+  },
   "password": {
     "vi": "Mật khẩu",
     "en": "Password"
@@ -1642,14 +2130,6 @@
   "backup_error_write": {
     "vi": "Không lưu được bản sao. Hãy thử lại.",
     "en": "The backup could not be saved. Try again."
-  },
-  "priority_automatic": {
-    "vi": "Mức ưu tiên được gợi ý tự động theo nội dung khi bạn gửi yêu cầu.",
-    "en": "Priority is suggested automatically from the request details when you submit."
-  },
-  "ticket_sender_account": {
-    "vi": "Người gửi",
-    "en": "Requester"
   },
   "team_tasks": {
     "vi": "Nhiệm vụ nhóm",

@@ -11,9 +11,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Translate, I18n, errorKey } from './i18n';
 import { ApiResponse } from './features/categories/interfaces/category';
+import { calendarDay, calendarMonth } from './calendar-date';
 
 type Status = 'TODO' | 'DOING' | 'DONE';
 type View = 'board' | 'calendar' | 'table';
@@ -24,7 +26,7 @@ interface TaskData {
   assigneeId: number | null;
   dueDate: string | null;
 }
-interface Task extends TaskData {
+export interface Task extends TaskData {
   id: number;
   version: number;
   canEdit: boolean;
@@ -41,12 +43,12 @@ const empty = (): TaskData => ({
   assigneeId: null,
   dueDate: null,
 });
-const today = new Date();
-
 @Component({ imports: [DatePipe, FormsModule, Translate], templateUrl: './tasks.html' })
 export class TasksPage {
   private readonly http = inject(HttpClient);
   private readonly destroy = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly editor = viewChild<ElementRef<HTMLDialogElement>>('editor');
   readonly i18n = inject(I18n);
   readonly tasks = signal<Task[]>([]);
@@ -55,7 +57,9 @@ export class TasksPage {
   readonly pending = signal(false);
   readonly error = signal('');
   readonly editError = signal('');
-  readonly view = signal<View>('board');
+  readonly view = signal<View>(
+    this.route.snapshot.queryParamMap.get('view') === 'calendar' ? 'calendar' : 'board',
+  );
   readonly views: View[] = ['board', 'calendar', 'table'];
   readonly states: Status[] = ['TODO', 'DOING', 'DONE'];
   readonly columns = computed(() =>
@@ -64,20 +68,19 @@ export class TasksPage {
       tasks: this.tasks().filter((task) => task.status === status),
     })),
   );
-  readonly month = signal(new Date(today.getFullYear(), today.getMonth(), 1, 12));
+  readonly today = calendarDay.format(new Date());
+  readonly month = signal(calendarMonth(this.today));
   readonly weekDays = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   readonly calendar = computed(() => {
     const month = this.month();
-    const first = (month.getDay() + 6) % 7;
-    const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+    const first = (month.getUTCDay() + 6) % 7;
+    const days = new Date(
+      Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + 1, 0),
+    ).getUTCDate();
     return Array.from({ length: Math.ceil((first + days) / 7) * 7 }, (_, index) => {
       const offset = index - first + 1;
-      const date = new Date(month.getFullYear(), month.getMonth(), offset, 12);
-      const key = [
-        date.getFullYear(),
-        String(date.getMonth() + 1).padStart(2, '0'),
-        String(date.getDate()).padStart(2, '0'),
-      ].join('-');
+      const date = new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth(), offset, 12));
+      const key = calendarDay.format(date);
       return {
         date,
         key,
@@ -88,6 +91,7 @@ export class TasksPage {
   });
   readonly over = signal<Status | null>(null);
   readonly editing = signal<Task | null>(null);
+  private linkedTask = Number(this.route.snapshot.queryParamMap.get('task'));
   draft = empty();
 
   constructor() {
@@ -105,6 +109,17 @@ export class TasksPage {
         next: ({ data }) => {
           this.tasks.set(data.tasks);
           this.members.set(data.members);
+          if (this.linkedTask) {
+            const linked = data.tasks.find((task) => task.id === this.linkedTask);
+            this.linkedTask = 0;
+            if (linked) {
+              if (linked.dueDate) this.month.set(calendarMonth(linked.dueDate));
+              this.open(linked);
+            } else {
+              this.error.set('task_not_found');
+              this.clearTaskLink();
+            }
+          }
         },
         error: (error) => this.error.set(errorKey(error)),
       });
@@ -136,8 +151,24 @@ export class TasksPage {
     this.editor()?.nativeElement.close();
   }
 
+  clearTaskLink() {
+    if (!this.route.snapshot.queryParamMap.has('task')) return;
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { task: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   moveMonth(offset: number) {
-    this.month.update((month) => new Date(month.getFullYear(), month.getMonth() + offset, 1, 12));
+    this.month.update(
+      (month) => new Date(Date.UTC(month.getUTCFullYear(), month.getUTCMonth() + offset, 1, 12)),
+    );
+  }
+
+  goToToday() {
+    this.month.set(calendarMonth(this.today));
   }
 
   startDrag(event: DragEvent, task: Task) {

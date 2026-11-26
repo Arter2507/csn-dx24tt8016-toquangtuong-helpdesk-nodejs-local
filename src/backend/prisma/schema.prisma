@@ -13,7 +13,9 @@ datasource db {
 model User {
   id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
   email        String    @unique @db.VarChar(254)
-  passwordHash String    @map("password_hash") @db.VarChar(255)
+  passwordHash String?   @map("password_hash") @db.VarChar(255)
+  activationTokenHash String? @unique(map: "uq_users_activation_token_hash") @map("activation_token_hash") @db.Char(64)
+  activationExpiresAt DateTime? @map("activation_expires_at") @db.DateTime(3)
   fullName     String    @map("full_name") @db.VarChar(150)
   phone        String?   @db.VarChar(30)
   isActive     Boolean   @default(true) @map("is_active")
@@ -31,10 +33,50 @@ model User {
   notifications         Notification[]
 
   profile UserProfile?
+  organizationMembership OrganizationMember?
+  ownedOrganization Organization? @relation("OrganizationOwner")
   tasksAssigned TaskItem[] @relation("TaskAssignee")
   tasksCreated TaskItem[] @relation("TaskCreator")
 
   @@map("users")
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  TECHNICIAN
+  USER
+}
+
+model Organization {
+  id          Int      @id @db.UnsignedTinyInt
+  name        String   @db.VarChar(150)
+  code        String   @unique @db.VarChar(30)
+  description String   @default("") @db.VarChar(1000)
+  ownerId     BigInt?  @unique @map("owner_id") @db.UnsignedBigInt
+  createdAt   DateTime @map("created_at") @db.DateTime(3)
+
+  owner       User?    @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  members     OrganizationMember[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  userId         BigInt     @id @map("user_id") @db.UnsignedBigInt
+  organizationId Int       @map("organization_id") @db.UnsignedTinyInt
+  employeeCode   String?    @map("employee_code") @db.VarChar(40)
+  department     String     @default("") @db.VarChar(100)
+  position       String     @default("") @db.VarChar(100)
+  role           MemberRole
+  joinedAt       DateTime   @map("joined_at") @db.DateTime(3)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([organizationId, employeeCode], map: "uq_members_employee_code")
+  @@index([organizationId, role], map: "idx_members_org_role")
+  @@map("organization_members")
 }
 
 model Role {
@@ -104,6 +146,7 @@ model TechnicianCategory {
 
 model Ticket {
   id          BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  displayCode String    @unique(map: "uq_tickets_display_code") @map("display_code") @db.VarChar(40)
   requesterId BigInt    @map("requester_id") @db.UnsignedBigInt
   assigneeId  BigInt?   @map("assignee_id") @db.UnsignedBigInt
   categoryId  BigInt    @map("category_id") @db.UnsignedBigInt
@@ -133,11 +176,22 @@ model Ticket {
   @@map("tickets")
 }
 
+model TicketNumberRule {
+  categoryId BigInt @id @map("category_id") @db.UnsignedBigInt
+  prefix     String @default("") @db.VarChar(12)
+  nextNumber Int    @default(1) @map("next_number") @db.UnsignedInt
+  digits     Int    @default(4) @db.UnsignedTinyInt
+  suffix     String @default("") @db.VarChar(12)
+
+  @@map("ticket_number_rules")
+}
+
 model TicketComment {
   id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
   ticketId  BigInt   @map("ticket_id") @db.UnsignedBigInt
   authorId  BigInt   @map("author_id") @db.UnsignedBigInt
   body      String   @db.Text
+  isInternal Boolean @default(false) @map("is_internal")
   createdAt DateTime @map("created_at") @db.DateTime(3)
 
   ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)

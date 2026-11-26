@@ -3,7 +3,7 @@
     <h1>
       {{
         mode() === 'list'
-          ? ('categories' | t)
+          ? ('ticket_types' | t)
           : mode() === 'create'
             ? ('add_category' | t)
             : ('edit_category' | t)
@@ -17,13 +17,12 @@
     @if (editingId !== null) {
       <span class="badge">{{ code }}</span>
     }
-    <span class="badge" data-tone="neutral">{{ 'demo_data' | t }}</span>
     @if (mode() === 'list') {
       <a class="primary" routerLink="/categories/new"
         ><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'add_category' | t }}</a
       >
     } @else {
-      <a class="text-button" routerLink="/categories"
+      <a class="text-button" routerLink="/categories/ticket-types"
         ><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ 'back_to_list' | t }}</a
       >
     }
@@ -261,7 +260,7 @@
       >
     }
     <div class="form-actions">
-      <a class="secondary" routerLink="/categories">{{ 'cancel' | t }}</a>
+      <a class="secondary" routerLink="/categories/ticket-types">{{ 'cancel' | t }}</a>
       <button class="primary" type="submit" [disabled]="saving">
         {{
           saving ? ('saving' | t) : editingId === null ? ('add_category' | t) : ('save_changes' | t)

@@ -1,9 +1,17 @@
 # THIẾT KẾ QUY CHUẨN VÀ DANH MỤC REST API
 
 **Đề tài:** Thiết kế website quản lý yêu cầu hỗ trợ kỹ thuật  
-**Trạng thái:** Thiết kế dự kiến, chưa xác nhận đã triển khai hoặc kiểm thử.  
+**Trạng thái:** Tài liệu thiết kế nền, kèm phần cập nhật API đang chạy.
+
 **Công nghệ:** Angular, Node.js, Express.js, MySQL.  
-**Tài liệu liên quan:** `Database_Helpdesk.md`.
+**Tài liệu liên quan:** [Cơ sở dữ liệu](database-demo.md) · [Kế hoạch IAM/RBAC](ke-hoach-iam-rbac.md).
+
+## API đang sử dụng
+
+- Angular truy cập `/api/v1` cùng origin. Phiên đăng nhập thực tế dùng cookie HttpOnly và xác minh origin khi ghi. Cấu hình đường dẫn và HTTPS xem tại [hướng dẫn production](../../docker/production.md).
+- `GET /tickets/number-preview?categoryId=...` trả mã dự kiến. `POST /tickets` dùng danh tính trong phiên và cấp mã trong transaction. Mã phiếu hiển thị là `code`, URL truy cập sử dụng khóa chính `id`.
+- `GET /tasks` phục vụ bảng, lịch tháng và lịch tuần của chuyên viên. `/tasks?view=calendar&task=<id>` là đường dẫn giao diện mở chi tiết nhiệm vụ từ danh sách có quyền.
+- `GET /tickets/:ticketId/attachments/:attachmentId` trả tệp sau khi kiểm tra quyền theo phiếu. Hồ sơ dùng API avatar của tài khoản hiện hành. Các route API hiện hành xem tại [src/app.js](../../src/backend/src/app.js).
 
 ## 1. Phạm vi và kiến trúc
 
@@ -31,7 +39,7 @@ Angular gọi HTTP API của Express; Express kiểm tra xác thực, quyền v�
 | Ngày giờ | ISO 8601 UTC, ví dụ `2026-11-10T08:30:00Z` |
 | Phân trang | `page` từ 1, `pageSize` mặc định 20, tối đa 100 |
 | Sắp xếp | `sortBy`, `sortOrder=asc|desc`; server chỉ chấp nhận trường trong danh sách cho phép |
-| Xác thực | Access token trong `Authorization: Bearer <token>`; phiên làm việc và refresh token theo thiết kế dưới đây |
+| Xác thực | Cookie HttpOnly cho phiên và refresh token, kết hợp origin và kiểm tra quyền trên backend |
 | Không trả dữ liệu | HTTP 204 không có body |
 
 **Phản hồi thành công** (ví dụ 200 hoặc 201):
@@ -58,7 +66,7 @@ Angular gọi HTTP API của Express; Express kiểm tra xác thực, quyền v�
 | 201 | Tạo mới thành công, trả `Location` khi có URL tài nguyên |
 | 204 | Thành công, không có nội dung trả về |
 | 400 | JSON hoặc tham số sai cú pháp |
-| 401 | Chưa xác thực, phiên hết hạn hoặc token không hợp lệ; trả `WWW-Authenticate: Bearer` |
+| 401 | Chưa xác thực, phiên hết hạn hoặc cookie phiên không hợp lệ |
 | 403 | Đã xác thực nhưng không đủ quyền |
 | 404 | Tài nguyên không tồn tại hoặc được ẩn khi không có quyền truy cập |
 | 409 | Xung đột trạng thái, phiên bản hoặc dữ liệu trùng |
@@ -72,7 +80,7 @@ Angular gọi HTTP API của Express; Express kiểm tra xác thực, quyền v�
 
 ## 4. Xác thực và phiên
 
-Đề xuất đăng nhập bằng email và mật khẩu; quản trị viên tạo tài khoản, không mở đăng ký công khai trong V1. Server cấp access token ngắn hạn và refresh token ngẫu nhiên, chỉ lưu hash refresh token ở `auth_sessions`. Refresh token đặt trong cookie `HttpOnly`, `Secure`, `SameSite` phù hợp; bảo vệ CSRF cho endpoint dùng cookie và kiểm soát origin. Khi refresh, xoay token, thu hồi token cũ theo transaction; logout thu hồi phiên và xóa cookie. Không lưu mật khẩu gốc; dùng Argon2id hoặc bcrypt với cấu hình phù hợp. Trạng thái tài khoản phải được kiểm tra khi xác thực. Access token cần kiểm tra chữ ký, thời hạn, issuer và audience. Để khóa tài khoản có hiệu lực ngay, kiểm tra phiên/trạng thái người dùng ở server cho mỗi request bảo vệ.
+Trạm Mèo đăng nhập bằng email và mật khẩu đã băm bcrypt. Quản trị viên cấp tài khoản. Server tạo access token ngắn hạn và refresh token ngẫu nhiên, lưu hash refresh token trong `auth_sessions`. Cả hai token dùng cookie `HttpOnly`, `SameSite=Strict` và thêm `Secure` ở production. Backend kiểm tra origin khi ghi, chữ ký và thời hạn token, issuer, audience, trạng thái tài khoản và phiên. Làm mới phiên xoay token trong transaction. Đăng xuất thu hồi phiên và xóa cookie.
 
 | Method | Endpoint | Quyền | Nội dung |
 |---|---|---|---|

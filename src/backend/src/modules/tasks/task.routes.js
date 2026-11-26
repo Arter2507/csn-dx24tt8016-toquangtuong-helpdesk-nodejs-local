@@ -5,6 +5,7 @@ import { validate } from '../../middlewares/validate.js';
 import { AppError } from '../../shared/errors.js';
 import { users } from '../users/users.js';
 import { idSchema } from '../categories/category.validator.js';
+import { isAdmin, isTechnician } from '../organizations/permissions.js';
 
 export const demoTasks = [];
 const id = z.number().int().positive().safe();
@@ -23,17 +24,18 @@ const missing = () => new AppError(404, 'NOT_FOUND');
 const conflict = () => new AppError(409, 'CONFLICT', 'Nhiệm vụ vừa được cập nhật');
 
 function staff(req, res, next) {
-  if (req.account && !req.account.roleCodes.some(role => role === 'ADMIN' || role === 'TECHNICIAN')) return next(forbidden());
+  if (req.account && !isAdmin(req.account) && !isTechnician(req.account)) return next(forbidden());
   next();
 }
 
 async function members(req) {
   if (!req.account) return users.filter(user => user.isActive && ['ADMIN', 'TECHNICIAN'].includes(user.role))
     .map(({ id, fullName }) => ({ id, fullName }));
-  const [rows] = await pool.query(
-    `SELECT DISTINCT u.id, u.full_name AS fullName FROM users u
-      JOIN user_roles ur ON ur.user_id = u.id JOIN roles r ON r.id = ur.role_id
-      WHERE u.is_active = 1 AND r.code IN ('ADMIN', 'TECHNICIAN') ORDER BY u.full_name`,
+  const [rows] = await pool.execute(
+    `SELECT u.id, u.full_name AS fullName FROM users u
+      JOIN organization_members m ON m.user_id = u.id
+      WHERE m.organization_id = ? AND u.is_active = 1 AND u.password_hash IS NOT NULL
+        AND m.role IN ('OWNER', 'ADMIN', 'TECHNICIAN') ORDER BY u.full_name`, [req.account.organizationId],
   );
   return rows;
 }
@@ -43,7 +45,7 @@ async function find(req, taskId) {
   const [rows] = await pool.execute(select + ' WHERE id = ?', [taskId]);
   return rows[0];
 }
-const canEdit = (req, row) => !req.account || req.account.roleCodes.includes('ADMIN') ||
+const canEdit = (req, row) => !req.account || isAdmin(req.account) ||
   req.account.id === row.createdBy || req.account.id === row.assigneeId;
 const taskView = (req, row) => ({ ...row, canEdit: canEdit(req, row) });
 

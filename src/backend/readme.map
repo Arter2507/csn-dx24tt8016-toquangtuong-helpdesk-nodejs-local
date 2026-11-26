@@ -6,12 +6,15 @@
 
 | Việc cần làm | Bắt đầu ở đâu |
 | --- | --- |
-| Đổi cổng hoặc nguồn dữ liệu | .env.example → src/configs/env.js → src/server.js |
+| Đổi cổng, origin hoặc thông số MySQL | docker/.env.example ở gốc repo → src/configs/env.js → src/server.js. |
+| Đổi dữ liệu rà soát | sql/helpdesk-sample-data.sql và scripts/seed-review-data.js, khởi tạo qua scripts/docker-init-db.js. |
 | Thêm endpoint | src/app.js đăng ký router. Xem module categories để tham khảo cách tách route, controller, service và repository. |
 | Đổi quy tắc nhập danh mục | src/modules/categories/category.validator.js kiểm tra đầu vào, category.service.js xử lý nghiệp vụ. |
 | Đổi tìm kiếm hoặc phân trang danh mục | category.validator.js khai báo tham số, demo.repository.js và mysql.repository.js thực hiện truy vấn, category.service.js tạo metadata. |
-| Đổi vai trò hoặc vô hiệu hóa người dùng | src/modules/users/users.js. Tìm kiếm và lọc danh sách nằm trong src/shared/demo-resource.routes.js, với cấu hình tại src/app.js. |
-| Đổi phân công, mức ưu tiên hoặc chuyển trạng thái ticket | src/modules/tickets/tickets.js. Kiểm thử luồng và xung đột phiên bản ở test/workspace.test.js. |
+| Đổi vai trò hoặc vô hiệu hóa người dùng | src/modules/organizations/members.repository.js và permissions.js. Xem src/app.js để kiểm tra quyền API. |
+| Đăng ký, kích hoạt, trạng thái chờ cấp quyền | src/modules/auth/auth.routes.js, auth.repository.js và src/modules/organizations/activation.js |
+| Tổ chức, thành viên và phân quyền | src/modules/organizations/organization.routes.js và prisma/migrations/20261126090000_organizations_iam/migration.sql |
+| Đổi phân công, số phiếu, mức ưu tiên hoặc trạng thái | src/modules/tickets/mysql.repository.js, numbering.js, ticket-access.js và ticket-status.js. Kiểm thử ở test/mysql-workflow.test.js. |
 | Đổi định dạng lỗi | src/shared/errors.js → src/middlewares/error.js. Lỗi đầu vào được tạo ở src/middlewares/validate.js. |
 | Chuẩn bị schema MySQL | prisma/schema.prisma và prisma/migrations/. Xem [hướng dẫn chạy](../README.md). Cấu hình kết nối ở src/database/pool.js. |
 

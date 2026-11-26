@@ -1,5 +1,7 @@
 # Báo cáo tiến độ nội bộ Trạm Mèo ngày 23/11/2026
 
+Mốc đối chiếu ngày 23/11. Xem [báo cáo hiện hành ngày 25/11/2026](bao-cao-tien-do-local-2026-11-25.md) để lấy lệnh chạy và tiến độ mới nhất.
+
 Nhánh cộng tác `local`, phiên bản giao diện v0.2.0. Phạm vi báo cáo gồm cấu hình chạy cục bộ, chức năng đã triển khai và kết quả kiểm thử trên dữ liệu mẫu.
 
 | Hạng mục | Kết quả | Kiểm chứng |

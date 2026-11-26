@@ -1,0 +1,85 @@
+<section class="panel login-panel" aria-labelledby="access-title">
+  @let pending = mode() === 'pending';
+  @let registering = mode() === 'register';
+  <div class="login-brand">
+    <span class="brand-mark">
+      <img src="mascot/it-support-mark.webp" alt="" width="40" height="40" />
+    </span>
+    <strong>{{ 'tr_m_m_o' | t }}</strong>
+  </div>
+  @if (pending) {
+    <img class="assignment-mascot" src="mascot/it-support-rest.webp" alt="" />
+  }
+  <div class="login-heading">
+    <h1 id="access-title">{{ (pending ? 'pending_assignment' : mode()) | t }}</h1>
+    <p class="muted">
+      {{
+        (pending ? 'pending_assignment_help' : registering ? 'register_help' : 'activate_help') | t
+      }}
+    </p>
+  </div>
+  @if (error()) {
+    <p class="notice error" role="alert">{{ error() | t }}</p>
+  }
+  @if (pending) {
+    <button class="primary" type="button" [disabled]="busy()" (click)="signOut()">
+      {{ 'sign_out' | t }}
+    </button>
+  } @else {
+    @if (completed()) {
+      <p class="notice" role="status">
+        {{ (registering ? 'registration_complete' : 'activation_complete') | t }}
+      </p>
+    } @else if (!registering && !validToken) {
+      <p class="notice error" role="alert">{{ 'api_INVITATION_INVALID' | t }}</p>
+    } @else {
+      <form class="iam-form" (ngSubmit)="submit()" #form="ngForm">
+        @if (registering) {
+          <div class="field">
+            <label for="register-name">{{ 'member_name' | t }}</label>
+            <input
+              id="register-name"
+              name="fullName"
+              autocomplete="name"
+              required
+              maxlength="150"
+              [(ngModel)]="fullName"
+            />
+          </div>
+          <div class="field">
+            <label for="register-email">{{ 'email' | t }}</label>
+            <input
+              id="register-email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              required
+              email
+              maxlength="254"
+              [(ngModel)]="email"
+            />
+          </div>
+        }
+        <div class="field">
+          <label for="initial-password">{{ 'password' | t }}</label>
+          <input
+            id="initial-password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            required
+            minlength="12"
+            maxlength="72"
+            [(ngModel)]="password"
+            aria-describedby="initial-password-help"
+          />
+          <small id="initial-password-help" class="muted">{{ 'initial_password_help' | t }}</small>
+        </div>
+        <button class="primary" type="submit" [disabled]="form.invalid || busy()">
+          {{ mode() | t }}
+        </button>
+      </form>
+    }
+    <a class="text-button login-link" routerLink="/login">{{ 'sign_in' | t }}</a>
+  }
+</section>

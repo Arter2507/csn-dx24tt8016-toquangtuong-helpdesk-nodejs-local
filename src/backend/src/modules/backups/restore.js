@@ -12,12 +12,13 @@ import { demoProfiles } from '../accounts/profile.routes.js';
 import { demoTasks } from '../tasks/task.routes.js';
 import { ensureAttachmentDirectory, getAttachmentPath } from '../tickets/attachments.js';
 import { tickets } from '../tickets/tickets.js';
+import { legacyTicketCode, restoreDemoNumberRules } from '../tickets/numbering.js';
 import { users } from '../users/users.js';
 
 const invalid = () => new AppError(422, 'RESTORE_INVALID', 'Bản sao thiếu dữ liệu, hỏng hoặc khác chế độ');
 const tables = ['categories', 'technician_categories', 'tickets', 'ticket_comments', 'ticket_events',
-  'ticket_attachments', 'notifications', 'user_profiles', 'task_items'];
-const optional = new Set(['user_profiles', 'task_items']);
+  'ticket_attachments', 'notifications', 'user_profiles', 'task_items', 'ticket_number_rules'];
+const optional = new Set(['user_profiles', 'task_items', 'ticket_number_rules']);
 const versionedTables = new Set(['tickets', 'task_items']);
 const jsonColumns = new Set(['details', 'old_value', 'new_value']);
 
@@ -53,6 +54,7 @@ async function mysqlRestore(data) {
       await conn.execute('UPDATE users SET full_name = ?, phone = ? WHERE id = ?', [user.full_name, user.phone, user.id]);
     }
     const included = tables.filter(table => Array.isArray(data[table]));
+    for (const row of data.tickets) row.display_code ??= legacyTicketCode(row.id);
     for (const table of included.filter(table => versionedTables.has(table))) {
       const [current] = await conn.query('SELECT id, version FROM ' + table);
       refreshVersions(current, data[table]);
@@ -70,6 +72,9 @@ async function mysqlRestore(data) {
           selected.map(column => value(column, row[column])),
         );
       }
+    }
+    if (included.includes('ticket_number_rules')) {
+      await conn.query('INSERT IGNORE INTO ticket_number_rules (category_id) VALUES (0)');
     }
     await conn.commit();
   } catch (error) {
@@ -124,8 +129,10 @@ export async function restoreArchive(archive) {
     if (demo) {
       demoRepository.replace(data.categories);
       replaceRows(users, data.users);
+      for (const ticket of data.tickets) ticket.code ??= legacyTicketCode(ticket.id);
       refreshVersions(tickets, data.tickets);
       replaceRows(tickets, data.tickets);
+      restoreDemoNumberRules(data.ticketNumberRules);
       if (Array.isArray(data.tasks)) {
         refreshVersions(demoTasks, data.tasks);
         replaceRows(demoTasks, data.tasks);

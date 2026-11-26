@@ -4,7 +4,6 @@
     <p>{{ 'admin_track_incoming_requests_assignments_and_progress' | t }}</p>
   </div>
   <div class="heading-actions">
-    <span class="badge">{{ 'demo_data' | t }}</span>
     <a class="primary" routerLink="/tickets/new"
       ><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'new_request' | t }}</a
     >
@@ -21,9 +20,9 @@
       <section class="panel welcome">
         <div>
           <h2>{{ 'hello' | t }}</h2>
-          <p>{{ 'heres_whats_happening_in_your_demo_workspace' | t }}</p>
+          <p>{{ 'admin_welcome_description' | t }}</p>
         </div>
-        <img src="mascot/cat-support-cartoon-calico.webp" width="320" height="320" alt="" />
+        <img src="mascot/it-support-mark.webp" width="320" height="320" alt="" />
       </section>
       <helpdesk-stat-cards [tickets]="rows" />
     </div>
@@ -101,7 +100,7 @@
                 <tr>
                   <td>
                     <a class="badge" [routerLink]="['/tickets', row.id, 'edit']">{{
-                      row['code'] ?? '#' + row.id
+                      ticketReference(row)
                     }}</a>
                   </td>
                   <td>{{ row['title'] }}</td>

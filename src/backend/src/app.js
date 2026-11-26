@@ -3,10 +3,14 @@ import { profileRoutes } from './modules/accounts/profile.routes.js';
 import { taskRoutes } from './modules/tasks/task.routes.js';
 import { guardWrites } from './modules/backups/maintenance.js';
 import { backupRoutes } from './modules/backups/backup.routes.js';
-import { authRoutes, newPassword, requireAccount, requireAdmin, sameOrigin } from './modules/auth/auth.routes.js';
+import { authRoutes, requireAccount, sameOrigin } from './modules/auth/auth.routes.js';
+import { requireAdmin, requireMember, requireOwner } from './modules/organizations/permissions.js';
+import { memberRoutes, organizationRoutes } from './modules/organizations/organization.routes.js';
+import { members } from './modules/organizations/members.repository.js';
 import { accountsDirectory, notificationRoutes, technicianCategories } from './modules/accounts/accounts.routes.js';
 import { z } from 'zod';
 import { registerTicketActions } from './modules/tickets/actions.js';
+import { numberRulesRoutes, previewTicketCode } from './modules/tickets/numbering.js';
 import { ticketComments } from './modules/tickets/comments.js';
 import { randomUUID } from 'node:crypto';
 import { config } from './configs/env.js';
@@ -20,7 +24,6 @@ import { mysqlRepository } from './modules/categories/mysql.repository.js';
 import { demoResourceRoutes } from './shared/demo-resource.routes.js';
 import { asyncResourceRoutes } from './shared/async-resource.routes.js';
 import { users, roles, userInput, userUpdate, createUser, updateUser } from './modules/users/users.js';
-import { usersMysql } from './modules/users/mysql.repository.js';
 import { tickets, statuses, ticketListFields, ticketInput, ticketUpdate, createTicket, updateTicket } from './modules/tickets/tickets.js';
 import { ticketsMysql } from './modules/tickets/mysql.repository.js';
 import { discardFailedUpload, receiveTicket, sendAttachment } from './modules/tickets/attachments.js';
@@ -41,11 +44,20 @@ if (useMysql) {
     next();
   });
   app.use('/api/v1/auth', authRoutes);
-  app.use('/api/v1', requireAccount);
+  app.use('/api/v1', requireAccount, requireMember);
 }
 app.use('/api/v1/profile', profileRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/categories', categoryRoutes(useMysql ? mysqlRepository : demoRepository, useMysql ? requireAdmin : undefined));
+if (useMysql) app.use('/api/v1/settings/ticket-number-rules', requireOwner, numberRulesRoutes);
+else app.use('/api/v1/settings/ticket-number-rules', numberRulesRoutes);
+
+app.get('/api/v1/tickets/number-preview', validate(z.object({
+  categoryId: z.coerce.number().int().positive().safe(),
+}), 'query'), async (req, res) => {
+  const code = await previewTicketCode(tickets, req.validated.query.categoryId);
+  res.set('Cache-Control', 'no-store').json({ success: true, data: { code }, meta: null });
+});
 
 if (useMysql) {
   app.get('/api/v1/directory', accountsDirectory);
@@ -54,13 +66,8 @@ if (useMysql) {
   app.put('/api/v1/users/:id/categories', requireAdmin, validate(idSchema, 'params'),
     validate(z.object({ categoryIds: z.array(z.number().int().positive().safe()).max(100) }).strict(), 'body'),
     technicianCategories.update);
-  app.use('/api/v1/users', requireAdmin, asyncResourceRoutes({
-    repository: usersMysql,
-    input: userInput.extend({ password: newPassword }),
-    updateInput: userUpdate,
-    searchable: ['fullName', 'email'],
-    filters: { field: 'role', values: roles },
-  }));
+  app.use('/api/v1/organizations', organizationRoutes);
+  app.use('/api/v1/users', memberRoutes);
   app.get('/api/v1/tickets/:ticketId/attachments/:attachmentId', sendAttachmentFromMysql);
   app.get('/api/v1/tickets/:ticketId/comments', ticketComments.list);
   app.post('/api/v1/tickets/:ticketId/comments', ticketComments.create);
@@ -69,7 +76,7 @@ if (useMysql) {
   app.use('/api/v1/tickets', asyncResourceRoutes({
     repository: ticketsMysql,
     input: ticketInput,
-    updateInput: ticketUpdate.partial().required({ version: true }).extend({ note: z.string().trim().max(2000).optional() }),
+    updateInput: ticketUpdate.partial().required({ version: true }),
     prepareCreate: (body, account) => ({ ...body, requesterId: account.id }),
     searchable: ['title', 'description'],
     filters: { field: 'status', values: statuses },
@@ -77,10 +84,10 @@ if (useMysql) {
     receive: receiveTicket,
     archive: true,
   }), discardFailedUpload);
-  app.get('/api/v1/backups/snapshot', requireAdmin, async (req, res, next) => {
+  app.get('/api/v1/backups/snapshot', requireOwner, async (req, res, next) => {
     try {
       const [usersPage, ticketsPage, categoriesPage] = await Promise.all([
-        usersMysql.list({ search: '', page: 1, pageSize: 1000, sortBy: 'id', sortOrder: 'asc' }),
+        members.list({ search: '', page: 1, pageSize: 1000, sortBy: 'id', sortOrder: 'asc' }, req.account),
         ticketsMysql.list({ search: '', page: 1, pageSize: 1000, sortBy: 'id', sortOrder: 'asc' }),
         mysqlRepository.list({ search: '', page: 1, pageSize: 1000, sortBy: 'id', sortOrder: 'asc', isActive: undefined }),
       ]);
@@ -124,6 +131,10 @@ if (useMysql) {
   app.use('/api/v1/tickets', demoResourceRoutes({
     rows: tickets, input: ticketInput, updateInput: ticketUpdate, create: createTicket, update: updateTicket,
     searchable: ['title', 'description'], filters: { field: 'status', values: statuses },
+    extraSearch: row => {
+      const category = demoRepository.snapshot().find(category => category.id === row.categoryId);
+      return [category?.name, category?.code];
+    },
     queryFields: ticketListFields, receive: receiveTicket, archive: true
   }), discardFailedUpload);
   app.get('/api/v1/backups/snapshot', (req, res) => {
@@ -133,7 +144,7 @@ if (useMysql) {
   });
 }
 
-if (useMysql) app.use('/api/v1/backups', requireAdmin, backupRoutes);
+if (useMysql) app.use('/api/v1/backups', requireOwner, backupRoutes);
 else app.use('/api/v1/backups', backupRoutes);
 
 app.use((req, res, next) => next(new AppError(404, 'NOT_FOUND', 'Không tìm thấy API')));

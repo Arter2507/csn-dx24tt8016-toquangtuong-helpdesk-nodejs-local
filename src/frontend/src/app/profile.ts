@@ -99,6 +99,7 @@ export class ProfilePage {
   }
 
   roleLabel(role: string) {
+    if (role === 'OWNER') return 'member_role_owner';
     return userRoles.find((item) => item.value === role)?.label ?? role;
   }
 

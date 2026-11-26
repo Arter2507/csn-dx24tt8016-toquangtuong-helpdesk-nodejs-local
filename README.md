@@ -16,8 +16,8 @@
 | Email sinh viên | 170124299@rdi.tvu.vn |
 | Email liên hệ | toquangtuong250703.it@gmail.com |
 | Số điện thoại | 0917895327 |
-| Repository | [Điền đường dẫn GitHub] |
-| Trạng thái | Đang chuẩn bị và tổ chức thư mục đồ án |
+| Repository | Nhánh cộng tác `local` |
+| Trạng thái | Luồng nghiệp vụ MySQL chạy local, đã chuẩn bị cấu hình máy chủ |
 
 ## 2. Giới thiệu
 
@@ -25,17 +25,17 @@
 
 Website hỗ trợ phân loại yêu cầu hỗ trợ, quản lý mức độ ưu tiên theo loại yêu cầu và phân công người phụ trách xử lý. Hệ thống cũng cung cấp chức năng tìm kiếm, thống kê theo loại yêu cầu, trạng thái hoặc thời gian, giúp người quản lý dễ dàng theo dõi và đánh giá hiệu quả xử lý các yêu cầu hỗ trợ.
 
-## 3. Chức năng dự kiến
+## 3. Chức năng hiện hành
 
 - Cho phép người dùng gửi yêu cầu hỗ trợ kỹ thuật.
 - Phân loại yêu cầu theo phần mềm, phần cứng, mạng hoặc tài khoản.
 - Quản lý mức độ ưu tiên và phân công người phụ trách.
-- Cập nhật trạng thái yêu cầu (ticket): Tiếp nhận, Đang xử lý, Hoàn thành.
+- Xử lý phiếu qua tiếp nhận, đang xử lý, chờ phản hồi, chờ xác nhận và đã đóng.
 - Tìm kiếm, phân tích và thống kê theo loại, trạng thái và thời gian.
 
-Các chức năng trên là dự kiến và sẽ được cập nhật theo kết quả phân tích, thiết kế và thực hiện.
+Ứng dụng có đăng nhập ba không gian, hồ sơ, nhiệm vụ nhóm, lịch tháng/lịch tuần, thông báo và sao lưu. Mở rộng phân quyền theo phòng ban trong [kế hoạch IAM/RBAC](documents/markdown/ke-hoach-iam-rbac.md).
 
-## 4. Công nghệ dự kiến
+## 4. Công nghệ
 
 | Thành phần | Công nghệ |
 | --- | --- |
@@ -43,13 +43,13 @@ Các chức năng trên là dự kiến và sẽ được cập nhật theo kế
 | Máy chủ | Node.js, Express.js |
 | Cơ sở dữ liệu | MySQL |
 
-Phiên bản và các công cụ bổ sung sẽ được ghi nhận sau khi lựa chọn và cài đặt.
+Docker Compose dựng môi trường MySQL 8.4 với migration Prisma. Cấu hình production phục vụ Angular tĩnh qua Caddy.
 
 ## 5. Cấu trúc thư mục
 
 ```text
 .
-├── docker/            # Chứa các tệp tin liên quan đến triển khai ứng dụng trên docker (Nếu sử dụng)
+├── docker/            # Cấu hình local và production
 ├── progress-report/   # Báo cáo tiến độ hằng tuần
 ├── setup/             # Tệp cài đặt, dữ liệu thử và hướng dẫn triển khai
 ├── soft/              # Phần mềm liên quan, nếu có
@@ -62,18 +62,7 @@ Các thư mục con trong `thesis/` sẽ được tổ chức theo quy định: 
 
 ## 6. Cài đặt và chạy chương trình
 
-Đồ án đang trong giai đoạn nghiên cứu và xác định đề tài. Hướng dẫn cài đặt và chạy chương trình sẽ được cập nhật sau khi hoàn thành xây dựng hệ thống.
-
-<!-- Chưa có hướng dẫn chạy được xác minh. Sau khi mã nguồn và môi trường được thiết lập, mục này sẽ cập nhật:
-
-1. Yêu cầu môi trường và phiên bản phần mềm.
-2. Cách lấy mã nguồn và cài đặt các thư viện.
-3. Cách cấu hình môi trường và cơ sở dữ liệu.
-4. Lệnh khởi chạy giao diện và máy chủ.
-5. Cách nạp dữ liệu thử và kiểm tra kết quả.
-6. Hướng dẫn Docker và sơ đồ triển khai, nếu sử dụng. -->
-
-==
+Chạy `pnpm dev` từ gốc repo có Docker Compose, Node và pnpm. Mở [Trạm Mèo local](http://127.0.0.1:4200). [Hướng dẫn local và dữ liệu rà soát](README.local.md) · [Triển khai production](docker/production.md)
 
 ## 7. Tiến độ và kết quả
 ### Tuần 1: 04/11/2026 – 10/11/2026
@@ -86,7 +75,7 @@ Các thư mục con trong `thesis/` sẽ được tổ chức theo quy định: 
 **Theo dõi tiến độ**
 
 - Báo cáo tiến độ hằng tuần được lưu tại thư mục `progress-report/`.
-- Kết quả thiết kế, chức năng hoàn thành, cách kiểm thử và hình ảnh minh họa sẽ được cập nhật theo tiến độ thực tế.
+- Xem [kết quả và phạm vi kiểm thử ngày 26/11/2026](progress-report/bao-cao-tien-do-local-2026-11-26.md).
 
 ## 8. Tài liệu tham khảo
 

@@ -1,7 +1,14 @@
 import { app } from './app.js';
 import { config } from './configs/env.js';
 if (!['demo', 'mysql'].includes(config.dataSource)) throw new Error('DATA_SOURCE phải là demo hoặc mysql');
-const server = app.listen(config.port, '127.0.0.1');
+if (process.env.NODE_ENV === 'production') {
+  const origin = new URL(config.auth.origin);
+  if (config.dataSource !== 'mysql' || config.auth.secret.length < 32 ||
+      origin.protocol !== 'https:' || origin.origin !== config.auth.origin) {
+    throw new Error('Production cần MySQL, JWT_SECRET tối thiểu 32 ký tự và CORS_ORIGIN là origin HTTPS.');
+  }
+}
+const server = app.listen(config.port, config.host);
 server.once('listening', () => {
   console.log('Helpdesk API đang chạy tại cổng ' + config.port);
   process.send?.('ready');

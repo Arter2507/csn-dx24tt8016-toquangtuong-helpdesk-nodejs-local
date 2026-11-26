@@ -2,8 +2,9 @@ import 'dotenv/config';
 
 const refreshDays = Number(process.env.REFRESH_TOKEN_DAYS || 7);
 export const config = {
+  host: process.env.HOST || '127.0.0.1',
   port: Number(process.env.PORT || 3000),
-  dataSource: process.env.DATA_SOURCE || 'demo',
+  dataSource: process.env.DATA_SOURCE || 'mysql',
   auth: {
     secret: process.env.JWT_SECRET || '',
     origin: process.env.CORS_ORIGIN || 'http://127.0.0.1:4200',

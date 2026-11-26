@@ -24,10 +24,13 @@ DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS ticket_events;
 DROP TABLE IF EXISTS ticket_attachments;
 DROP TABLE IF EXISTS ticket_comments;
+DROP TABLE IF EXISTS ticket_number_rules;
 DROP TABLE IF EXISTS tickets;
 DROP TABLE IF EXISTS technician_categories;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS auth_sessions;
+DROP TABLE IF EXISTS organization_members;
+DROP TABLE IF EXISTS organizations;
 DROP TABLE IF EXISTS user_roles;
 DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS users;
@@ -40,14 +43,42 @@ SET FOREIGN_KEY_CHECKS = 1;
 CREATE TABLE users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   email VARCHAR(254) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255) NULL,
+  activation_token_hash CHAR(64) NULL,
+  activation_expires_at DATETIME(3) NULL,
   full_name VARCHAR(150) NOT NULL,
   phone VARCHAR(30) NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME(3) NOT NULL,
   updated_at DATETIME(3) NOT NULL,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_users_email (email)
+  UNIQUE KEY uq_users_email (email),
+  UNIQUE KEY uq_users_activation_token_hash (activation_token_hash)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE organizations (
+  id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  code VARCHAR(30) NOT NULL UNIQUE,
+  description VARCHAR(1000) NOT NULL DEFAULT '',
+  owner_id BIGINT UNSIGNED NULL UNIQUE,
+  created_at DATETIME(3) NOT NULL,
+  CONSTRAINT chk_organizations_single_workspace CHECK (id = 1),
+  CONSTRAINT fk_organizations_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON UPDATE RESTRICT ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE organization_members (
+  user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+  organization_id TINYINT UNSIGNED NOT NULL,
+  employee_code VARCHAR(40) NULL,
+  department VARCHAR(100) NOT NULL DEFAULT '',
+  position VARCHAR(100) NOT NULL DEFAULT '',
+  role ENUM('OWNER', 'ADMIN', 'TECHNICIAN', 'USER') NOT NULL,
+  joined_at DATETIME(3) NOT NULL,
+  UNIQUE KEY uq_members_employee_code (organization_id, employee_code),
+  KEY idx_members_org_role (organization_id, role),
+  CONSTRAINT fk_members_user FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+  CONSTRAINT fk_members_organization FOREIGN KEY (organization_id) REFERENCES organizations(id) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
@@ -127,6 +158,7 @@ CREATE TABLE technician_categories (
 -- ---------------------------------------------------------------------------
 CREATE TABLE tickets (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  display_code VARCHAR(40) NOT NULL,
   requester_id BIGINT UNSIGNED NOT NULL,
   assignee_id BIGINT UNSIGNED NULL,
   category_id BIGINT UNSIGNED NOT NULL,
@@ -141,6 +173,7 @@ CREATE TABLE tickets (
   created_at DATETIME(3) NOT NULL,
   updated_at DATETIME(3) NOT NULL,
   PRIMARY KEY (id),
+  UNIQUE KEY uq_tickets_display_code (display_code),
   KEY idx_tickets_requester_created (requester_id, created_at, id),
   KEY idx_tickets_assignee_status_created (assignee_id, status, created_at, id),
   KEY idx_tickets_status_created (status, created_at, id),
@@ -157,10 +190,20 @@ CREATE TABLE tickets (
   CONSTRAINT chk_tickets_priority
     CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'URGENT')),
   CONSTRAINT chk_tickets_status
-    CHECK (status IN ('NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED')),
+    CHECK (status IN ('NEW', 'IN_PROGRESS', 'PENDING_CUSTOMER', 'RESOLVED', 'CLOSED')),
   CONSTRAINT chk_tickets_version
     CHECK (version >= 1)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE ticket_number_rules (
+  category_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+  prefix VARCHAR(12) NOT NULL DEFAULT '',
+  next_number INT UNSIGNED NOT NULL DEFAULT 1,
+  digits TINYINT UNSIGNED NOT NULL DEFAULT 4,
+  suffix VARCHAR(12) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO ticket_number_rules (category_id) VALUES (0);
 
 -- ---------------------------------------------------------------------------
 -- ticket_comments
@@ -170,6 +213,7 @@ CREATE TABLE ticket_comments (
   ticket_id BIGINT UNSIGNED NOT NULL,
   author_id BIGINT UNSIGNED NOT NULL,
   body TEXT NOT NULL,
+  is_internal BOOLEAN NOT NULL DEFAULT FALSE,
   created_at DATETIME(3) NOT NULL,
   PRIMARY KEY (id),
   KEY idx_ticket_comments_ticket_created (ticket_id, created_at, id),
@@ -232,7 +276,9 @@ CREATE TABLE ticket_events (
       'STATUS_CHANGED',
       'CATEGORY_CHANGED',
       'PRIORITY_CHANGED',
-      'DETAILS_CHANGED'
+      'DETAILS_CHANGED',
+      'MERGED_INTO',
+      'MERGED_TICKET'
     ))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -289,6 +335,11 @@ INSERT INTO user_roles (user_id, role_id, created_at) VALUES
   (2, 2, @now),
   (3, 1, @now),
   (3, 3, @now);
+
+INSERT INTO organizations (id, name, code, owner_id, created_at)
+VALUES (1, 'Trạm Mèo', 'TRAM-MEO', 3, @now);
+INSERT INTO organization_members (user_id, organization_id, role, joined_at) VALUES
+  (1, 1, 'USER', @now), (2, 1, 'TECHNICIAN', @now), (3, 1, 'OWNER', @now);
 
 INSERT INTO technician_categories (user_id, category_id, created_at) VALUES
   (2, 1, @now),

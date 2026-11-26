@@ -1,6 +1,16 @@
 export type Value = string | number | boolean | null;
 export type Row = Record<string, Value> & { id: number };
 export type Resource = 'users' | 'tickets';
+export interface TicketLink {
+  id: number;
+  code: string;
+}
+export interface TicketDetails {
+  attachments?: Attachment[];
+  history?: TicketEvent[];
+  mergedInto?: TicketLink;
+  mergedTickets?: TicketLink[];
+}
 
 export interface Field {
   key: string;
@@ -31,4 +41,6 @@ export interface TicketComment {
   authorName: string;
   body: string;
   createdAt: string;
+  internal: boolean;
+  ticketUpdate?: { status: string; version: number; at: string };
 }

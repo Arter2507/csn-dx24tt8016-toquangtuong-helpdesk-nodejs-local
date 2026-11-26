@@ -4,7 +4,9 @@ import { AppError } from '../../shared/errors.js';
 import { demoRepository } from '../categories/demo.repository.js';
 import { users } from '../users/users.js';
 import { prepareAttachments } from './attachments.js';
-export const statuses = ['NEW', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+import { allocateDemoCode } from './numbering.js';
+import { canUpdateStatus, needsTransitionNote, statuses } from './ticket-status.js';
+export { statuses } from './ticket-status.js';
 const fields = {
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().min(1).max(10000),
@@ -29,10 +31,10 @@ export const ticketUpdate = z.object({
   priority: z.enum(priorities),
   status: z.enum(statuses),
   version: z.number().int().positive(),
+  note: z.string().trim().max(2000).optional(),
   removeAttachments: z.array(z.string().regex(/^[a-f0-9]{32}$/)).max(5).optional()
 }).strict();
 export const tickets = [];
-const transitions = { NEW: ['IN_PROGRESS'], IN_PROGRESS: ['RESOLVED'], RESOLVED: ['CLOSED', 'IN_PROGRESS'], CLOSED: [] };
 function checkCategory(id) {
   if (!demoRepository.isActive(id)) throw new AppError(422, 'INVALID_CATEGORY', 'Danh mục không hoạt động');
 }
@@ -42,10 +44,10 @@ export async function createTicket(input, files = []) {
   if (!users.some(user => user.id === input.requesterId && user.isActive)) {
     throw new AppError(422, 'INVALID_REQUESTER', 'Người gửi không hoạt động');
   }
-  const id = tickets.length + 1;
+  const id = tickets.reduce((maximum, ticket) => Math.max(maximum, ticket.id), 0) + 1;
   const now = new Date().toISOString();
   const ticket = {
-    ...input, priority: estimatePriority(input), id, code: 'HD-' + String(id).padStart(3, '0'), status: 'NEW',
+    ...input, priority: estimatePriority(input), id, code: allocateDemoCode(tickets, input.categoryId), status: 'NEW',
     assigneeId: null, version: 1, createdAt: now, updatedAt: now, attachments,
     history: [{ status: 'NEW', at: now }]
   };
@@ -53,12 +55,14 @@ export async function createTicket(input, files = []) {
   return ticket;
 }
 export async function updateTicket(ticket, input, files = []) {
-  const { version, removeAttachments = [], ...changes } = input;
+  const { version, note, removeAttachments = [], ...changes } = input;
   const attachments = await prepareAttachments(ticket.attachments ?? [], files, removeAttachments);
   if (input.categoryId !== ticket.categoryId) checkCategory(input.categoryId);
-  if (ticket.archivedAt || ticket.version !== version || ticket.status === 'CLOSED' ||
-      (ticket.status !== input.status && !transitions[ticket.status].includes(input.status))) {
+  if (ticket.archivedAt || ticket.version !== version || !canUpdateStatus(ticket.status, input.status)) {
     throw new AppError(409, 'CONFLICT', 'Phiên bản hoặc chuyển trạng thái không hợp lệ');
+  }
+  if (input.status === 'PENDING_CUSTOMER' && needsTransitionNote(ticket.status, input.status) && !note) {
+    throw new AppError(422, 'NOTE_REQUIRED', 'Vui lòng nhập nội dung phản hồi');
   }
   if ((input.assigneeId !== null && input.assigneeId !== ticket.assigneeId && !users.some(user => user.id === input.assigneeId && user.isActive && user.role === 'TECHNICIAN')) ||
       (input.status !== 'NEW' && input.assigneeId === null)) {
@@ -71,7 +75,7 @@ export async function updateTicket(ticket, input, files = []) {
   const updated = { ...ticket, ...changes, attachments,
     archivedAttachments: [...(ticket.archivedAttachments ?? []), ...archivedAttachments],
     version: version + 1, updatedAt: now,
-    history: ticket.status === input.status ? history : [...history, { status: input.status, at: now }] };
+    history: ticket.status === input.status ? history : [...history, { status: input.status, at: now, note }] };
   Object.assign(ticket, updated);
   return updated;
 }

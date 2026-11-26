@@ -5,8 +5,10 @@ import { archiveRoute, archiveRows } from './archive.js';
 import { AppError } from './errors.js';
 import { idSchema, listSchema } from '../modules/categories/category.validator.js';
 
+const normalizeSearch = value => String(value ?? '').toLowerCase().normalize('NFD').replace(/\p{M}/gu, '').replaceAll('đ', 'd');
+
 export function demoResourceRoutes({
-  rows, input, updateInput, create, update, searchable, filters, archive = false, queryFields = {}, receive = (req, res, next) => next()
+  rows, input, updateInput, create, update, searchable, filters, archive = false, queryFields = {}, extraSearch = () => [], receive = (req, res, next) => next()
 }) {
   const router = Router();
   const day = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
@@ -22,13 +24,15 @@ export function demoResourceRoutes({
   if (archive) archiveRoute(router, ids => archiveRows(rows, ids));
   router.get('/', validate(querySchema, 'query'), (req, res) => {
     const { search, page, pageSize, sortBy, sortOrder, filter, createdOn, assigneeId, ...criteria } = req.validated.query;
-    const keyword = search.toLocaleLowerCase();
+    const keyword = normalizeSearch(search);
+    const reference = keyword.startsWith('#');
     const matches = rows.filter(row => !row.archivedAt && (!filter || String(row[filters.field]) === filter) &&
       (assigneeId === undefined || (row.assigneeId ?? 0) === assigneeId) &&
       (!createdOn || (row.createdAt && day.format(new Date(row.createdAt)) === createdOn)) &&
       Object.entries(criteria).every(([field, value]) => value === undefined || row[field] === value) &&
-      (row.code?.toLowerCase().includes(keyword) ||
-        searchable.some(field => row[field].toLocaleLowerCase().includes(keyword))));
+      (reference ? normalizeSearch(row.code).includes(keyword.slice(1)) :
+        [row.code, ...searchable.map(field => row[field]), ...extraSearch(row)]
+          .some(value => normalizeSearch(value).includes(keyword))));
     matches.sort((a, b) => {
       const order = sortBy === 'id' ? a.id - b.id : a[sortBy].localeCompare(b[sortBy]);
       return order * (sortOrder === 'asc' ? 1 : -1) || a.id - b.id;

@@ -1,11 +1,11 @@
 import { AppError } from '../../shared/errors.js';
+import { needsTransitionNote } from './ticket-status.js';
+import { isAdmin, isTechnician } from '../organizations/permissions.js';
 
-export function isAdmin(account) {
-  return account.roleCodes.includes('ADMIN');
-}
+export { isAdmin, isTechnician };
 
-export function isTechnician(account) {
-  return account.roleCodes.includes('TECHNICIAN');
+export function canHandle(account, ticket) {
+  return isAdmin(account) || (isTechnician(account) && account.id === ticket.assigneeId);
 }
 
 export function authorizeUpdate(account, ticket, changes) {
@@ -19,10 +19,9 @@ export function authorizeUpdate(account, ticket, changes) {
     throw deny();
   }
   if (ticket.status === changes.status) return;
-  const handling = changes.status === 'RESOLVED' || (ticket.status === 'NEW' && changes.status === 'IN_PROGRESS');
-  if (handling ? !admin && !assigned : !owner) throw deny();
-  if ((changes.status === 'RESOLVED' || (ticket.status === 'RESOLVED' && changes.status === 'IN_PROGRESS'))
-      && !changes.note) {
+  const needsOwner = ticket.status === 'RESOLVED';
+  if (needsOwner ? !owner : !canHandle(account, ticket)) throw deny();
+  if (needsTransitionNote(ticket.status, changes.status) && !changes.note) {
     throw new AppError(422, 'NOTE_REQUIRED', 'Vui lòng nhập nội dung phản hồi');
   }
 }

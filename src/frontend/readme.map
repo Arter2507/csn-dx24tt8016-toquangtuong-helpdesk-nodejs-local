@@ -10,9 +10,11 @@
 | Thêm đường dẫn hoặc trang trống | src/app/app.routes.ts đăng ký route, src/app/pages.ts chứa mẫu trang trống. |
 | Đổi dashboard và số liệu | src/app/dashboard.html hiển thị KPI và biểu đồ. Dashboard trong src/app/pages.ts tổng hợp từ API ticket. |
 | Đổi dashboard chuyên viên hoặc người gửi | src/app/role-dashboard.ts và src/app/role-dashboard.html. |
+| Đổi lịch tháng, lịch tuần hoặc mở chi tiết từ URL | src/app/tasks.ts, src/app/tasks.html, src/app/role-dashboard.ts và src/app/calendar-date.ts. |
+| Thêm danh mục vào trang chung | src/app/directory-page.ts và src/app/directory-page.html. |
 | Đổi cài đặt hoặc trang danh sách thông báo | src/app/account-pages.ts và src/app/account-pages.html. |
 | Sửa nội dung tiếng Việt hoặc tiếng Anh | src/app/messages.json. |
-| Sửa thao tác chọn và xóa nhiều dòng | src/app/bulk-actions.ts. |
+| Sửa thao tác chọn, xóa mềm, phân công và gộp phiếu | src/app/bulk-actions.ts và src/app/features/workspace/workspace.html. |
 | Đổi báo cáo, bộ lọc hoặc xuất CSV | src/app/reports.html và Reports trong src/app/pages.ts. |
 | Sửa bảng, bộ lọc hoặc form danh mục | src/app/app.html. Trạng thái và thao tác nằm trong src/app/app.ts. |
 | Đổi API hoặc kiểu dữ liệu danh mục | src/app/features/categories/services/category.service.ts và interfaces/category.ts trong cùng feature. |
@@ -44,7 +46,12 @@
 | .vscode/tasks.json | Tác vụ chạy từ VS Code. |
 | public/ | Tài nguyên được sao chép khi build. |
 | public/fonts/ | Font Chivo cục bộ và giấy phép SIL OFL. |
-| public/mascot/cat-support-cartoon-calico.webp | Mascot cho logo Trạm Mèo, favicon và khối chào. |
+| public/mascot/it-support-mark.webp và favicon-32/48/64.png | Logo và favicon Trạm Mèo. |
+| public/mascot/it-support-sketch.png và it-support-rest.webp | Minh họa đăng nhập và trang chờ cấp quyền. |
+| src/app/organization.ts và organization.html | Thông tin tổ chức, danh sách phân cấp, cây thu gọn, sơ đồ liên kết và bảng quyền. |
+| src/app/settings-nav.ts | Menu dọc dùng chung cho Cài đặt và Tổ chức. |
+| src/app/members.ts và members.html | Lọc, thêm, cập nhật, khóa và gửi liên kết kích hoạt cho nhân sự. |
+| src/app/onboarding.ts và onboarding.html | Đăng ký, kích hoạt và màn hình chờ cấp quyền. |
 | src/ | Mã nguồn Angular. |
 | src/index.html | Khung HTML chứa app-root. |
 | src/main.ts | Khởi động Angular bằng Shell và appConfig. |

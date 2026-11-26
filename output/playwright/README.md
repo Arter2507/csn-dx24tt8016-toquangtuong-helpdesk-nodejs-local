@@ -42,10 +42,8 @@ Angular build thành công. Kết quả gồm 2/2 kiểm thử Angular, 5/5 ki�
 
 Bộ demo gồm 7 ca, thêm bảng chuông, toast, tùy chọn giao diện, màn hình rộng và sao lưu theo lịch. Các luồng hồ sơ, nhiệm vụ nhóm và khôi phục được kiểm tra riêng trên Edge. [Báo cáo nội bộ](../../progress-report/bao-cao-tien-do-local-2026-11-23.md)
 
-## Chạy lại
+## Rà soát trên MySQL hiện tại
 
-1. Từ thư mục gốc nhánh `local`, chạy `pnpm dev` để khởi động API demo cổng 3000 và Angular cổng 4200.
-2. Trong thư mục này, chạy `npm ci` rồi `npx playwright test`. Máy cần có Microsoft Edge. Đặt biến `HELPDESK_SCREENSHOTS` thành đường dẫn thư mục ảnh chụp nếu cần lưu ảnh của lần chạy mới ở vị trí khác.
-3. Chạy `npx playwright show-report report` để mở báo cáo HTML. Script ở [helpdesk.spec.mjs](helpdesk.spec.mjs), cấu hình ở [playwright.config.mjs](playwright.config.mjs).
+Chạy `pnpm dev` ở gốc repo rồi dùng [các bước rà soát MySQL](../../README.local.md#rà-soát-trên-dữ-liệu-thật-trong-mysql-local) với ba vai trò. Kết quả Edge và HTTPS cục bộ nằm trong [báo cáo ngày 25/11/2026](../../progress-report/bao-cao-tien-do-local-2026-11-25.md#kiểm-chứng).
 
-Bộ test tạo ticket mẫu trong bộ nhớ, được xóa khi khởi động lại backend. Kết quả áp dụng cho chế độ demo và viewport mô phỏng. Xem báo cáo nội bộ để đối chiếu phạm vi kiểm thử MySQL. Các kích thước mobile trong bộ này là viewport mô phỏng.
+[Kịch bản Playwright trước đây](helpdesk.spec.mjs) và ảnh chụp bên trên ghi lại giai đoạn demo trong bộ nhớ. Chạy lại kịch bản ở bản mã nguồn và môi trường của mốc tương ứng. Kích thước mobile trong báo cáo là viewport mô phỏng.

@@ -1,5 +1,5 @@
 import { Translate, I18n } from './i18n';
-import { Component, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Session } from './session';
 import { BackupScheduler } from './backup-scheduler';
@@ -17,11 +17,18 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 })
 export class Shell {
   private readonly content = viewChild<ElementRef<HTMLElement>>('content');
+  readonly mobileToggle = viewChild<ElementRef<HTMLButtonElement>>('mobileMenu');
   private readonly router = inject(Router);
   readonly menuOpen = signal(false);
   readonly collapsed = signal(localStorage.getItem('helpdesk.sidebar') === 'collapsed');
   readonly preferences = inject(Preferences);
   readonly session = inject(Session);
+  private readonly workspaceRoute = signal(false);
+  readonly workspaceVisible = computed(
+    () =>
+      this.workspaceRoute() &&
+      (this.session.mode() === 'demo' || !!this.session.account()?.organizationId),
+  );
   readonly signOutError = signal(false);
   readonly i18n = inject(I18n);
   readonly progress = inject(NetworkProgress);
@@ -45,7 +52,6 @@ export class Shell {
     {
       label: 'administration',
       links: [
-        { path: '/users', label: 'users', icon: 'bi-people' },
         { path: '/categories', label: 'categories', icon: 'bi-tags' },
         { path: '/reports', label: 'reports', icon: 'bi-bar-chart' },
         { path: '/backup', label: 'backups_2', icon: 'bi-database' },
@@ -62,15 +68,24 @@ export class Shell {
     this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
       if (!(event instanceof NavigationEnd)) return;
       const path = event.urlAfterRedirects.split(/[?#]/)[0];
+      this.workspaceRoute.set(
+        !['/login', '/register', '/activate', '/pending-assignment'].includes(path),
+      );
       if (path !== this.currentPath) {
         this.currentPath = path;
         this.content()?.nativeElement.scrollTo(0, 0);
         if (window.matchMedia('(max-width: 767px)').matches) window.scrollTo(0, 0);
       }
       const route = this.router.routerState.snapshot.root.firstChild;
-      const section = this.groups
-        .flatMap((group) => group.links)
-        .find((link) => link.path === '/' + route?.url[0]?.path);
+      const directoryResource = route?.url[0]?.path;
+      const section =
+        directoryResource === 'users'
+          ? { path: '/users', label: 'members' }
+          : directoryResource === 'categories' && path !== '/categories'
+            ? { path: '/categories/ticket-types', label: 'ticket_types' }
+            : this.groups
+                .flatMap((group) => group.links)
+                .find((link) => link.path === '/' + route?.url[0]?.path);
       const account = Number(
         route?.queryParamMap.get('account') ??
           route?.queryParamMap.get('requesterId') ??
@@ -96,6 +111,10 @@ export class Shell {
           ? [{ label: 'overview' }]
           : [
               { label: 'overview', path: '/' },
+              ...(directoryResource === 'users' ||
+              (directoryResource === 'categories' && path !== '/categories')
+                ? [{ label: 'categories', path: '/categories' }]
+                : []),
               ...(section && (mode === 'create' || mode === 'edit' || mode === 'view')
                 ? [section]
                 : []),
@@ -119,11 +138,13 @@ export class Shell {
   }
 
   visibleLink(path: string) {
+    if (path === '/backup') return this.session.allows('OWNER');
     if (path === '/tasks') return this.session.allows('ADMIN') || this.session.allows('TECHNICIAN');
     if (path === '/dashboard/technician') return this.session.allows('TECHNICIAN');
+    if (path === '/dashboard/user')
+      return this.session.allows('USER') || this.session.hasRole('TECHNICIAN');
     return (
-      !['/', '/users', '/categories', '/reports', '/backup'].includes(path) ||
-      this.session.allows('ADMIN')
+      !['/', '/users', '/categories', '/reports'].includes(path) || this.session.allows('ADMIN')
     );
   }
 

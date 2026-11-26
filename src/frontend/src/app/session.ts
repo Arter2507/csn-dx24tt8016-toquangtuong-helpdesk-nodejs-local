@@ -21,6 +21,10 @@ export interface Account {
   email: string;
   roleCodes: string[];
   isActive: boolean;
+  role: 'OWNER' | 'ADMIN' | 'TECHNICIAN' | 'USER' | null;
+  organizationId: number | null;
+  organizationName: string | null;
+  status: 'ACTIVE' | 'UNASSIGNED';
 }
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +37,8 @@ export class Session {
   private refreshing?: Observable<Account>;
 
   hasRole(role: string) {
+    if (role === 'ADMIN' && this.account()?.role === 'OWNER') return true;
+    if (role === 'USER') return this.account()?.role === 'USER';
     return this.account()?.roleCodes.includes(role) ?? false;
   }
 
@@ -41,6 +47,7 @@ export class Session {
   }
 
   get home() {
+    if (this.account()?.status === 'UNASSIGNED') return '/pending-assignment';
     return this.allows('ADMIN')
       ? '/'
       : this.hasRole('TECHNICIAN')
@@ -121,6 +128,10 @@ export const requireSession: CanActivateFn = async (route) => {
   }
   if (session.mode() === 'demo') return true;
   if (!session.account()) return router.parseUrl('/login');
+  if (!session.account()?.organizationId) {
+    return route.data['pending'] ? true : router.parseUrl('/pending-assignment');
+  }
+  if (route.data['pending']) return router.parseUrl(session.home);
   const access: string | string[] | undefined = route.data['access'];
   return !access ||
     (Array.isArray(access) ? access.some((role) => session.hasRole(role)) : session.hasRole(access))
@@ -131,7 +142,7 @@ export const requireSession: CanActivateFn = async (route) => {
 export const renewSession: HttpInterceptorFn = (request, next) => {
   if (
     !request.url.startsWith('/api/v1/') ||
-    /^\/api\/v1\/auth\/(mode|login|refresh|logout)$/.test(request.url)
+    /^\/api\/v1\/auth\/(mode|login|register|activate|refresh|logout)$/.test(request.url)
   )
     return next(request);
   const session = inject(Session);

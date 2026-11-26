@@ -1,24 +1,25 @@
 # Trạm Mèo — chức năng, tiến độ và phân công
 
-Cập nhật **23/11/2026** · Nhánh cộng tác `local` · Bản **v0.2.0**
+Cập nhật **26/11/2026** · Nhánh cộng tác `local` · Bản **v0.2.0**
 
 ## Chức năng hiện có
 
 | Hạng mục | Phạm vi đã chạy được |
 | --- | --- |
-| Nhiệm vụ nhóm | Tạo, phân công, kéo thả giữa các trạng thái, đánh dấu hoàn thành, lịch và danh sách. |
+| Nhiệm vụ nhóm | Tạo, phân công, kéo thả, đánh dấu hoàn thành, lịch tháng và lịch tuần có dấu hôm nay, trạng thái và chi tiết. |
 | Quản trị | Tổng quan, biểu đồ trạng thái, hàng đợi chưa phân công. |
 | Chuyên viên | Công việc theo ngày, lịch tuần, ghi chú trình duyệt, lối tắt việc được giao; chuyển góc nhìn người gửi. |
 | Người dùng | Gửi hôm nay/tuần này, năm yêu cầu mở ưu tiên cao, chờ xác nhận, tạo yêu cầu và xem tiến độ. |
-| Quản lý yêu cầu | Tìm kiếm, lọc, phân trang, sửa, phân công, trạng thái, timeline, kéo thả tệp, xóa mềm. |
-| Người dùng và danh mục | Tạo/sửa, bật/ngưng sử dụng; giữ liên kết lịch sử; luôn còn ít nhất một ADMIN hoạt động. |
+| Quản lý yêu cầu | Tìm mã một phần, gợi ý, lọc trực tiếp, cỡ trang 5–100, trao đổi và đính kèm. Quản trị viên có thể xóa mềm, phân công hoặc gộp nhiều phiếu. |
+| Tổ chức và phân quyền | Cơ cấu bốn vai trò, ba chế độ xem, hồ sơ nhân sự, tự đăng ký, chờ cấp quyền và kích hoạt qua liên kết. |
+| Người dùng và danh mục | Danh mục chung dẫn tới người dùng và loại phiếu. Tạo/sửa và bật/ngưng sử dụng vẫn giữ lịch sử. |
 | Báo cáo | Lọc ngày tạo / loại / trạng thái, biểu đồ, bảng, CSV. |
 | Hồ sơ, cài đặt, thông báo | Sửa hồ sơ qua MySQL, theme sáng/tối/theo thiết bị, giảm chuyển động, ngôn ngữ, tùy chọn toast. Nút chuông và trang thông báo dùng chung trạng thái đã đọc. |
 | Sao lưu | Tạo bản ZIP thủ công hoặc theo lịch khi mở web. Có tiến độ, lịch sử, tải bản sao và khôi phục từ lịch sử. |
 | Giao diện | Phase -1, Trạm Mèo, VI/EN, sáng/tối, loading, chuyển trang, sidebar. |
-| Công cụ & CSDL | Lệnh pnpm typecheck/build/re-build/dev; Prisma migration; SQL schema + sample ~5 ticket; API CRUD categories/users/tickets với `DATA_SOURCE=mysql`. |
+| Công cụ và CSDL | Docker Compose cho Angular, Express và MySQL. Có lệnh pnpm dev, build, check và stop; migration tự động khi khởi động MySQL. |
 
-`DATA_SOURCE=demo` dùng bộ nhớ; `DATA_SOURCE=mysql` đọc MySQL. MySQL có đăng nhập, phân quyền, tệp lưu trên đĩa và thông báo phía máy chủ. Đã thêm hồ sơ theo tab và nhiệm vụ nhóm. Khôi phục được kiểm tra trên schema riêng.
+Local và cấu hình production đều dùng MySQL. Bộ local có 10 phiếu nhiều ngày và 7 nhiệm vụ. Trang hồ sơ theo tab, thông báo, tệp và sao lưu đọc dữ liệu thực từ API. Chế độ bộ nhớ phục vụ bộ kiểm thử nhanh.
 
 ## Phân công cho hai người
 
@@ -36,11 +37,11 @@ Trạng thái: **Chờ làm** · **Đang làm** · **Chờ kiểm tra** · **Đ�
 | B3 | Người 2 | API ticket đầy đủ theo contract: phân công, transition, comment, history, soft-delete. | Đang làm | Transaction, version, quyền sở hữu. Luồng chính đã kiểm thử. API có route riêng và giữ PATCH tương thích với form hiện tại. | B1, B2 |
 | B4 | Người 2 | Tệp đính kèm dài hạn + thông báo theo tài khoản trên server. | Đã triển khai | Upload/download đúng quyền; thông báo bền sau reload. | B2, B3 |
 | B5 | Người 2 | Thống kê MySQL, xuất liệu, sao lưu và khôi phục. | Đang làm | Đã thử khôi phục từ lịch sử trên schema riêng. Còn đối chiếu thống kê và thử với dữ liệu lớn hơn. | B1, B3, B4 |
-| B6 | Người 2 | Chuẩn hóa `.env.example`, README chạy máy, kiểm thử, triển khai demo. | **Xong** (phần môi trường) | Clone + chạy theo README; còn rà thêm sau B2–B5. | Một phần độc lập B1 |
+| B6 | Người 2 | Chuẩn hóa Docker, biến môi trường, MySQL local và cấu hình production. | Cấu hình đã chuẩn bị | Xác minh DNS, HTTPS công khai và quy trình vận hành trên máy chủ đích. | B1, B2 |
 
-### Kiểm chứng ngày 23/11/2026
+### Kiểm chứng và các mốc tiếp theo
 
-Xem [báo cáo tiến độ nội bộ](../../progress-report/bao-cao-tien-do-local-2026-11-23.md) để đối chiếu phạm vi và các phần còn lại.
+Xem [báo cáo tiến độ hiện hành](../../progress-report/bao-cao-tien-do-local-2026-11-26.md) và [kế hoạch IAM/RBAC dành cho hai người](ke-hoach-iam-rbac.md).
 
 ### Mốc 16/11/2026
 

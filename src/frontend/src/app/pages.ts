@@ -9,7 +9,11 @@ import { Category } from './features/categories/interfaces/category';
 import { CategoryService } from './features/categories/services/category.service';
 import { WorkspaceService } from './features/workspace/workspace.service';
 import { Row } from './features/workspace/workspace.types';
-import { ticketPriorities, ticketStatuses } from './features/workspace/workspace-labels';
+import {
+  ticketPriorities,
+  ticketReference,
+  ticketStatuses,
+} from './features/workspace/workspace-labels';
 
 const dayFormat = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
 const dayKey = (date: Date) => dayFormat.format(date);
@@ -128,6 +132,7 @@ class StatusChart {
   templateUrl: './dashboard.html',
 })
 export class Dashboard {
+  readonly ticketReference = ticketReference;
   private readonly workspace = inject(WorkspaceService);
   private readonly destroy = inject(DestroyRef);
   readonly tickets = signal<Row[] | null>(null);

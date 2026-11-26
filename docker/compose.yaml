@@ -1,0 +1,111 @@
+name: tram-meo
+
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-helpdesk}"
+      MYSQL_USER: "${MYSQL_USER:-helpdesk_app}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?Run pnpm dev or set MYSQL_PASSWORD in docker/.env}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Run pnpm dev or set MYSQL_ROOT_PASSWORD in docker/.env}"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u "$$MYSQL_USER" -D "$$MYSQL_DATABASE" -e "SELECT 1" >/dev/null']
+      interval: 3s
+      timeout: 5s
+      retries: 25
+      start_period: 15s
+
+  backend:
+    build:
+      context: ../src/backend
+      dockerfile: ../../docker/backend.Dockerfile
+    init: true
+    command: ["sh", "-c", "node scripts/docker-init-db.js && exec node --watch --watch-preserve-output src/server.js"]
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DATA_SOURCE: mysql
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_NAME: "${MYSQL_DATABASE:-helpdesk}"
+      DB_USER: "${MYSQL_USER:-helpdesk_app}"
+      DB_PASSWORD: "${MYSQL_PASSWORD:?Run pnpm dev or set MYSQL_PASSWORD in docker/.env}"
+      JWT_SECRET: "${JWT_SECRET:?Run pnpm dev or set JWT_SECRET in docker/.env}"
+      MYSQL_SEED_SAMPLE: "${MYSQL_SEED_SAMPLE:-true}"
+      CORS_ORIGIN: "${CORS_ORIGIN:-http://127.0.0.1:${FRONTEND_PORT:-4200}}"
+      UPLOAD_DIR: /data/uploads
+      BACKUP_DIR: /data/backups
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    volumes:
+      - uploads:/data/uploads
+      - backups:/data/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/auth/mode').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    develop:
+      watch:
+        - action: sync
+          path: ../src/backend/src
+          target: /app/src
+        - action: sync+restart
+          path: ../src/backend/prisma/migrations
+          target: /app/prisma/migrations
+        - action: rebuild
+          path: ../src/backend/package.json
+        - action: rebuild
+          path: ../src/backend/pnpm-lock.yaml
+        - action: rebuild
+          path: ../src/backend/pnpm-workspace.yaml
+
+  frontend:
+    build:
+      context: ../src/frontend
+      dockerfile: ../../docker/frontend.Dockerfile
+      target: development
+    init: true
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-4200}:4200"
+    depends_on:
+      backend:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ../src/frontend/src
+          target: /app/src
+        - action: sync
+          path: ../src/frontend/public
+          target: /app/public
+        - action: sync+restart
+          path: ../src/frontend/angular.json
+          target: /app/angular.json
+        - action: sync+restart
+          path: ../src/frontend/proxy.docker.conf.json
+          target: /app/proxy.docker.conf.json
+        - action: sync+restart
+          path: ../src/frontend/tsconfig.json
+          target: /app/tsconfig.json
+        - action: sync+restart
+          path: ../src/frontend/tsconfig.app.json
+          target: /app/tsconfig.app.json
+        - action: rebuild
+          path: ../src/frontend/package.json
+        - action: rebuild
+          path: ../src/frontend/pnpm-lock.yaml
+        - action: rebuild
+          path: ../src/frontend/pnpm-workspace.yaml
+
+volumes:
+  mysql_data:
+  uploads:
+  backups:

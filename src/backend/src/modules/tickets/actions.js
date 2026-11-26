@@ -35,6 +35,22 @@ function update(schema, toChanges) {
 }
 
 export function registerTicketActions(app) {
+  app.get('/api/v1/tickets/technicians', requireAdmin,
+    validate(z.object({ categoryId: z.coerce.number().int().positive().safe() }), 'query'),
+    async (req, res) => {
+      const data = await ticketsMysql.technicians(req.validated.query.categoryId);
+      res.json({ success: true, data, meta: null });
+    });
+  const selection = z.array(z.object({ id, ...version }).strict()).min(2).max(100)
+    .refine(rows => new Set(rows.map(row => row.id)).size === rows.length);
+  app.post('/api/v1/tickets/batch', requireAdmin, validate(z.object({
+    selection,
+    update: z.union([z.object({ assigneeId: id }).strict(), z.object({ targetId: id }).strict()]),
+  }).strict(), 'body'), async (req, res) => {
+    const { selection, update } = req.validated.body;
+    const data = await ticketsMysql.batch(selection, update, req.account);
+    res.json({ success: true, data, meta: null });
+  });
   const route = '/api/v1/tickets/:id/';
   app.put(route + 'assignee', requireAdmin,
     ...update(z.object({ ...version, assigneeId: id.nullable() }), body => body));

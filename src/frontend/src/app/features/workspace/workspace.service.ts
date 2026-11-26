@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { EMPTY, expand, map, reduce } from 'rxjs';
 import { ApiResponse } from '../categories/interfaces/category';
 import { Session } from '../../session';
-import { Attachment, Resource, Row, TicketComment, TicketEvent, Value } from './workspace.types';
+import { Resource, Row, TicketComment, TicketDetails, Value } from './workspace.types';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceService {
@@ -50,9 +50,16 @@ export class WorkspaceService {
     return this.http.get<ApiResponse<TicketComment[]>>('/api/v1/tickets/' + id + '/comments');
   }
 
-  addComment(id: number, body: string) {
+  previewTicketNumber(categoryId: number) {
+    return this.http.get<ApiResponse<{ code: string }>>('/api/v1/tickets/number-preview', {
+      params: { categoryId },
+    });
+  }
+
+  addComment(id: number, body: string, internal: boolean) {
     return this.http.post<ApiResponse<TicketComment>>('/api/v1/tickets/' + id + '/comments', {
       body,
+      internal,
     });
   }
 
@@ -60,10 +67,29 @@ export class WorkspaceService {
     return this.http.post<ApiResponse<{ count: number }>>('/api/v1/tickets/archive', { ids });
   }
 
+  assignableTechnicians(categoryId: number) {
+    return this.http.get<ApiResponse<{ id: number; fullName: string }[]>>(
+      '/api/v1/tickets/technicians',
+      {
+        params: { categoryId },
+      },
+    );
+  }
+
+  batchTickets(
+    selection: { id: number; version: number }[],
+    update: { assigneeId: number } | { targetId: number },
+  ) {
+    return this.http.post<ApiResponse<{ count: number }>>('/api/v1/tickets/batch', {
+      selection,
+      update,
+    });
+  }
+
   find(resource: Resource, id: string) {
-    return this.http.get<
-      ApiResponse<Row & { attachments?: Attachment[]; history?: TicketEvent[] }>
-    >('/api/v1/' + resource + '/' + encodeURIComponent(id));
+    return this.http.get<ApiResponse<Row & TicketDetails>>(
+      '/api/v1/' + resource + '/' + encodeURIComponent(id),
+    );
   }
 
   save(

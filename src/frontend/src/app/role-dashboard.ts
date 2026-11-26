@@ -2,24 +2,31 @@ import { Session } from './session';
 import { Loading } from './loading';
 import { Translate, I18n } from './i18n';
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-import { ticketPriorities, ticketStatuses } from './features/workspace/workspace-labels';
+import {
+  ticketPriorities,
+  ticketReference,
+  ticketStatuses,
+} from './features/workspace/workspace-labels';
 import { WorkspaceService } from './features/workspace/workspace.service';
 import { Row } from './features/workspace/workspace.types';
+import { ApiResponse } from './features/categories/interfaces/category';
+import { calendarDay } from './calendar-date';
+import type { Task } from './tasks';
 
-const vietnamDay = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
 const weekdayNames = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const dateKey = (row: Row, field: string) => {
   const date = new Date(String(row[field] ?? ''));
-  return Number.isFinite(date.getTime()) ? vietnamDay.format(date) : '';
+  return Number.isFinite(date.getTime()) ? calendarDay.format(date) : '';
 };
 const shiftDay = (key: string, offset: number) => {
   const date = new Date(key + 'T12:00:00Z');
   date.setUTCDate(date.getUTCDate() + offset);
-  return vietnamDay.format(date);
+  return calendarDay.format(date);
 };
 const activeTicket = (row: Row) => row['status'] !== 'CLOSED';
 const priorityRank = (row: Row) =>
@@ -31,10 +38,12 @@ const newest = (a: Row, b: Row) =>
   imports: [Translate, Loading, RouterLink, NgTemplateOutlet],
   templateUrl: './role-dashboard.html',
 })
-export class RoleDashboard {
+export class RoleDashboard implements OnInit {
+  readonly ticketReference = ticketReference;
   readonly role = input.required<'technician' | 'user'>();
   readonly i18n = inject(I18n);
   private readonly workspace = inject(WorkspaceService);
+  private readonly http = inject(HttpClient);
   private readonly destroy = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
 
@@ -42,11 +51,13 @@ export class RoleDashboard {
   readonly session = inject(Session);
   readonly technicianId = this.session.account()?.id ?? 2;
   readonly requesterId = signal(1);
-  readonly today = vietnamDay.format(new Date());
+  readonly today = calendarDay.format(new Date());
   readonly selectedDay = signal(this.today);
   readonly userPeriod = signal<'day' | 'week'>('week');
   readonly data = signal<{ tickets: Row[]; users: Row[] } | null>(null);
   readonly error = signal(false);
+  readonly teamTasks = signal<Task[] | null>(null);
+  readonly calendarError = signal(false);
   readonly note = signal('');
   readonly noteFeedback = signal('');
   readonly noteChanged = signal(false);
@@ -76,6 +87,12 @@ export class RoleDashboard {
   readonly techDay = computed(() =>
     this.tickets().filter((row) => dateKey(row, 'updatedAt') === this.selectedDay()),
   );
+  readonly scheduledTasks = computed(() =>
+    (this.teamTasks() ?? []).filter((task) => task.assigneeId === this.account()),
+  );
+  readonly selectedTasks = computed(() =>
+    this.scheduledTasks().filter((task) => task.dueDate === this.selectedDay()),
+  );
   readonly weekStart = computed(() => {
     const key = this.selectedDay();
     const weekday = new Date(key + 'T12:00:00Z').getUTCDay();
@@ -84,10 +101,13 @@ export class RoleDashboard {
   readonly week = computed(() =>
     weekdayNames.map((label, index) => {
       const date = shiftDay(this.weekStart(), index);
+      const tasks = this.scheduledTasks().filter((task) => task.dueDate === date);
       return {
         label,
         date,
         count: this.tickets().filter((row) => dateKey(row, 'updatedAt') === date).length,
+        statuses: [...new Set(tasks.map((task) => task.status))],
+        taskCount: tasks.length,
       };
     }),
   );
@@ -120,7 +140,22 @@ export class RoleDashboard {
     } catch {
       this.noteFeedback.set('your_browser_is_blocking_note_storage');
     }
+  }
+
+  ngOnInit() {
     this.load();
+    if (this.technician()) this.loadWeekTasks();
+  }
+
+  loadWeekTasks() {
+    this.calendarError.set(false);
+    this.http
+      .get<ApiResponse<{ tasks: Task[] }>>('/api/v1/tasks')
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: ({ data }) => this.teamTasks.set(data.tasks),
+        error: () => this.calendarError.set(true),
+      });
   }
 
   load() {

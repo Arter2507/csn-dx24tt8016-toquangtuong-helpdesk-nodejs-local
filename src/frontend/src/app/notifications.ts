@@ -43,8 +43,8 @@ export class Notifications {
   private readonly confirmedRead = signal(new Set<string>());
   private readonly activeSource = computed(() => {
     if (this.session.mode() === 'demo') return 'demo:' + this.demoAccount();
-    const id = this.session.account()?.id;
-    return id ? 'mysql:' + id : null;
+    const account = this.session.account();
+    return account?.organizationId ? 'mysql:' + account.id : null;
   });
 
   readonly demoScope = signal<number | null>(null);

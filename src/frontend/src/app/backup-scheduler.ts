@@ -26,7 +26,7 @@ export class BackupScheduler {
   private readonly activeAccount = computed(() =>
     this.session.mode() === 'demo'
       ? 0
-      : this.session.hasRole('ADMIN')
+      : this.session.hasRole('OWNER')
         ? this.session.account()?.id
         : null,
   );

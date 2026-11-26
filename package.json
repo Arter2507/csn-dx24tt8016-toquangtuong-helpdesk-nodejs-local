@@ -2,18 +2,13 @@
   "name": "tram-meo",
   "version": "0.2.0",
   "private": true,
-  "description": "Trạm Mèo — workspace lệnh pnpm cho frontend và backend",
+  "description": "Trạm Mèo — môi trường phát triển Docker Compose",
   "packageManager": "pnpm@12.16.1",
   "scripts": {
-    "dev": "node setup/dev.mjs demo",
-    "dev:mysql": "node setup/dev.mjs mysql",
-    "typecheck:lint-frontend": "pnpm --dir src/frontend run typecheck:lint",
-    "typecheck:lint-backend": "pnpm --dir src/backend run typecheck:lint",
-    "build-frontend": "pnpm --dir src/frontend run build",
-    "build-backend": "pnpm --dir src/backend run build",
-    "re-build-frontend": "pnpm --dir src/frontend run re-build",
-    "re-build-backend": "pnpm --dir src/backend run re-build",
-    "dev-frontend": "pnpm --dir src/frontend run dev",
-    "dev-backend": "pnpm --dir src/backend run dev"
+    "dev": "node setup/docker.mjs dev",
+    "dev:mysql": "node setup/docker.mjs dev",
+    "build": "node setup/docker.mjs build",
+    "check": "node setup/docker.mjs check",
+    "stop": "node setup/docker.mjs stop"
   }
 }

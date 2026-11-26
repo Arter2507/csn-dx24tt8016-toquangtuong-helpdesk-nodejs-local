@@ -1,0 +1,17 @@
+<header class="page-heading">
+  <div>
+    <h1>{{ 'categories' | t }}</h1>
+    <p>{{ 'directory_description' | t }}</p>
+  </div>
+</header>
+<div class="portal-grid">
+  @for (entry of entries; track entry.path) {
+    <section class="panel portal-card">
+      <h2><i class="bi" [class]="entry.icon" aria-hidden="true"></i>{{ entry.label | t }}</h2>
+      <p class="muted">{{ entry.description | t }}</p>
+      <a class="secondary" [routerLink]="entry.path"
+        >{{ entry.label | t }} <i class="bi bi-arrow-right" aria-hidden="true"></i
+      ></a>
+    </section>
+  }
+</div>

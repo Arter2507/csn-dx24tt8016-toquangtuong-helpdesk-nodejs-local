@@ -1,3 +1,13 @@
+import { Row } from './workspace.types';
+
+export function formatTicketCode(code: string) {
+  return /^\d+$/.test(code) ? '#' + code : code;
+}
+
+export function ticketReference(row: Row) {
+  return formatTicketCode(String(row['code'] ?? row.id));
+}
+
 export const ticketStatuses = [
   { value: 'NEW', label: 'new', tone: 'primary', color: 'new', icon: 'bi-plus-lg' },
   {
@@ -6,6 +16,13 @@ export const ticketStatuses = [
     tone: 'info',
     color: 'progress',
     icon: 'bi-arrow-repeat',
+  },
+  {
+    value: 'PENDING_CUSTOMER',
+    label: 'waiting_for_customer',
+    tone: 'warning',
+    color: 'pending',
+    icon: 'bi-chat-dots',
   },
   {
     value: 'RESOLVED',

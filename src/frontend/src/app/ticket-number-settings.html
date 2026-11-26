@@ -1,0 +1,115 @@
+<section class="panel portal-card" aria-labelledby="ticket-number-settings-title">
+  <h2 id="ticket-number-settings-title">
+    <i class="bi bi-hash" aria-hidden="true"></i>{{ 'ticket_number_rules' | t }}
+  </h2>
+  <p class="muted">{{ 'ticket_number_description' | t }}</p>
+  @if (loadError()) {
+    <p class="notice error" role="alert">
+      {{ loadError() | t }}
+      <button class="text-button" type="button" (click)="load()">{{ 'try_again' | t }}</button>
+    </p>
+  } @else if (rows(); as rules) {
+    @if (rules.length) {
+      <div
+        class="table-scroll"
+        tabindex="0"
+        role="region"
+        [attr.aria-label]="'ticket_number_rules' | t"
+      >
+        <table class="ticket-number-table">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'ticket_type' | t }}</th>
+              <th scope="col">{{ 'ticket_number_prefix' | t }}</th>
+              <th scope="col">{{ 'ticket_number_value' | t }}</th>
+              <th scope="col">{{ 'ticket_number_digits' | t }}</th>
+              <th scope="col">{{ 'ticket_number_suffix' | t }}</th>
+              <th scope="col">{{ 'ticket_number_preview' | t }}</th>
+              <th scope="col">{{ 'actions' | t }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rules; track row.categoryId) {
+              <tr>
+                <th scope="row">
+                  {{ i18n.category(row.category) }}
+                  @if (!row.configured) {
+                    <small class="muted">{{ 'ticket_number_default' | t }}</small>
+                  }
+                </th>
+                <td>
+                  <input
+                    [(ngModel)]="row.prefix"
+                    maxlength="12"
+                    [disabled]="saving() === row.categoryId"
+                    [attr.aria-label]="
+                      ('ticket_number_prefix' | t) + ' · ' + i18n.category(row.category)
+                    "
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    [(ngModel)]="row.nextNumber"
+                    min="1"
+                    max="999999999"
+                    [disabled]="saving() === row.categoryId"
+                    [attr.aria-label]="
+                      ('ticket_number_value' | t) + ' · ' + i18n.category(row.category)
+                    "
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    [(ngModel)]="row.digits"
+                    min="1"
+                    max="9"
+                    [disabled]="saving() === row.categoryId"
+                    [attr.aria-label]="
+                      ('ticket_number_digits' | t) + ' · ' + i18n.category(row.category)
+                    "
+                  />
+                </td>
+                <td>
+                  <input
+                    [(ngModel)]="row.suffix"
+                    maxlength="12"
+                    [disabled]="saving() === row.categoryId"
+                    [attr.aria-label]="
+                      ('ticket_number_suffix' | t) + ' · ' + i18n.category(row.category)
+                    "
+                  />
+                </td>
+                <td>
+                  <span class="badge">{{ preview(row) || '—' }}</span>
+                </td>
+                <td>
+                  <button
+                    class="secondary"
+                    type="button"
+                    [disabled]="saving() !== null || !preview(row)"
+                    (click)="save(row)"
+                  >
+                    {{ (saving() === row.categoryId ? 'saving' : 'save_changes') | t }}
+                  </button>
+                  @if (feedback(); as result) {
+                    @if (result.categoryId === row.categoryId) {
+                      <small [attr.role]="result.error ? 'alert' : 'status'">{{
+                        result.message | t
+                      }}</small>
+                    }
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="muted">{{ 'ticket_number_no_categories' | t }}</p>
+    }
+  } @else {
+    <app-loading />
+  }
+</section>

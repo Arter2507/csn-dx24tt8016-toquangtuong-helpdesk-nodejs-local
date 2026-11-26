@@ -21,6 +21,29 @@ const details = z.object({
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2_000_000, files: 1, fields: 0 } }).single('avatar');
 const missing = () => new AppError(404, 'NOT_FOUND', 'Không tìm thấy hồ sơ');
 
+export function receiveAvatar(req, res, next) {
+  upload(req, res, error => {
+    if (error) return next(new AppError(422, 'AVATAR_INVALID', 'Chọn ảnh PNG, JPEG hoặc WebP tối đa 2 MB'));
+    next();
+  });
+}
+
+export function avatarImage(file) {
+  const image = file?.buffer;
+  const mime = image && fileType(image);
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(mime) || mime !== file.mimetype) {
+    throw new AppError(422, 'AVATAR_INVALID', 'Chọn ảnh PNG, JPEG hoặc WebP tối đa 2 MB');
+  }
+  return { image, mime };
+}
+
+export function saveAvatar(connection, id, image, mime) {
+  return connection.execute(
+    'INSERT INTO user_profiles (user_id, details, avatar, avatar_mime) VALUES (?, JSON_OBJECT(), ?, ?) ON DUPLICATE KEY UPDATE avatar = ?, avatar_mime = ?',
+    [id, image, mime, image, mime],
+  );
+}
+
 async function find(req) {
   const demo = !req.account;
   const id = demo ? Number(req.query.account ?? 1) : req.account.id;
@@ -76,21 +99,11 @@ profileRoutes.patch('/', validate(details, 'body'), async (req, res) => {
     profile: { ...current.profile, details: fields },
   }), meta: null });
 });
-profileRoutes.post('/avatar', (req, res, next) => upload(req, res, error => {
-  if (error) return next(new AppError(422, 'AVATAR_INVALID', 'Chọn ảnh PNG, JPEG hoặc WebP tối đa 2 MB'));
-  next();
-}), async (req, res) => {
+profileRoutes.post('/avatar', receiveAvatar, async (req, res) => {
   const current = await find(req);
-  const image = req.file?.buffer;
-  const mime = image && fileType(image);
-  if (!['image/png', 'image/jpeg', 'image/webp'].includes(mime) || mime !== req.file.mimetype) {
-    throw new AppError(422, 'AVATAR_INVALID', 'Chọn ảnh PNG, JPEG hoặc WebP tối đa 2 MB');
-  }
+  const { image, mime } = avatarImage(req.file);
   if (req.account) {
-    await pool.execute(
-      'INSERT INTO user_profiles (user_id, details, avatar, avatar_mime) VALUES (?, JSON_OBJECT(), ?, ?) ON DUPLICATE KEY UPDATE avatar = ?, avatar_mime = ?',
-      [current.account.id, image, mime, image, mime],
-    );
+    await saveAvatar(pool, current.account.id, image, mime);
   } else {
     demoProfiles.set(current.account.id, { ...current.profile, avatar: image.toString('base64'), avatarMime: mime });
   }

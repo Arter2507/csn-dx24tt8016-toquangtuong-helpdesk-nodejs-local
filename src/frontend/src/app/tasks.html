@@ -90,7 +90,7 @@
           >
             <i class="bi bi-chevron-left" aria-hidden="true"></i>
           </button>
-          <h2>{{ month() | date: 'MM/yyyy' }}</h2>
+          <h2>{{ month() | date: 'MM/yyyy' : '+0000' }}</h2>
           <button
             type="button"
             class="secondary"
@@ -100,29 +100,45 @@
             <i class="bi bi-chevron-right" aria-hidden="true"></i>
           </button>
         </header>
-        <div class="table-scroll">
+        <button class="text-button" type="button" (click)="goToToday()">{{ 'today' | t }}</button>
+        <div
+          class="table-scroll"
+          role="region"
+          tabindex="0"
+          [attr.aria-label]="'tasks_calendar' | t"
+        >
           <div class="task-calendar-grid">
             @for (day of weekDays; track day) {
               <strong class="task-calendar-day">{{ day | t }}</strong>
             }
             @for (cell of calendar(); track cell.key) {
-              <div class="task-calendar-cell" [class.outside-month]="!cell.inMonth">
+              <div
+                class="task-calendar-cell"
+                [class.outside-month]="!cell.inMonth"
+                [class.has-tasks]="cell.tasks.length > 0"
+                [class.is-today]="cell.key === today"
+              >
                 <button
                   type="button"
                   class="task-calendar-date"
                   (click)="open(null, cell.key)"
                   [attr.aria-label]="'tasks_add_on_date' | t: { date: cell.key }"
+                  [attr.aria-current]="cell.key === today ? 'date' : null"
                 >
-                  {{ cell.date | date: 'd' }}
+                  {{ cell.date | date: 'd' : '+0000' }}
+                  @if (cell.key === today) {
+                    <small>{{ 'today' | t }}</small>
+                  }
                 </button>
                 @for (task of cell.tasks; track task.id) {
                   <button
                     type="button"
                     class="task-calendar-event"
-                    [class.done]="task.status === 'DONE'"
+                    [attr.data-task-state]="task.status"
                     (click)="open(task)"
                   >
-                    {{ task.title }}
+                    <strong>{{ task.title }}</strong>
+                    <small>{{ 'tasks_status_' + task.status | t }}</small>
                   </button>
                 }
               </div>
@@ -182,7 +198,12 @@
     }
   }
 }
-<dialog #editor class="task-editor-dialog" aria-labelledby="task-editor-title">
+<dialog
+  #editor
+  class="task-editor-dialog"
+  aria-labelledby="task-editor-title"
+  (close)="clearTaskLink()"
+>
   <form class="profile-fields" #form="ngForm" (ngSubmit)="save()">
     <h2 id="task-editor-title" class="wide">
       {{ (editing() ? 'tasks_details' : 'tasks_new') | t }}

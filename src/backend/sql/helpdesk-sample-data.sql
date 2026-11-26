@@ -5,7 +5,7 @@
 -- Tài khoản mẫu (mật khẩu: password):
 --   user@example.test  — Người gửi
 --   tech@example.test  — Kỹ thuật viên
---   admin@example.test — Quản trị
+--   admin@example.test — Chủ sở hữu
 
 SET NAMES utf8mb4;
 START TRANSACTION;
@@ -49,41 +49,49 @@ INSERT INTO technician_categories (user_id, category_id, created_at) VALUES
   (5, 1, @now),
   (5, 3, @now);
 
+UPDATE organizations SET owner_id = 3 WHERE id = 1 AND owner_id IS NULL;
+INSERT INTO organization_members (user_id, organization_id, employee_code, department, position, role, joined_at) VALUES
+  (1, 1, 'NV001', 'Văn phòng', 'Nhân viên', 'USER', @now),
+  (2, 1, 'NV002', 'Hỗ trợ kỹ thuật', 'Chuyên viên', 'TECHNICIAN', @now),
+  (3, 1, 'NV003', 'Điều hành', 'Chủ sở hữu', 'OWNER', @now),
+  (4, 1, 'NV004', 'Văn phòng', 'Nhân viên', 'USER', @now),
+  (5, 1, 'NV005', 'Mạng & Hạ tầng', 'Chuyên viên', 'TECHNICIAN', @now);
+
 -- 5 yêu cầu mẫu (trạng thái khác nhau để dashboard/báo cáo có dữ liệu)
 INSERT INTO tickets (
-  id, requester_id, assignee_id, category_id, title, description,
+  id, display_code, requester_id, assignee_id, category_id, title, description,
   priority, status, version, resolved_at, closed_at, archived_at, created_at, updated_at
 ) VALUES
   (
-    1, 1, NULL, 4,
+    1, 'HD-001', 1, NULL, 4,
     'Không đăng nhập được email công ty',
     'Khi nhập mật khẩu hệ thống báo sai dù đã đổi mật khẩu hôm qua.',
     'HIGH', 'NEW', 1, NULL, NULL, NULL,
     DATE_SUB(@now, INTERVAL 2 HOUR), DATE_SUB(@now, INTERVAL 2 HOUR)
   ),
   (
-    2, 4, 2, 1,
+    2, 'HD-002', 4, 2, 1,
     'Phần mềm kế toán bị treo khi xuất báo cáo',
     'Mở module báo cáo tháng thì ứng dụng không phản hồi khoảng 2 phút rồi thoát.',
     'MEDIUM', 'IN_PROGRESS', 2, NULL, NULL, NULL,
     DATE_SUB(@now, INTERVAL 1 DAY), DATE_SUB(@now, INTERVAL 3 HOUR)
   ),
   (
-    3, 1, 2, 3,
+    3, 'HD-003', 1, 2, 3,
     'Mất kết nối Wi-Fi phòng họp tầng 3',
     'Máy tính xách tay không nhận được SSID nội bộ từ sáng nay.',
     'URGENT', 'RESOLVED', 3, DATE_SUB(@now, INTERVAL 1 HOUR), NULL, NULL,
     DATE_SUB(@now, INTERVAL 2 DAY), DATE_SUB(@now, INTERVAL 1 HOUR)
   ),
   (
-    4, 4, 5, 2,
+    4, 'HD-004', 4, 5, 2,
     'Máy in hành chính kẹt giấy liên tục',
     'Đã thử lấy giấy ra nhưng đèn cảnh báo vẫn sáng, không in được phiếu.',
     'LOW', 'CLOSED', 4, DATE_SUB(@now, INTERVAL 2 DAY), DATE_SUB(@now, INTERVAL 1 DAY), NULL,
     DATE_SUB(@now, INTERVAL 5 DAY), DATE_SUB(@now, INTERVAL 1 DAY)
   ),
   (
-    5, 1, NULL, 1,
+    5, 'HD-005', 1, NULL, 1,
     'Cần cài đặt bộ Office cho máy mới',
     'Máy bàn vừa nhận chưa có Word/Excel. Ưu tiên trong tuần này.',
     'MEDIUM', 'NEW', 1, NULL, NULL, NULL,
