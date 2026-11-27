@@ -1,9 +1,9 @@
 import { ApplicationConfig, inject, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
-import { Preferences } from './preferences';
-import { trackProgress } from './loading';
-import { renewSession } from './session';
+import { Preferences } from './core/preferences/preferences';
+import { trackProgress } from './core/http/network-progress';
+import { renewSession } from './core/auth/session';
 import { routes } from './app.routes';
 export const appConfig: ApplicationConfig = {
   providers: [

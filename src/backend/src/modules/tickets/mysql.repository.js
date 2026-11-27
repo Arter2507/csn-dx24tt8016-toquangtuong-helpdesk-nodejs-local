@@ -3,9 +3,12 @@ import { AppError } from '../../shared/errors.js';
 import { estimatePriority } from './priority.js';
 import { prepareAttachments } from './attachments.js';
 import { authorizeUpdate, isAdmin, isTechnician } from './ticket-access.js';
-import { notify } from '../accounts/accounts.routes.js';
+import { discardNotifications, notify, publishNotifications } from '../notifications/inbox.js';
+import { queueStatusMail } from '../notifications/outgoing-mail.js';
 import { allocateMysqlCode } from './numbering.js';
 import { canUpdateStatus } from './ticket-status.js';
+import { chatExpiresAt } from './chat-session.js';
+import { ticketDeadlines } from '../sla/policy.js';
 
 function toIso(value) {
   if (!value) return null;
@@ -40,6 +43,11 @@ function mapTicket(row, attachments, history) {
     version: Number(row.version),
     createdAt: toIso(row.createdAt),
     updatedAt: toIso(row.updatedAt),
+    responseDueAt: toIso(row.responseDueAt),
+    resolutionDueAt: toIso(row.resolutionDueAt),
+    firstResponseAt: toIso(row.firstResponseAt),
+    resolvedAt: toIso(row.resolvedAt),
+    chatExpiresAt: toIso(chatExpiresAt(row)),
     archivedAt: row.archivedAt ? toIso(row.archivedAt) : null,
     attachments,
     history,
@@ -77,9 +85,18 @@ const selectBase = `
   SELECT
     id, display_code AS code, title, description, category_id AS categoryId, requester_id AS requesterId,
     assignee_id AS assigneeId, priority, status, version,
-    created_at AS createdAt, updated_at AS updatedAt, archived_at AS archivedAt
+    created_at AS createdAt, updated_at AS updatedAt, archived_at AS archivedAt, resolved_at AS resolvedAt, closed_at AS closedAt,
+    response_due_at AS responseDueAt, resolution_due_at AS resolutionDueAt, first_response_at AS firstResponseAt
   FROM tickets
 `;
+
+const categoryBranch = predicate => `category_id IN (
+  WITH RECURSIVE branch (id) AS (
+    SELECT id FROM categories WHERE ${predicate}
+    UNION ALL SELECT c.id FROM categories c JOIN branch p ON c.parent_id = p.id
+  )
+  SELECT id FROM branch
+)`;
 
 async function assertActiveCategory(categoryId) {
   const [rows] = await pool.execute(
@@ -97,11 +114,15 @@ async function assertActiveRequester(requesterId) {
   if (!rows[0]) throw new AppError(422, 'INVALID_REQUESTER', 'Người gửi không hoạt động');
 }
 
-const activeTechnicians = `SELECT u.id, u.full_name AS fullName
+const activeTechnicians = `WITH RECURSIVE specialties (id, parent_id) AS (
+  SELECT id, parent_id FROM categories WHERE id = ?
+  UNION ALL SELECT c.id, c.parent_id FROM categories c JOIN specialties s ON c.id = s.parent_id
+)
+SELECT u.id, u.full_name AS fullName
      FROM users u
      JOIN organization_members m ON m.user_id = u.id
-     JOIN technician_categories tc ON tc.user_id = u.id
-     WHERE u.is_active = 1 AND u.password_hash IS NOT NULL AND m.role = 'TECHNICIAN' AND tc.category_id = ?`;
+     WHERE u.is_active = 1 AND u.password_hash IS NOT NULL AND m.role = 'TECHNICIAN'
+       AND EXISTS (SELECT 1 FROM technician_categories tc JOIN specialties s ON s.id = tc.category_id WHERE tc.user_id = u.id)`;
 
 async function assertActiveTechnician(assigneeId, categoryId, connection = pool) {
   const [rows] = await connection.execute(
@@ -142,7 +163,10 @@ async function saveAttachmentRows(conn, ticketId, uploaderId, attachments, remov
 
 export const ticketsMysql = {
   async technicians(categoryId) {
-    const [rows] = await pool.execute(activeTechnicians + ' ORDER BY u.full_name, u.id', [categoryId]);
+    const [rows] = await pool.execute(activeTechnicians + ` ORDER BY
+      EXISTS (SELECT 1 FROM technician_categories exact_match WHERE exact_match.user_id = u.id AND exact_match.category_id = ?) DESC,
+      (SELECT COUNT(*) FROM tickets t WHERE t.assignee_id = u.id AND t.archived_at IS NULL AND t.status NOT IN ('RESOLVED','CLOSED')),
+      u.full_name, u.id`, [categoryId, categoryId]);
     return rows.map(row => ({ ...row, id: Number(row.id) }));
   },
   async list(q, account) {
@@ -163,8 +187,7 @@ export const ticketsMysql = {
         values.push(pattern);
       } else {
         conditions.push(`(display_code ${matches} OR title ${matches} OR description ${matches}
-          OR EXISTS (SELECT 1 FROM categories c WHERE c.id = tickets.category_id
-            AND (c.name ${matches} OR c.code ${matches})))`);
+          OR ${categoryBranch(`name ${matches} OR code ${matches}`)})`);
         values.push(pattern, pattern, pattern, pattern, pattern);
       }
     }
@@ -177,7 +200,7 @@ export const ticketsMysql = {
       values.push(q.priority);
     }
     if (q.categoryId) {
-      conditions.push('category_id = ?');
+      conditions.push(categoryBranch('id = ?'));
       values.push(q.categoryId);
     }
     if (q.requesterId) {
@@ -239,6 +262,7 @@ export const ticketsMysql = {
   },
 
   async create(input, files = []) {
+    const { mailFingerprint } = input;
     await assertActiveCategory(input.categoryId);
     await assertActiveRequester(input.requesterId);
     const attachments = await prepareAttachments([], files);
@@ -246,15 +270,27 @@ export const ticketsMysql = {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
+      if (mailFingerprint) {
+        await conn.execute('INSERT INTO inbound_ticket_mail (fingerprint, created_at) VALUES (?, UTC_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE fingerprint = fingerprint', [mailFingerprint]);
+        const [[delivered]] = await conn.execute('SELECT ticket_id AS ticketId FROM inbound_ticket_mail WHERE fingerprint = ? FOR UPDATE', [mailFingerprint]);
+        if (delivered.ticketId != null) {
+          await conn.commit();
+          return this.find(delivered.ticketId);
+        }
+      }
       const code = await allocateMysqlCode(conn, input.categoryId);
+      const createdAt = new Date();
+      const priority = estimatePriority(input);
+      const [responseDueAt, resolutionDueAt] = await ticketDeadlines(conn, input.requesterId, priority, createdAt) ?? [null, null];
       const [result] = await conn.execute(
         `INSERT INTO tickets
           (display_code, requester_id, assignee_id, category_id, title, description, priority, status, version,
-           resolved_at, closed_at, archived_at, created_at, updated_at)
-         VALUES (?, ?, NULL, ?, ?, ?, ?, 'NEW', 1, NULL, NULL, NULL, UTC_TIMESTAMP(3), UTC_TIMESTAMP(3))`,
-        [code, input.requesterId, input.categoryId, input.title, input.description, estimatePriority(input)],
+           resolved_at, closed_at, archived_at, response_due_at, resolution_due_at, created_at, updated_at)
+         VALUES (?, ?, NULL, ?, ?, ?, ?, 'NEW', 1, NULL, NULL, NULL, ?, ?, ?, ?)`,
+        [code, input.requesterId, input.categoryId, input.title, input.description, priority, responseDueAt, resolutionDueAt, createdAt, createdAt],
       );
       const ticketId = result.insertId;
+      if (mailFingerprint) await conn.execute('UPDATE inbound_ticket_mail SET ticket_id = ? WHERE fingerprint = ?', [ticketId, mailFingerprint]);
       await insertEvent(conn, ticketId, input.requesterId, 'CREATED', null, { status: 'NEW' });
       await saveAttachmentRows(conn, ticketId, input.requesterId, attachments);
       await conn.commit();
@@ -296,9 +332,13 @@ export const ticketsMysql = {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
+      const newDeadlines = changes.priority === priority
+        ? null
+        : await ticketDeadlines(conn, current.requesterId, changes.priority, new Date(current.createdAt));
       const [result] = await conn.execute(
         `UPDATE tickets SET
            title = ?, description = ?, category_id = ?, assignee_id = ?, priority = ?,
+           response_due_at = COALESCE(?, response_due_at), resolution_due_at = COALESCE(?, resolution_due_at),
            version = version + 1,
            resolved_at = CASE
              WHEN ? = 'RESOLVED' AND status <> 'RESOLVED' THEN UTC_TIMESTAMP(3)
@@ -315,6 +355,8 @@ export const ticketsMysql = {
           changes.categoryId,
           changes.assigneeId,
           changes.priority,
+          newDeadlines?.[0] ?? null,
+          newDeadlines?.[1] ?? null,
           changes.status,
           changes.status,
           changes.status,
@@ -337,6 +379,7 @@ export const ticketsMysql = {
           { status: input.status },
           note,
         );
+        await queueStatusMail(conn, current, input.status);
         const recipients = new Set([current.requesterId, input.assigneeId]);
         for (const userId of recipients) {
           if (userId && userId !== actorId) {
@@ -378,14 +421,19 @@ export const ticketsMysql = {
         );
       }
 
+      if (title !== changes.title || description !== changes.description || files.length || removeAttachments.length) {
+        await insertEvent(conn, id, actorId, 'CONTENT_CHANGED');
+      }
       await saveAttachmentRows(conn, id, actorId, attachments.filter(file => files.some(upload => upload.filename === file.id)), removeAttachments);
       await conn.commit();
+      publishNotifications(conn);
       for (const file of files) file.committed = true;
       return this.find(id, account);
     } catch (error) {
       await conn.rollback();
       throw error;
     } finally {
+      discardNotifications(conn);
       conn.release();
     }
   },
@@ -435,11 +483,13 @@ export const ticketsMysql = {
         }
       }
       await conn.commit();
+      publishNotifications(conn);
       return { count: 'targetId' in update ? rows.length - 1 : rows.length };
     } catch (error) {
       await conn.rollback();
       throw error;
     } finally {
+      discardNotifications(conn);
       conn.release();
     }
   },

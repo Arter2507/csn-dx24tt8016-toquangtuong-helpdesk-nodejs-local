@@ -1,11 +1,14 @@
-import { RowMenu } from '../../row-menu';
-import { BulkActions, RowSelection } from '../../bulk-actions';
-import { Loading } from '../../loading';
-import { Translate, I18n, errorKey } from '../../i18n';
+import { RowMenu } from '../../shared/ui/row-menu';
+import { BulkActions } from './bulk-actions';
+import { RowSelection } from '../../shared/ui/batch-state-actions';
+import { Loading } from '../../shared/ui/loading';
+import { Translate, I18n, errorKey } from '../../core/i18n/i18n';
 import { DatePipe } from '@angular/common';
+import { catalogPaths } from '../categories/catalog';
 import {
   ChangeDetectorRef,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   inject,
@@ -14,11 +17,15 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Preferences } from '../../preferences';
-import { Session } from '../../session';
+import { Preferences } from '../../core/preferences/preferences';
+import { Session } from '../../core/auth/session';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { firstValueFrom, forkJoin } from 'rxjs';
+import { firstValueFrom, forkJoin, timer } from 'rxjs';
+import { TicketActions, canEditTicket } from './ticket-actions';
+import { QuickTicket } from './quick-ticket';
+import { KnowledgeLinks } from '../knowledge/knowledge-links';
+import { Article } from '../knowledge/knowledge.service';
 import { Category } from '../categories/interfaces/category';
 import { CategoryService } from '../categories/services/category.service';
 import {
@@ -27,8 +34,8 @@ import {
   ticketReference,
   ticketStatuses,
   userRoles,
-} from './workspace-labels';
-import { WorkspaceService } from './workspace.service';
+} from '../../shared/data/workspace-labels';
+import { WorkspaceService } from '../../shared/data/workspace.service';
 import {
   Attachment,
   Field,
@@ -38,7 +45,7 @@ import {
   TicketDetails,
   TicketEvent,
   Value,
-} from './workspace.types';
+} from '../../shared/data/workspace.types';
 
 const MAX_FILES = 5;
 const MAX_BYTES = 50_000_000;
@@ -46,7 +53,18 @@ const FILE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'appli
 
 @Component({
   selector: 'app-workspace',
-  imports: [Translate, Loading, RowMenu, BulkActions, FormsModule, RouterLink, DatePipe],
+  imports: [
+    Translate,
+    Loading,
+    RowMenu,
+    BulkActions,
+    FormsModule,
+    RouterLink,
+    DatePipe,
+    TicketActions,
+    QuickTicket,
+    KnowledgeLinks,
+  ],
   templateUrl: './workspace.html',
 })
 export class Workspace implements OnInit {
@@ -91,6 +109,7 @@ export class Workspace implements OnInit {
   form: Record<string, Value> = {};
   editing: (Row & TicketDetails) | null = null;
   categoryOptions: Category[] = [];
+  categoryPaths = new Map<number, string>();
 
   accountNames = new Map<number, string>();
   private accountRows = new Map<number, Row>();
@@ -127,6 +146,8 @@ export class Workspace implements OnInit {
     return this.rows.map((row) => row.id);
   }
   readonly bulk = viewChild(BulkActions);
+  readonly quickTicket = viewChild(QuickTicket);
+  readonly batchBusy = computed(() => this.bulk()?.busy() ?? false);
   readonly session = inject(Session);
   private readonly preferences = inject(Preferences);
   senderId: number | null = null;
@@ -137,6 +158,9 @@ export class Workspace implements OnInit {
   internalNote = false;
   commentError = '';
   commentSaving = false;
+  chatNow = Date.now();
+  private commentsRequestInFlight = false;
+  chatExpiredByServer = false;
   specialties: { categories: Category[]; selected: Set<number> } | null = null;
   specialtyFeedback = '';
 
@@ -145,6 +169,7 @@ export class Workspace implements OnInit {
   }
 
   get transitionNoteRequired() {
+    if (this.secured) return false;
     const previous = this.editing?.['status'];
     const next = this.form['status'];
     return (
@@ -172,9 +197,8 @@ export class Workspace implements OnInit {
       return true;
     if (!this.secured || !this.isTicket || !this.editing || this.session.hasRole('ADMIN'))
       return false;
-    if (field.key === 'status') return false;
+    if (field.key !== 'priority') return false;
     return (
-      field.key !== 'priority' ||
       !this.session.hasRole('TECHNICIAN') ||
       this.session.account()?.id !== this.editing['assigneeId']
     );
@@ -205,7 +229,45 @@ export class Workspace implements OnInit {
     return this.isTicket ? 'title' : 'fullName';
   }
   get readOnly() {
-    return this.mode() === 'view' || this.closed || !!this.editing?.mergedInto;
+    return (
+      this.mode() === 'view' ||
+      (this.isTicket && this.editing !== null && !this.canEdit(this.editing))
+    );
+  }
+  canEdit(row: Row & TicketDetails) {
+    return canEditTicket(row, this.session);
+  }
+  get chatLocked() {
+    const expiry = String(this.editing?.['chatExpiresAt'] ?? '');
+    return (
+      !!this.editing?.mergedInto ||
+      this.chatExpiredByServer ||
+      (expiry !== '' && Date.parse(expiry) <= this.chatNow)
+    );
+  }
+
+  changeTicket(row: Row & TicketDetails) {
+    if (this.editing?.id === row.id) {
+      this.editing = row;
+      this.history = row.history ?? [];
+      this.chatExpiredByServer = false;
+      this.chatNow = Date.now();
+      void this.loadComments(row.id);
+    }
+    this.rows = this.rows.map((item) => (item.id === row.id ? row : item));
+    this.view.markForCheck();
+  }
+
+  appendArticle(article: Article) {
+    const title = article.title.replace(/[\r\n]/g, ' ');
+    this.comment = (this.comment.trimEnd() + '\n' + title + ' /knowledge/' + article.id).trim();
+  }
+
+  messageLines(body: string) {
+    return body.split('\n').map((line) => {
+      const match = /^(.*?)\s*\/knowledge\/(\d+)\s*$/.exec(line);
+      return match ? { text: match[1] || line, id: match[2] } : { text: line, id: null };
+    });
   }
   get scope() {
     return { requesterId: this.requesterId || null, assigneeId: this.assigneeId || null };
@@ -219,6 +281,13 @@ export class Workspace implements OnInit {
 
   ngOnInit() {
     this.destroy.onDestroy(() => clearTimeout(this.searchTimer));
+    timer(4000, 4000)
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe(() => {
+        if (!this.secured || !this.editing || !this.isTicket || document.hidden) return;
+        this.chatNow = Date.now();
+        void this.loadComments(this.editing.id);
+      });
     const result = this.router.lastSuccessfulNavigation()?.extras.info as
       { notice?: string; ticketId?: number; code?: string } | undefined;
     this.notice = result?.notice ?? '';
@@ -266,6 +335,7 @@ export class Workspace implements OnInit {
     this.comment = '';
     this.internalNote = false;
     this.commentError = '';
+    this.chatExpiredByServer = false;
     try {
       const row = id ? (await firstValueFrom(this.service.find(this.resource(), id))).data : null;
       const fields: Field[] = this.isTicket
@@ -416,19 +486,52 @@ export class Workspace implements OnInit {
   }
 
   private async loadComments(id: number, request = this.request) {
+    if (this.commentsRequestInFlight || this.commentSaving) return;
+    this.commentsRequestInFlight = true;
+    const previousComments = this.comments;
     try {
       const response = await firstValueFrom(this.service.comments(id));
-      if (request === this.request) this.comments = response.data;
+      if (request === this.request && this.editing?.id === id && !this.commentSaving) {
+        if (this.comments === previousComments) this.comments = response.data;
+        if (response.meta.version >= Number(this.editing['version'])) {
+          const { chatExpiresAt, status, resolvedAt, firstResponseAt } = response.meta;
+          const version = this.mode() === 'view' ? response.meta.version : this.editing['version'];
+          if (
+            this.editing['chatExpiresAt'] !== chatExpiresAt ||
+            this.editing['status'] !== status ||
+            this.editing['resolvedAt'] !== resolvedAt ||
+            this.editing['firstResponseAt'] !== firstResponseAt ||
+            this.editing['version'] !== version
+          ) {
+            this.editing = Object.assign({}, this.editing, {
+              chatExpiresAt,
+              status,
+              resolvedAt,
+              firstResponseAt,
+              version,
+            });
+          }
+          if (!response.meta.chatExpiresAt) this.chatExpiredByServer = false;
+        }
+      }
     } catch (error) {
       if (request === this.request) this.commentError = errorKey(error);
     } finally {
+      this.commentsRequestInFlight = false;
       if (request === this.request && !this.destroy.destroyed) this.view.markForCheck();
     }
   }
 
   async sendComment() {
     const id = this.editing?.id;
-    if (!id || this.commentSaving || !this.comment.trim()) return;
+    if (
+      !id ||
+      this.commentSaving ||
+      this.chatLocked ||
+      !this.comment.trim() ||
+      this.comment.length > 5000
+    )
+      return;
     const request = this.request;
     this.commentSaving = true;
     this.commentError = '';
@@ -444,9 +547,15 @@ export class Workspace implements OnInit {
         this.comments = [...this.comments, data];
         this.comment = '';
         const change = data.ticketUpdate;
-        if (change && this.editing['version'] === change.version - 1) {
-          this.editing['status'] = this.form['status'] = change.status;
-          this.editing['version'] = change.version;
+        const editing = this.editing;
+        if (data.firstResponseAt)
+          this.editing = Object.assign({}, editing, { firstResponseAt: data.firstResponseAt });
+        if (change && editing['version'] === change.version - 1) {
+          this.editing = Object.assign({}, this.editing ?? editing, {
+            status: change.status,
+            version: change.version,
+          });
+          this.form['status'] = change.status;
           this.history = [...this.history, { status: change.status, at: change.at }];
           this.fields = this.fields.map((field) =>
             field.key === 'status'
@@ -457,6 +566,7 @@ export class Workspace implements OnInit {
       }
     } catch (error) {
       this.commentError = errorKey(error);
+      if (this.commentError === 'api_CHAT_EXPIRED') this.chatExpiredByServer = true;
     } finally {
       this.commentSaving = false;
       if (!this.destroy.destroyed) this.view.markForCheck();
@@ -507,7 +617,9 @@ export class Workspace implements OnInit {
       }),
     );
     this.optionsLoaded = true;
-    this.categoryOptions = categories;
+    const catalog = catalogPaths(categories, (category) => this.i18n.category(category));
+    this.categoryOptions = catalog.map((entry) => entry.row);
+    this.categoryPaths = new Map(catalog.map((entry) => [entry.row.id, entry.path]));
 
     this.accountNames = new Map(users.map((row) => [row.id, this.i18n.personKey(row)]));
     this.accountRows = new Map(users.map((row) => [row.id, row]));
@@ -556,7 +668,7 @@ export class Workspace implements OnInit {
       (user) =>
         (user['isActive'] && user['role'] === 'TECHNICIAN') || user.id === row?.['assigneeId'],
     );
-    return [
+    const fields: Field[] = [
       {
         key: 'title',
         label: 'request_title',
@@ -570,7 +682,7 @@ export class Workspace implements OnInit {
         kind: 'select',
         options: [
           { value: null, label: 'choose_a_category' },
-          ...categories.map((row) => ({ value: row.id, label: row.name })),
+          ...categories.map((row) => ({ value: row.id, label: this.categoryName(row.id) })),
         ],
       },
       {
@@ -605,6 +717,10 @@ export class Workspace implements OnInit {
           ]
         : []),
     ];
+    if (row && this.secured) {
+      return fields.filter((field) => !['status', 'assigneeId', 'categoryId'].includes(field.key));
+    }
+    return fields;
   }
 
   private statusOptions(row: Row) {
@@ -629,6 +745,7 @@ export class Workspace implements OnInit {
 
   applyFilters() {
     clearTimeout(this.searchTimer);
+    if (this.batchBusy()) return;
     this.applied = {
       search: this.search.trim().slice(0, 100),
       filter: this.filter,
@@ -725,8 +842,12 @@ export class Workspace implements OnInit {
   }
 
   categoryName(id: number) {
-    const category = this.categoryOptions.find((row) => row.id === id);
-    return category ? this.i18n.category(category) : '—';
+    return this.categoryPaths.get(id) ?? '—';
+  }
+
+  slaStatus(deadline: string, completed: string | null) {
+    if (completed) return Date.parse(completed) <= Date.parse(deadline) ? 'sla_met' : 'sla_missed';
+    return Date.now() <= Date.parse(deadline) ? 'sla_open' : 'sla_overdue';
   }
 
   fieldLabel(field: Field, value: Value, fallback: string) {
@@ -761,7 +882,9 @@ export class Workspace implements OnInit {
     this.saving = true;
     this.error = '';
     const payload = Object.fromEntries(
-      this.fields.map((field) => [field.key, this.form[field.key]]),
+      this.fields
+        .filter((field) => !this.lockedField(field))
+        .map((field) => [field.key, this.form[field.key]]),
     );
     if (this.isTicket && !this.editing && !this.secured && this.senderId)
       payload['requesterId'] = this.senderId;

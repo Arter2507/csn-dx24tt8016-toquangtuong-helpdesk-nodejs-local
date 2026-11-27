@@ -2,6 +2,8 @@ import 'dotenv/config';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
+import { createServer } from 'node:net';
+import { createInterface } from 'node:readline';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -23,6 +25,26 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
   });
   let server;
   let pool;
+  const receivedMail = [];
+  const smtp = createServer(socket => {
+    socket.write('220 localhost test SMTP\r\n');
+    let message = null;
+    createInterface({ input: socket }).on('line', line => {
+      if (message && line === '.') {
+        receivedMail.push(message.join('\n'));
+        message = null;
+        socket.write('250 stored\r\n');
+      } else if (message) message.push(line);
+      else if (line === 'DATA') {
+        message = [];
+        socket.write('354 end with a dot\r\n');
+      } else if (line === 'QUIT') socket.end('221 bye\r\n');
+      else socket.write('250 localhost\r\n');
+    });
+  });
+  smtp.listen(0, '127.0.0.1');
+  await once(smtp, 'listening');
+  const inboundToken = randomBytes(32).toString('hex');
   try {
     await connection.query('CREATE DATABASE ' + database);
     await connection.changeUser({ database });
@@ -35,6 +57,8 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     Object.assign(process.env, {
       DATA_SOURCE: 'mysql', DB_NAME: database, UPLOAD_DIR: uploadDir, CORS_ORIGIN: origin,
       BACKUP_DIR: join(uploadDir, 'backups'), NODE_ENV: 'development', JWT_SECRET: randomBytes(32).toString('hex'),
+      SMTP_HOST: '127.0.0.1', SMTP_PORT: String(smtp.address().port), SMTP_USER: '', MAIL_FROM: 'support@example.test', MAIL_LANGUAGE: 'en',
+      INBOUND_MAIL_TOKEN: inboundToken, INBOUND_MAIL_CATEGORY_ID: '3',
     });
     ({ pool } = await import('../src/database/pool.js'));
     const { app } = await import('../src/app.js');
@@ -103,6 +127,24 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     await expectStatus(client().request('/auth/refresh', 'POST', {}, { Cookie: oldCookies }), 401);
     assert.deepEqual((await login(tech, 'tech')).roleCodes, ['TECHNICIAN', 'USER']);
     assert.equal((await login(admin, 'admin')).role, 'OWNER');
+    const knowledgeInput = { title: 'Hướng dẫn Wi-Fi', body: 'Kiểm tra bộ phát tại phòng họp.', categoryId: 3, visibility: 'PUBLIC' };
+    const guide = await data(admin.request('/knowledge', 'POST', knowledgeInput), 201);
+    const internalGuide = await data(admin.request('/knowledge', 'POST', {
+      ...knowledgeInput, title: 'Quy trình liên bộ', body: 'Kiểm tra nhật ký điều phối.', visibility: 'INTERNAL',
+    }), 201);
+    const guest = client();
+    assert.equal((await data(guest.request('/knowledge/' + guide.id))).body, knowledgeInput.body);
+    assert.ok((await data(guest.request('/knowledge?q=bo%20phat&categoryId=3'))).some(row => row.id === guide.id));
+    assert.ok(!(await data(user.request('/knowledge'))).some(row => row.id === internalGuide.id));
+    assert.equal((await data(tech.request('/knowledge/' + internalGuide.id))).visibility, 'INTERNAL');
+    assert.ok(!(await data(tech.request('/knowledge?publicOnly=true'))).some(row => row.id === internalGuide.id));
+    await expectStatus(guest.request('/knowledge/' + internalGuide.id), 404);
+    await expectStatus(user.request('/knowledge/' + internalGuide.id), 404);
+    await expectStatus(tech.request('/knowledge', 'POST', knowledgeInput), 403);
+    const archivedGuide = await data(admin.request('/knowledge', 'POST', { ...knowledgeInput, title: 'Bài viết sẽ lưu trữ' }), 201);
+    await expectStatus(admin.request('/knowledge/' + archivedGuide.id, 'DELETE'), 204);
+    await expectStatus(admin.request('/knowledge/' + archivedGuide.id), 404);
+    await expectStatus(client().request('/notifications/stream'), 401);
     const organization = await data(admin.request('/organizations'));
     assert.equal(organization.ownerName, 'Quản trị mẫu');
     await data(admin.request('/organizations', 'PUT', { name: 'Tổ chức kiểm thử', code: organization.code, description: 'IAM' }));
@@ -135,23 +177,45 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     assert.deepEqual(await readFile(join(uploadDir, attachment.id)), pdf);
     await expectStatus(tech.request('/tickets/' + created.id + '/attachments/' + attachment.id), 404);
     const path = '/tickets/' + created.id;
-    await expectStatus(user.request(path, 'PATCH', { title: 'Không được sửa', version: created.version }), 403);
-    const payload = ({ title, description, priority, categoryId, assigneeId, status, version }) =>
-      ({ title, description, priority, categoryId, assigneeId, status, version });
-
-    await expectStatus(user.request(path, 'PATCH', { ...payload(created), assigneeId: 2 }), 403);
-    await expectStatus(admin.request(path, 'PATCH', { ...payload(created), assigneeId: 5 }), 422);
-    const assigned = await data(admin.request(path + '/assignee', 'PUT', { version: created.version, assigneeId: 2 }));
+    await expectStatus(user.request(path, 'PATCH', { version: created.version, assigneeId: 2 }), 422);
+    await expectStatus(user.request(path + '/assignee', 'PUT', { version: created.version, assigneeId: 2 }), 403);
+    await expectStatus(admin.request(path + '/assignee', 'PUT', { version: created.version, assigneeId: 5 }), 422);
+    const edited = await data(user.request(path, 'PATCH', { title: 'Máy in báo lỗi', version: created.version }));
+    assert.equal(edited.title, 'Máy in báo lỗi');
+    assert.equal((await data(user.request(path + '/history'))).at(-1).type, 'CONTENT_CHANGED');
+    const stream = await expectStatus(tech.request('/notifications/stream', 'GET', undefined, { Accept: 'text/event-stream' }), 200);
+    assert.match(stream.headers.get('content-type'), /text\/event-stream/);
+    const frames = stream.body.getReader();
+    assert.match(Buffer.from((await frames.read()).value).toString(), /event: inbox/);
+    const assigned = await data(admin.request(path + '/assignee', 'PUT', { version: edited.version, assigneeId: 2 }));
+    try {
+      const deadline = AbortSignal.timeout(3500);
+      const change = await Promise.race([
+        frames.read(),
+        once(deadline, 'abort').then(() => { throw new Error('Missing notification after assignment'); }),
+      ]);
+      assert.match(Buffer.from(change.value).toString(), /event: inbox/);
+      assert.ok((await data(tech.request('/notifications'))).some(item => item.ticketId === created.id && item.type === 'ASSIGNEE_CHANGED'));
+    } finally {
+      await frames.cancel();
+    }
     const attachmentResponse = await expectStatus(tech.request(path + '/attachments/' + attachment.id), 200);
     assert.deepEqual(Buffer.from(await attachmentResponse.arrayBuffer()), pdf);
     await expectStatus(user.request(path, 'PATCH', { version: assigned.version, priority: 'LOW' }), 403);
     const priorityEdit = await data(tech.request(path, 'PATCH', { version: assigned.version, priority: 'HIGH' }));
     assert.equal(priorityEdit.priority, 'HIGH');
     const progress = await data(tech.request(path + '/transitions', 'POST', { version: priorityEdit.version, toStatus: 'IN_PROGRESS' }));
-    await expectStatus(tech.request(path, 'PATCH', { ...payload(progress), status: 'RESOLVED' }), 422);
+    const { deliverStatusMail } = await import('../src/modules/notifications/outgoing-mail.js');
+    await deliverStatusMail();
+    assert.equal(receivedMail.length, 1);
+    assert.match(receivedMail[0], /To: user@example\.test/);
+    assert.match(receivedMail[0], /In progress/);
+    assert.match(receivedMail[0], /\/tickets\/\d+\/view/);
+    await expectStatus(tech.request(path, 'PATCH', { version: progress.version, status: 'RESOLVED' }), 422);
     await expectStatus(tech.request(path + '/transitions', 'POST', { version: progress.version, toStatus: 'PENDING_CUSTOMER' }), 422);
-    const comment = await data(tech.request(path + '/comments', 'POST', { body: 'Đã thử in lại.' }), 201);
+    const comment = await data(tech.request(path + '/comments', 'POST', { body: 'Đã thử in lại.\nHướng dẫn /knowledge/' + guide.id }), 201);
     assert.equal((await data(user.request(path + '/comments')))[0].id, comment.id);
+    await expectStatus(tech.request(path + '/comments', 'POST', { body: 'Nội bộ /knowledge/' + internalGuide.id }), 422);
     const pending = await data(tech.request(path + '/transitions', 'POST', {
       version: progress.version, toStatus: 'PENDING_CUSTOMER', note: 'Cho mình xin mã lỗi.',
     }));
@@ -164,18 +228,26 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     assert.equal(response.ticketUpdate.status, 'IN_PROGRESS');
     const resumed = await data(tech.request(path));
     assert.equal(resumed.version, pending.version + 1);
-    await expectStatus(tech.request(path, 'PATCH', { ...payload(pending), status: 'IN_PROGRESS' }), 409);
-    const firstResolution = await data(tech.request(path, 'PATCH', { ...payload(resumed), status: 'RESOLVED', note: 'Đã sửa lần đầu.' }));
-    const reopened = await data(user.request(path + '/transitions', 'POST', { version: firstResolution.version, toStatus: 'IN_PROGRESS', note: 'Cần thử thêm.' }));
+    await expectStatus(tech.request(path + '/transitions', 'POST', { version: pending.version, toStatus: 'RESOLVED', note: 'Cũ' }), 409);
+    const firstResolution = await data(tech.request(path + '/transitions', 'POST', { version: resumed.version, toStatus: 'RESOLVED', note: 'Đã sửa lần đầu.' }));
+    assert.ok(Date.parse(firstResolution.chatExpiresAt) > Date.now());
+    const reopened = await data(user.request(path + '/transitions', 'POST', { version: firstResolution.version, toStatus: 'IN_PROGRESS' }));
+    assert.equal(reopened.chatExpiresAt, null);
     const [[timestamps]] = await connection.execute('SELECT resolved_at FROM tickets WHERE id = ?', [created.id]);
     assert.equal(timestamps.resolved_at, null);
-    const resolved = await data(tech.request(path, 'PATCH', { ...payload(reopened), status: 'RESOLVED', note: 'Đã sửa.' }));
+    const resolved = await data(tech.request(path + '/transitions', 'POST', { version: reopened.version, toStatus: 'RESOLVED', note: 'Đã sửa.' }));
     assert.equal(resolved.history.at(-1).note, 'Đã sửa.');
     assert.equal((await data(user.request(path + '/history'))).at(-1).actorName, 'Kỹ thuật viên mẫu');
-    await expectStatus(admin.request(path, 'PATCH', { ...payload(resolved), status: 'CLOSED' }), 403);
-    const closed = await data(user.request(path, 'PATCH', { ...payload(resolved), status: 'CLOSED' }));
+    const close = { version: resolved.version, toStatus: 'CLOSED' };
+    await expectStatus(admin.request(path + '/transitions', 'POST', close), 403);
+    const closed = await data(user.request(path + '/transitions', 'POST', close));
     assert.equal(closed.status, 'CLOSED');
-    await expectStatus(user.request(path, 'PATCH', { ...payload(resolved), status: 'CLOSED' }), 409);
+    await expectStatus(user.request(path + '/transitions', 'POST', close), 409);
+    await data(user.request(path + '/comments', 'POST', { body: 'Xác nhận thêm sau khi đóng.' }), 201);
+    await connection.execute('UPDATE tickets SET closed_at = DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 25 HOUR) WHERE id = ?', [created.id]);
+    const locked = await expectStatus(user.request(path + '/comments', 'POST', { body: 'Quá hạn.' }), 409);
+    assert.equal((await locked.json()).error.code, 'CHAT_EXPIRED');
+    assert.ok((await data(user.request(path + '/comments'))).some(item => item.id === comment.id));
     assert.ok((await data(tech.request('/tickets'))).some(ticket => ticket.id === created.id));
     const updates = await data(user.request('/notifications'));
     const notification = updates.find(item => item.ticketId === created.id && item.type === 'COMMENT_ADDED');
@@ -234,6 +306,46 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     assert.equal(task.dueDate, '2026-11-28');
     assert.ok((await data(admin.request('/tasks'))).tasks.some(item => item.id === task.id));
 
+    const slaPath = '/settings/sla';
+    const policy = await data(admin.request(slaPath));
+    policy.enabled = true;
+    policy.rules.VIP = structuredClone(policy.rules.STANDARD);
+    for (const rule of Object.values(policy.rules.VIP)) {
+      rule.response = 15;
+      rule.resolution = 60;
+    }
+    await expectStatus(user.request(slaPath), 403);
+    await expectStatus(tech.request(slaPath, 'PUT', policy), 403);
+    await data(admin.request(slaPath, 'PUT', policy));
+    await data(admin.request('/users/1', 'PATCH', { customerTier: 'VIP' }));
+    const childCategory = await data(admin.request('/categories', 'POST', {
+      code: 'NET_LOGIN', name: 'Không vào được VPN', parentId: 3,
+    }), 201);
+    await expectStatus(admin.request('/categories/3', 'PATCH', { parentId: childCategory.id }), 422);
+    await expectStatus(admin.request('/categories/3', 'PATCH', { isActive: false }), 409);
+    const withDeadline = await data(user.request('/tickets', 'POST', {
+      title: 'Thử VPN', description: 'Kiểm tra phiếu SLA', categoryId: childCategory.id,
+    }), 201);
+    const servicePath = '/tickets/' + withDeadline.id;
+    const { businessDeadline } = await import('../src/modules/sla/policy.js');
+    const serviceStart = new Date(withDeadline.createdAt);
+    assert.equal(withDeadline.responseDueAt, businessDeadline(serviceStart, 15, policy.week, policy.holidays).toISOString());
+    assert.equal(withDeadline.resolutionDueAt, businessDeadline(serviceStart, 60, policy.week, policy.holidays).toISOString());
+    assert.ok((await data(user.request('/tickets?categoryId=3'))).some(item => item.id === withDeadline.id));
+    assert.ok((await data(user.request('/tickets?search=NETWORK'))).some(item => item.id === withDeadline.id));
+    await data(admin.request(servicePath + '/assignee', 'PUT', { version: withDeadline.version, assigneeId: 2 }));
+    await connection.execute('UPDATE tickets SET response_due_at = UTC_TIMESTAMP(3) + INTERVAL 10 MINUTE WHERE id = ?', [withDeadline.id]);
+    const { warnUpcomingSla } = await import('../src/modules/notifications/sla-warnings.js');
+    await warnUpcomingSla();
+    await warnUpcomingSla();
+    const upcoming = (await data(tech.request('/notifications'))).filter(item => item.ticketId === withDeadline.id && item.type === 'SLA_RESPONSE_DUE');
+    assert.equal(upcoming.length, 1);
+    await data(tech.request(servicePath + '/comments', 'POST', { body: 'Nội bộ', internal: true }), 201);
+    assert.equal((await data(user.request(servicePath))).firstResponseAt, null);
+    const reply = await data(tech.request(servicePath + '/comments', 'POST', { body: 'Đã nhận yêu cầu.' }), 201);
+    assert.equal((await data(user.request(servicePath))).firstResponseAt, reply.createdAt);
+    await data(admin.request(slaPath, 'PUT', { ...policy, enabled: false }));
+
     const jobs = () => data(admin.request('/backups'));
     const waitForBackup = async id => {
       for (let attempt = 0; attempt < 30; attempt++) {
@@ -262,6 +374,11 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     await expectStatus(tech.request('/tasks/' + task.id, 'PATCH', { status: 'DOING', version: task.version }), 409);
     await data(user.request('/profile', 'PATCH', { ...profileInput, bio: 'Thay đổi sau sao lưu' }));
     await expectStatus(admin.request(networkRulePath, 'PUT', { ...networkRule, prefix: 'NET' }), 204);
+    await data(admin.request('/categories/' + childCategory.id, 'PATCH', { parentId: null }));
+    const changedGuide = { ...knowledgeInput, body: 'Nội dung cập nhật sau khi sao lưu' };
+    await data(admin.request('/knowledge/' + guide.id, 'PUT', changedGuide));
+    assert.equal((await data(guest.request('/knowledge/' + guide.id))).body, changedGuide.body);
+    await data(admin.request(slaPath, 'PUT', { ...policy, enabled: false, holidays: [{ date: '2026-12-12', name: 'Ngày nghỉ kiểm thử' }] }));
     await expectStatus(user.request('/backups/' + manual.id + '/restore', 'POST', { confirmed: true }), 403);
     await expectStatus(admin.request('/backups/' + manual.id + '/restore', 'POST', { confirmed: false }), 422);
     const restored = await data(admin.request('/backups/' + manual.id + '/restore', 'POST', { confirmed: true }));
@@ -273,6 +390,23 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     const restoredRule = (await data(admin.request('/settings/ticket-number-rules'))).find(rule => rule.categoryId === 3);
     assert.equal(restoredRule.prefix, 'PYCM');
     assert.equal(restoredRule.nextNumber, 4);
+    assert.equal((await data(admin.request('/categories/' + childCategory.id))).parentId, 3);
+    assert.equal((await data(guest.request('/knowledge/' + guide.id))).body, knowledgeInput.body);
+    assert.deepEqual((await data(admin.request(slaPath))).rules.VIP, policy.rules.VIP);
+    assert.deepEqual((await data(admin.request(slaPath))).holidays, []);
+
+    const sourceMail = Buffer.from('From: user-changed@example.test\r\nTo: support@example.test\r\nMessage-ID: <qa-1@example.test>\r\nSubject: VPN trouble\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nVPN is offline.\r\n');
+    const mailHeaders = { 'Content-Type': 'message/rfc822', Authorization: 'Bearer ' + inboundToken, 'X-Verified-Sender': 'user-changed@example.test' };
+    const postMail = headers => fetch(base + '/mail/inbound', { method: 'POST', headers, body: sourceMail });
+    await expectStatus(postMail({ ...mailHeaders, Authorization: 'Bearer invalid' }), 401);
+    await expectStatus(postMail({ ...mailHeaders, 'X-Verified-Sender': 'tech@example.test' }), 422);
+    const posted = await Promise.all([postMail(mailHeaders), postMail(mailHeaders)]);
+    const mailCodes = await Promise.all(posted.map(response => data(response, 202)));
+    assert.equal(mailCodes[0].code, mailCodes[1].code);
+    const mailTickets = await data(user.request('/tickets?search=VPN%20trouble'));
+    assert.equal(mailTickets.length, 1);
+    assert.equal(mailTickets[0].requesterId, 1);
+    assert.equal(mailTickets[0].categoryId, 3);
 
     await expectStatus(admin.request('/backups/schedule/check', 'POST', {}), 204);
     await data(admin.request('/backups/schedule', 'PUT', { enabled: true, intervalMinutes: 30 }));
@@ -362,6 +496,51 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     await expectStatus(operator.request('/organizations', 'PUT', { name: 'Khác', code: 'DIFFERENT', description: '' }), 403);
     await expectStatus(operator.request('/backups'), 403);
     await expectStatus(operator.request('/users/3', 'PATCH', { isActive: false }), 403);
+    await context.test('organization units and atomic member and category status changes', async () => {
+      const unitsPath = '/organizations/units';
+      const batchMembersPath = '/users/batch-state';
+      const batchCategoriesPath = '/categories/batch-state';
+      const seededUnits = await data(operator.request(unitsPath));
+      assert.ok(seededUnits.some(unit => unit.code === 'HA-TANG' && unit.parentId));
+      await expectStatus(tech.request(unitsPath), 403);
+      await expectStatus(user.request(unitsPath), 403);
+      const newUnit = { name: 'Bộ phận kiểm thử', code: 'QA-TEAM', parentId: null, isActive: true };
+      await expectStatus(operator.request(unitsPath, 'POST', newUnit), 403);
+      const parent = await data(admin.request(unitsPath, 'POST', newUnit), 201);
+      await expectStatus(admin.request(unitsPath, 'POST', newUnit), 409);
+      const childInput = { ...newUnit, name: 'Nhóm kiểm thử', code: 'QA-GROUP', parentId: parent.id };
+      const child = await data(admin.request(unitsPath, 'POST', childInput), 201);
+      await expectStatus(admin.request(unitsPath + '/' + parent.id, 'DELETE'), 409);
+      const empty = await data(admin.request(unitsPath, 'POST', { ...newUnit, code: 'QA-EMPTY' }), 201);
+      await expectStatus(operator.request(unitsPath + '/' + empty.id, 'DELETE'), 403);
+      await expectStatus(admin.request(unitsPath + '/' + empty.id, 'DELETE'), 204);
+      assert.ok(!(await data(admin.request(unitsPath))).some(unit => unit.id === empty.id));
+      await expectStatus(admin.request(unitsPath + '/' + parent.id, 'PUT', { ...newUnit, parentId: child.id }), 422);
+      const moved = await data(operator.request('/users/' + linked.id, 'PATCH', { unitId: child.id }));
+      assert.equal(moved.department, child.name);
+      assert.equal(moved.unitId, child.id);
+      await data(admin.request(unitsPath + '/' + child.id, 'PUT', { ...childInput, name: 'Nhóm mới', isActive: false }));
+      assert.equal((await data(operator.request('/users/' + linked.id))).department, 'Nhóm mới');
+      await expectStatus(operator.request('/users/2', 'PATCH', { unitId: child.id }), 422);
+      await expectStatus(operator.request(batchMembersPath, 'PATCH', { ids: [linked.id, 3], isActive: false }), 403);
+      assert.equal((await data(operator.request('/users/' + linked.id))).status, 'ACTIVE');
+      await expectStatus(tech.request(batchMembersPath, 'PATCH', { ids: [linked.id], isActive: false }), 403);
+      const memberIds = [linked.id, 4];
+      assert.equal((await data(operator.request(batchMembersPath, 'PATCH', { ids: memberIds, isActive: false }))).count, 2);
+      await expectStatus(newcomer.request('/auth/me'), 401);
+      await expectStatus(newcomer.request('/auth/login', 'POST', { email: registration.email, password }), 401);
+      await data(operator.request(batchMembersPath, 'PATCH', { ids: memberIds, isActive: true }));
+      await login(newcomer, 'newcomer', password);
+      await expectStatus(user.request(batchCategoriesPath, 'PATCH', { ids: [1, 2], isActive: false }), 403);
+      await expectStatus(operator.request(batchCategoriesPath, 'PATCH', { ids: [1, 99999], isActive: false }), 404);
+      assert.equal((await data(operator.request('/categories/1'))).isActive, true);
+      const beforeCategoryChange = await data(operator.request('/tickets/2'));
+      assert.ok([1, 2].includes(beforeCategoryChange.categoryId));
+      await data(operator.request(batchCategoriesPath, 'PATCH', { ids: [1, 2], isActive: false }));
+      assert.equal((await data(operator.request('/categories/1'))).isActive, false);
+      assert.equal((await data(operator.request('/tickets/2'))).categoryId, beforeCategoryChange.categoryId);
+      await data(operator.request(batchCategoriesPath, 'PATCH', { ids: [1, 2], isActive: true }));
+    });
     await expectStatus(operator.request('/users/3/avatar', 'POST', avatar), 403);
     await expectStatus(operator.request('/users/' + linked.id + '/avatar', 'POST', avatar), 204);
     const staffPhoto = await expectStatus(operator.request('/users/' + linked.id + '/avatar'), 200);
@@ -406,7 +585,9 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     await expectStatus(admin.request('/auth/logout', 'POST', {}), 204);
     await expectStatus(client().request('/auth/me', 'GET', undefined, { Cookie: adminCookies }), 401);
   } finally {
+    server?.closeAllConnections();
     if (server) await new Promise(resolve => server.close(resolve));
+    await new Promise(resolve => smtp.close(resolve));
     if (pool) await pool.end();
     try {
       await connection.query('DROP DATABASE IF EXISTS ' + database);

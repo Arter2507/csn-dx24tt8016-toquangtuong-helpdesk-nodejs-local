@@ -13,9 +13,10 @@ export function authorizeUpdate(account, ticket, changes) {
   const owner = account.id === ticket.requesterId;
   const assigned = isTechnician(account) && account.id === ticket.assigneeId;
   const deny = () => new AppError(403, 'FORBIDDEN', 'Bạn không có quyền thực hiện thao tác này');
-  if (!admin && (['title', 'description', 'categoryId', 'assigneeId']
+  if (!admin && (['categoryId', 'assigneeId']
     .some(key => changes[key] !== ticket[key]) || changes.removeAttachments?.length ||
-    (!assigned && changes.priority !== ticket.priority))) {
+    (!assigned && changes.priority !== ticket.priority) ||
+    (!assigned && !owner && (changes.title !== ticket.title || changes.description !== ticket.description)))) {
     throw deny();
   }
   if (ticket.status === changes.status) return;

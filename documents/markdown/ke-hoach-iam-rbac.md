@@ -15,6 +15,9 @@ Mỗi bản cài đặt phục vụ một tổ chức. Khóa ngoại liên kết
 erDiagram
     USERS o|--o| ORGANIZATIONS : "owns"
     ORGANIZATIONS ||--o{ ORGANIZATION_MEMBERS : "contains"
+    ORGANIZATIONS ||--o{ ORGANIZATION_UNITS : "contains"
+    ORGANIZATION_UNITS o|--o{ ORGANIZATION_UNITS : "parent of"
+    ORGANIZATION_UNITS o|--o{ ORGANIZATION_MEMBERS : "assigned to"
     USERS ||--o| ORGANIZATION_MEMBERS : "belongs"
     USERS ||--o{ AUTH_SESSIONS : "signs in"
     USERS ||--o{ TICKETS : "requests"
@@ -26,8 +29,12 @@ erDiagram
 | `POST /api/v1/auth/activate` | Công khai. Kiểm tra token và hạn dùng khi đặt mật khẩu lần đầu. |
 | `GET /api/v1/organizations` | Chủ sở hữu và Quản trị viên đọc thông tin tổ chức. |
 | `PUT /api/v1/organizations` | Chủ sở hữu cập nhật tên, mã và mô tả. |
+| `GET /api/v1/organizations/units` | Chủ sở hữu và Quản trị viên xem các đơn vị trong tổ chức. |
+| `POST /api/v1/organizations/units` và `PUT /api/v1/organizations/units/:id` | Chủ sở hữu thêm, chuyển, đổi thông tin và ngưng sử dụng đơn vị. |
+| `DELETE /api/v1/organizations/units/:id` | Chủ sở hữu xóa mềm đơn vị đã trống. API chặn khi còn nhân sự hoặc đơn vị trực thuộc. |
 | `GET /api/v1/users` và `GET /api/v1/users/:id` | Chủ sở hữu và Quản trị viên xem nhân sự. Bộ lọc nhận `filter` theo vai trò và `status` theo trạng thái. |
 | `POST /api/v1/users` và `PATCH /api/v1/users/:id` | Chủ sở hữu và Quản trị viên quản lý các cấp dưới được phép. |
+| `PATCH /api/v1/users/batch-state` | Khóa hoặc mở khóa tối đa 100 tài khoản trong một lần. API kiểm tra toàn bộ lựa chọn trước khi ghi. Khi khóa, phiên đăng nhập và link kích hoạt cũ hết hiệu lực. |
 | `POST /api/v1/users/:id/invitation` | Quản lý cấp trên tạo lại link cho tài khoản đang chờ kích hoạt. |
 | `GET /api/v1/users/:id/avatar` và `POST /api/v1/users/:id/avatar` | Đọc trong phạm vi tổ chức. Tải ảnh mới theo quyền quản lý. |
 
@@ -35,9 +42,11 @@ Trạng thái hoạt động được suy ra từ quan hệ thành viên, mật 
 
 Migration tự chọn tài khoản quản trị đang hoạt động có ID thấp nhất làm Chủ sở hữu. Các tài khoản còn lại được chuyển sang vai trò tương ứng và giữ nguyên ID liên kết với phiếu. Bản ZIP nghiệp vụ dành cho Chủ sở hữu. Khôi phục ZIP giữ quyền và định danh đang có. [Hướng dẫn máy chủ và tài khoản Chủ sở hữu](../../docker/production.md)
 
-## Kế hoạch mở rộng phòng ban
+## Đơn vị trực thuộc
 
-Trạm Mèo lưu phòng ban và chức danh trong hồ sơ thành viên. Giai đoạn sau mở rộng phạm vi xử lý từ từng kỹ thuật viên sang phòng ban, bổ sung nhóm nghiệp vụ và quyền điều phối theo nhóm.
+Migration `20261126110000_organization_units` chuyển tên phòng ban hiện có thành đơn vị cấp đầu theo tổ chức, gắn khoá `organization_members.unit_id` và giữ chuỗi phòng ban cũ cho luồng tương thích. Chủ sở hữu sắp xếp lại cấp cha–con sau khi áp dụng migration. Mã đơn vị duy nhất trong tổ chức. API kiểm tra vòng lặp và khóa ngoại giới hạn đơn vị cha cùng tổ chức. Hồ sơ đã gán giữ liên kết nếu đơn vị ngưng sử dụng. Bản sao nghiệp vụ có thông tin đơn vị để đối chiếu. Khôi phục ZIP giữ cơ cấu và quyền IAM đang dùng.
+
+Định tuyến theo đơn vị, hàng đợi phòng ban và quyền trưởng nhóm thuộc giai đoạn sau. Lưu đơn vị trên hồ sơ hiện phục vụ cơ cấu nhân sự và tra cứu.
 
 ## Màn hình theo vai trò
 
@@ -52,7 +61,7 @@ Khi một Agent mở **Phiếu của tôi**, màn hình lấy phạm vi người
 
 ## Thiết kế dữ liệu và định tuyến
 
-- Thêm `departments` với mã, tên và trạng thái, cùng `department_members` với người dùng, phòng và quyền Agent hoặc trưởng nhóm. Ngưng sử dụng giữ nguyên tham chiếu trong lịch sử.
+- Dùng `organization_units` làm danh mục. Bổ sung quan hệ tham gia nhiều đơn vị khi có nhu cầu cấp quyền Agent hoặc trưởng nhóm theo từng đơn vị. Ngưng sử dụng giữ nguyên tham chiếu trong lịch sử.
 - Thêm `department_id` trên `tickets`, bản ghi phân công và quy tắc mặc định từ loại phiếu tới phòng. Ví dụ Phần cứng → Hỗ trợ Phần cứng, Mạng → Mạng & Hạ tầng, Phần mềm → Phần mềm nghiệp vụ.
 - Áp dụng migration theo hai bước. Tạo khóa và trường tùy chọn trước, xác định phòng từ danh mục hoặc người đang phụ trách sau. Phiếu thiếu căn cứ vào hàng đợi cần phân loại. Giữ ID và mã phiếu qua toàn bộ quy trình.
 - Lấy phạm vi từ membership đang hoạt động và hành động được cấp. Áp dụng cùng điều kiện cho danh sách, chi tiết, cập nhật, tìm kiếm, thống kê, thông báo, lịch sử và download. Ghi người thực hiện, thời điểm, phạm vi cũ và mới khi đổi quyền hoặc chuyển phòng.

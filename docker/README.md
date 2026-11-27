@@ -15,7 +15,12 @@ Chạy các lệnh từ thư mục gốc nhánh `local`.
 
 Máy cần Docker Engine với **Docker Compose 2.23 trở lên** và Node/pnpm để gọi lệnh. Trên Docker Desktop, các lệnh khởi động và build có thể mở Desktop tự động khi đang chọn context Desktop. Với Docker Engine, khởi động engine theo cách của hệ điều hành.
 
-Mở [http://localhost:4200/](http://localhost:4200/) hoặc [http://127.0.0.1:4200/](http://127.0.0.1:4200/). Hai địa chỉ đều đăng nhập được trong môi trường dev và mỗi địa chỉ giữ phiên riêng. API mở tại `127.0.0.1:3000` và Angular chuyển `/api` đến `backend:3000` trong mạng Compose. MySQL chỉ dùng trong mạng này. Có thể đổi `FRONTEND_PORT` và `API_PORT` trong `docker/.env`. Nếu đặt `CORS_ORIGIN` thành một tên miền riêng, hãy mở web bằng đúng địa chỉ đó.
+Mở [http://127.0.0.1:4200/](http://127.0.0.1:4200/). `compose.yaml` công bố cổng frontend trên loopback của máy và truyền cổng này vào `src/frontend/scripts/serve-docker.mjs`. Script chạy Angular với `--host 0.0.0.0` trong container và in hai địa chỉ truy cập của máy theo cổng đã công bố. API mở tại `127.0.0.1:3000` và Angular chuyển `/api` đến `backend:3000`. MySQL chỉ dùng trong mạng Compose. Có thể đổi `FRONTEND_PORT` và `API_PORT` trong `docker/.env`.
+
+```text
+Local:   http://localhost:4200/
+Network: http://127.0.0.1:4200/
+```
 
 ### Cài thư viện trên máy mới
 

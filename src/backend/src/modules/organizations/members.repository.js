@@ -8,15 +8,17 @@ const statusSql = `CASE
   WHEN u.password_hash IS NULL THEN 'PENDING_ACTIVATION'
   ELSE 'ACTIVE'
 END`;
-const memberFrom = 'FROM organization_members m JOIN users u ON u.id = m.user_id';
+const memberFrom = `FROM organization_members m JOIN users u ON u.id = m.user_id
+  LEFT JOIN organization_units unit ON unit.id = m.unit_id AND unit.organization_id = m.organization_id`;
 const memberSelect = `SELECT u.id, u.email, u.full_name AS fullName, COALESCE(u.phone,'') AS phone,
-  m.employee_code AS employeeCode, m.department, m.position, m.role, m.joined_at AS joinedAt,
+  m.employee_code AS employeeCode, COALESCE(unit.name, m.department) AS department,
+  m.unit_id AS unitId, m.position, m.customer_tier AS customerTier, m.role, m.joined_at AS joinedAt,
   ${statusSql} AS status, u.activation_expires_at AS invitationExpiresAt,
   EXISTS(SELECT 1 FROM user_profiles p WHERE p.user_id = u.id AND p.avatar IS NOT NULL) AS hasAvatar
   ${memberFrom}`;
 
 function view(row) {
-  return { ...row, id: Number(row.id), isActive: row.status === 'ACTIVE', hasAvatar: Boolean(row.hasAvatar) };
+  return { ...row, id: Number(row.id), unitId: row.unitId == null ? null : Number(row.unitId), isActive: row.status === 'ACTIVE', hasAvatar: Boolean(row.hasAvatar) };
 }
 
 async function findMember(connection, id, organizationId) {
@@ -59,7 +61,35 @@ async function revokeSessions(connection, id) {
   );
 }
 
+async function assignedUnit(connection, organizationId, data, previous = null) {
+  if (data.unitId === undefined) return Object.hasOwn(data, 'department') ? null : previous;
+  if (data.unitId === null || data.unitId === previous) return data.unitId;
+  const [[unit]] = await connection.execute(
+    'SELECT id FROM organization_units WHERE organization_id = ? AND id = ? AND is_active = 1 AND deleted_at IS NULL',
+    [organizationId, data.unitId],
+  );
+  if (!unit) throw new AppError(422, 'UNIT_UNAVAILABLE');
+  return data.unitId;
+}
+
 export const members = {
+  batchState(ids, enabled, account) {
+    return manageOrganization(account, async (conn, actor, organization) => {
+      const selected = [];
+      for (const id of [...ids].sort((a, b) => a - b)) {
+        selected.push(await manageableMember(conn, actor, id, organization.id));
+      }
+      for (const member of selected) {
+        if (enabled === (member.status !== 'DISABLED')) continue;
+        await conn.execute(
+          `UPDATE users SET is_active = ?, activation_token_hash = NULL, activation_expires_at = NULL,
+           updated_at = UTC_TIMESTAMP(3) WHERE id = ?`, [enabled, member.id],
+        );
+        if (!enabled) await revokeSessions(conn, member.id);
+      }
+      return selected.length;
+    });
+  },
   async list(query, account) {
     const clauses = ['m.organization_id = ?'];
     const args = [account.organizationId];
@@ -91,6 +121,7 @@ export const members = {
   create(data, files, account) {
     return manageOrganization(account, async (conn, actor, organization) => {
       if (!canManage(actor, data.role)) throw forbidden();
+      const unitId = await assignedUnit(conn, organization.id, data);
       const [[existing]] = await conn.execute('SELECT id, is_active AS isActive, password_hash IS NOT NULL AS activated FROM users WHERE email = ? FOR UPDATE', [data.email]);
       let id = existing?.id;
       if (existing) {
@@ -108,9 +139,9 @@ export const members = {
         id = result.insertId;
       }
       await conn.execute(
-        `INSERT INTO organization_members (organization_id, user_id, employee_code, department, position, role, joined_at)
-         VALUES (?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`,
-        [organization.id, id, data.employeeCode || null, data.department, data.position, data.role],
+        `INSERT INTO organization_members (organization_id, user_id, employee_code, department, unit_id, position, role, customer_tier, joined_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`,
+        [organization.id, id, data.employeeCode || null, data.department, unitId, data.position, data.role, data.customerTier ?? 'STANDARD'],
       );
       const invitation = existing ? null : await issueInvitation(conn, id);
       return { ...(await findMember(conn, id, organization.id)), invitation };
@@ -121,6 +152,8 @@ export const members = {
       const member = await manageableMember(conn, actor, id, organization.id);
       const next = { ...member, ...changes };
       if (!canManage(actor, next.role)) throw forbidden();
+      const unitId = await assignedUnit(conn, organization.id, changes, member.unitId);
+      const department = changes.department ?? (changes.unitId === null ? '' : next.department);
       const enabled = changes.isActive ?? (member.status !== 'DISABLED');
       const emailChanged = next.email !== member.email;
       const revokeInvitation = emailChanged || !enabled;
@@ -132,8 +165,8 @@ export const members = {
         [next.email, next.fullName, next.phone || null, enabled, revokeInvitation, revokeInvitation, id],
       );
       await conn.execute(
-        'UPDATE organization_members SET employee_code = ?, department = ?, position = ?, role = ? WHERE user_id = ? AND organization_id = ?',
-        [next.employeeCode || null, next.department, next.position, next.role, id, organization.id],
+        'UPDATE organization_members SET employee_code = ?, department = ?, unit_id = ?, position = ?, role = ?, customer_tier = ? WHERE user_id = ? AND organization_id = ?',
+        [next.employeeCode || null, department, unitId, next.position, next.role, next.customerTier, id, organization.id],
       );
       if (emailChanged || !enabled || next.role !== member.role) await revokeSessions(conn, id);
       return findMember(conn, id, organization.id);

@@ -14,7 +14,7 @@ FROM app-build AS development
 # Include newly added assets in Angular's watch, even before they enter the build graph.
 ENV NG_BUILD_WATCH_ROOT=true
 EXPOSE 4200
-CMD ["node", "node_modules/@angular/cli/bin/ng.js", "serve", "--host", "0.0.0.0", "--port", "4200", "--proxy-config", "proxy.docker.conf.json", "--poll", "1000", "--live-reload", "--hmr"]
+CMD ["node", "scripts/serve-docker.mjs"]
 
 FROM caddy:2-alpine AS production
 COPY --from=app-build /app/dist/frontend/browser/ /srv/

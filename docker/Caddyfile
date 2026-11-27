@@ -1,5 +1,6 @@
 {$APP_DOMAIN} {
-	encode zstd gzip
+	@compressible not path /api/v1/notifications/stream
+	encode @compressible zstd gzip
 	header X-Content-Type-Options nosniff
 
 	handle /api/* {

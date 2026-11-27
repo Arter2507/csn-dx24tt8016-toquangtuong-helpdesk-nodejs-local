@@ -1,0 +1,12 @@
+CREATE TABLE knowledge_articles (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  category_id BIGINT UNSIGNED NULL,
+  title VARCHAR(200) NOT NULL,
+  body TEXT NOT NULL,
+  visibility ENUM('PUBLIC','INTERNAL') NOT NULL DEFAULT 'INTERNAL',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  archived_at DATETIME(3) NULL,
+  KEY idx_kb_category (category_id),
+  FULLTEXT KEY ft_kb_content (title, body),
+  CONSTRAINT fk_kb_category FOREIGN KEY (category_id) REFERENCES categories(id) ON UPDATE RESTRICT ON DELETE SET NULL
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;

@@ -8,5 +8,6 @@ export const listSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
   isActive: z.enum(['true', 'false']).optional()
 });
-export const createSchema = z.object({ code: z.string().trim().min(1).max(30).regex(/^[A-Z0-9_]+$/), name: z.string().trim().min(1).max(100) }).strict();
-export const updateSchema = z.object({ name: z.string().trim().min(1).max(100).optional(), isActive: z.boolean().optional() }).strict().refine(value => Object.keys(value).length > 0, 'Cần ít nhất một trường');
+const parentId = z.number().int().positive().safe().nullable().optional();
+export const createSchema = z.object({ code: z.string().trim().min(1).max(30).regex(/^[A-Z0-9_]+$/), name: z.string().trim().min(1).max(100), parentId }).strict();
+export const updateSchema = z.object({ name: z.string().trim().min(1).max(100).optional(), isActive: z.boolean().optional(), parentId }).strict().refine(value => Object.keys(value).length > 0, 'Cần ít nhất một trường');

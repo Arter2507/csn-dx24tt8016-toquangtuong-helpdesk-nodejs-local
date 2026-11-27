@@ -1,28 +1,33 @@
 import { Routes } from '@angular/router';
-import { requireSession } from './session';
+import { requireSession } from './core/auth/session';
 
 const loadWorkspace = () =>
   import('./features/workspace/workspace').then((module) => module.Workspace);
-const loadCategories = () => import('./app').then((module) => module.App);
-const loadMembers = () => import('./members').then((module) => module.MembersPage);
-const loadOnboarding = () => import('./onboarding').then((module) => module.Onboarding);
+const loadCategories = () =>
+  import('./features/categories/categories-page').then((module) => module.CategoriesPage);
+const loadMembers = () =>
+  import('./features/organization/members').then((module) => module.MembersPage);
+const loadOnboarding = () =>
+  import('./features/auth/onboarding').then((module) => module.Onboarding);
 
 const protectedRoutes: Routes = [
   {
     path: '',
     pathMatch: 'full',
     data: { access: 'ADMIN' },
-    loadComponent: () => import('./pages').then((module) => module.Dashboard),
+    loadComponent: () => import('./features/overview/pages').then((module) => module.Dashboard),
   },
   {
     path: 'dashboard/technician',
-    loadComponent: () => import('./role-dashboard').then((module) => module.RoleDashboard),
+    loadComponent: () =>
+      import('./features/overview/role-dashboard').then((module) => module.RoleDashboard),
     data: { role: 'technician', access: 'TECHNICIAN', crumb: 'technician' },
   },
   {
     path: 'dashboard/user',
-    loadComponent: () => import('./role-dashboard').then((module) => module.RoleDashboard),
-    data: { role: 'user', access: ['USER', 'TECHNICIAN'], crumb: 'requester_workspace' },
+    loadComponent: () =>
+      import('./features/overview/role-dashboard').then((module) => module.RoleDashboard),
+    data: { role: 'user', access: 'USER', crumb: 'requester_workspace' },
   },
   {
     path: 'tickets/:id/view',
@@ -57,7 +62,8 @@ const protectedRoutes: Routes = [
   })),
   {
     path: 'categories',
-    loadComponent: () => import('./directory-page').then((module) => module.DirectoryPage),
+    loadComponent: () =>
+      import('./features/directory/directory-page').then((module) => module.DirectoryPage),
     data: { access: 'ADMIN', crumb: 'categories' },
   },
   {
@@ -77,47 +83,62 @@ const protectedRoutes: Routes = [
   },
   {
     path: 'notifications',
-    loadComponent: () => import('./account-pages').then((module) => module.AccountPages),
-    data: { page: 'notifications', crumb: 'notifications' },
+    loadComponent: () =>
+      import('./features/notifications/inbox-page').then((module) => module.InboxPage),
+    data: { crumb: 'notifications' },
   },
   {
     path: 'tasks',
-    loadComponent: () => import('./tasks').then((module) => module.TasksPage),
+    loadComponent: () => import('./features/tasks/tasks').then((module) => module.TasksPage),
     data: { access: ['ADMIN', 'TECHNICIAN'], crumb: 'team_tasks' },
   },
   {
     path: 'reports',
     data: { access: 'ADMIN' },
-    loadComponent: () => import('./pages').then((module) => module.Reports),
+    loadComponent: () => import('./features/overview/pages').then((module) => module.Reports),
   },
   {
     path: 'backup',
-    loadComponent: () => import('./backups').then((module) => module.BackupPage),
+    loadComponent: () => import('./features/backups/backups').then((module) => module.BackupPage),
     data: { access: 'OWNER', crumb: 'backups' },
   },
   {
     path: 'profile',
-    loadComponent: () => import('./profile').then((module) => module.ProfilePage),
+    loadComponent: () => import('./features/profile/profile').then((module) => module.ProfilePage),
     data: { crumb: 'profile' },
   },
   {
+    path: 'settings/sla',
+    loadComponent: () =>
+      import('./features/settings/sla-settings').then((module) => module.SlaSettings),
+    data: { access: 'ADMIN', crumb: 'sla_settings' },
+  },
+  {
     path: 'settings/organizations',
-    loadComponent: () => import('./organization').then((module) => module.OrganizationPage),
+    loadComponent: () =>
+      import('./features/organization/organization').then((module) => module.OrganizationPage),
     data: { access: 'ADMIN', crumb: 'organization' },
   },
   {
     path: 'settings',
-    loadComponent: () => import('./account-pages').then((module) => module.AccountPages),
-    data: { page: 'settings', crumb: 'settings' },
+    loadComponent: () =>
+      import('./features/settings/settings-page').then((module) => module.SettingsPage),
+    data: { crumb: 'settings' },
   },
   {
     path: '**',
-    loadComponent: () => import('./pages').then((module) => module.BlankPage),
+    loadComponent: () => import('./features/overview/pages').then((module) => module.BlankPage),
     data: { title: 'page_not_found', message: 'check_the_address_or_go_back_to_the_overview' },
   },
 ];
 
 export const routes: Routes = [
+  ...['knowledge', 'knowledge/:id'].map((path) => ({
+    path,
+    loadComponent: () =>
+      import('./features/knowledge/knowledge-page').then((module) => module.KnowledgePage),
+    data: { crumb: 'knowledge' },
+  })),
   {
     path: 'register',
     loadComponent: loadOnboarding,
@@ -136,7 +157,7 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    loadComponent: () => import('./login').then((module) => module.Login),
+    loadComponent: () => import('./features/auth/login').then((module) => module.Login),
     data: { crumb: 'sign_in' },
   },
   ...protectedRoutes.map((route) => ({ ...route, canActivate: [requireSession] })),

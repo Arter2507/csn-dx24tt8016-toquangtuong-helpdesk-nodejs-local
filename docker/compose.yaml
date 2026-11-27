@@ -38,6 +38,14 @@ services:
       CORS_ORIGIN: "${CORS_ORIGIN:-http://127.0.0.1:${FRONTEND_PORT:-4200}}"
       UPLOAD_DIR: /data/uploads
       BACKUP_DIR: /data/backups
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      MAIL_FROM: "${MAIL_FROM:-}"
+      MAIL_LANGUAGE: "${MAIL_LANGUAGE:-vi}"
+      INBOUND_MAIL_TOKEN: "${INBOUND_MAIL_TOKEN:-}"
+      INBOUND_MAIL_CATEGORY_ID: "${INBOUND_MAIL_CATEGORY_ID:-0}"
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     volumes:
@@ -73,6 +81,8 @@ services:
       dockerfile: ../../docker/frontend.Dockerfile
       target: development
     init: true
+    environment:
+      DEV_PUBLIC_PORT: "${FRONTEND_PORT:-4200}"
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-4200}:4200"
     depends_on:

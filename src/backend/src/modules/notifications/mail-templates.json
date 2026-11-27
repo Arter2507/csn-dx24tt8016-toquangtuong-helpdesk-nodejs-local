@@ -1,0 +1,24 @@
+{
+  "vi": {
+    "subject": "[Trạm Mèo] {code} · {status}",
+    "body": "Yêu cầu {code} đã chuyển sang trạng thái {status}.\n\n{title}\n\nXem yêu cầu: {url}\n",
+    "statuses": {
+      "NEW": "Mới tiếp nhận",
+      "IN_PROGRESS": "Đang xử lý",
+      "PENDING_CUSTOMER": "Chờ người gửi phản hồi",
+      "RESOLVED": "Đã xử lý",
+      "CLOSED": "Đã đóng"
+    }
+  },
+  "en": {
+    "subject": "[Trạm Mèo] {code} · {status}",
+    "body": "Request {code} is now {status}.\n\n{title}\n\nView request: {url}\n",
+    "statuses": {
+      "NEW": "New",
+      "IN_PROGRESS": "In progress",
+      "PENDING_CUSTOMER": "Waiting for requester",
+      "RESOLVED": "Resolved",
+      "CLOSED": "Closed"
+    }
+  }
+}

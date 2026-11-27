@@ -82,10 +82,13 @@ export function sameOrigin(req, res, next) {
   next();
 }
 
-export async function requireAccount(req, res, next) {
+export async function currentAccount(req) {
   const session = await readAccess(req);
-  if (!session) throw unauthorized();
-  const user = await authRepository.session(session.id, session.userId);
+  return session ? authRepository.session(session.id, session.userId) : null;
+}
+
+export async function requireAccount(req, res, next) {
+  const user = await currentAccount(req);
   if (!user) throw unauthorized();
   req.account = user;
   next();

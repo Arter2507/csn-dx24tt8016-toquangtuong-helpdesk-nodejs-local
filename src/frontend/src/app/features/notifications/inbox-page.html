@@ -1,0 +1,108 @@
+<header class="page-heading portal-heading">
+  <div>
+    <span class="role-kicker"
+      ><i class="bi bi-bell" aria-hidden="true"></i
+      >{{ (session.account() ? 'workspace' : 'demo_workspace') | t }}</span
+    >
+    <h1>{{ 'notifications' | t }}</h1>
+    <p>{{ 'notifications_intro' | t }}</p>
+  </div>
+</header>
+@if (error()) {
+  <p class="notice error" role="alert">
+    {{ error() | t }}
+    @if (!users()) {
+      <button type="button" class="text-button" (click)="load()">{{ 'try_again' | t }}</button>
+    }
+  </p>
+}
+
+@if (users(); as rows) {
+  @if (!session.account()) {
+    <label class="field notification-account">
+      <span>{{ 'choose_account' | t }}</span>
+      <select [ngModel]="inbox.demoAccount()" (ngModelChange)="chooseNotificationAccount($event)">
+        @for (user of rows; track user.id) {
+          <option [ngValue]="user.id">{{ i18n.personKey(user) | t }}</option>
+        }
+      </select>
+    </label>
+  }
+}
+<section class="panel portal-card">
+  <div class="section-heading">
+    <h2><i class="bi bi-bell" aria-hidden="true"></i>{{ 'recent_updates' | t }}</h2>
+    <span class="badge">{{ 'unread_count' | t: { count: inbox.unread().length } }}</span>
+  </div>
+  <div class="portal-choices">
+    <button
+      type="button"
+      class="secondary"
+      [attr.aria-pressed]="unreadOnly()"
+      (click)="unreadOnly.set(!unreadOnly())"
+    >
+      {{ 'unread_only' | t }}
+    </button>
+    <button
+      type="button"
+      class="text-button"
+      [disabled]="!inbox.unread().length || inbox.saving()"
+      (click)="inbox.readAll()"
+    >
+      {{ 'mark_all_read' | t }}
+    </button>
+  </div>
+  @if (inbox.readFailed()) {
+    <p class="notice error" role="alert">{{ 'notification_read_error' | t }}</p>
+  }
+  @if (inbox.failed()) {
+    <p role="alert">
+      {{ 'we_couldnt_load_your_data' | t }}
+      <button type="button" class="text-button" (click)="inbox.refresh()">
+        {{ 'try_again' | t }}
+      </button>
+    </p>
+  }
+  @if (inbox.loading()) {
+    <app-loading />
+  } @else {
+    <ul class="portal-updates">
+      @for (item of shown(); track item.id) {
+        <li [class.unread]="!item.read">
+          <div>
+            @if (item.ticketId) {
+              <a
+                [routerLink]="['/tickets', item.ticketId, item.assigned ? 'edit' : 'view']"
+                [queryParams]="inbox.ticketQuery(item)"
+                (click)="inbox.markRead([item.id])"
+                >{{ item.title }}</a
+              >
+            } @else {
+              <strong>{{ item.title }}</strong>
+            }
+            <div class="update-meta">
+              <span class="badge">{{ item.label | t }}</span>
+              <time [attr.datetime]="item.createdAt">{{
+                item.createdAt | date: 'dd/MM/yyyy HH:mm' : '+0700'
+              }}</time>
+            </div>
+          </div>
+          @if (!item.read) {
+            <button
+              type="button"
+              class="text-button"
+              [disabled]="inbox.saving()"
+              (click)="inbox.markRead([item.id])"
+            >
+              {{ 'mark_read' | t }}
+            </button>
+          }
+        </li>
+      } @empty {
+        @if (!inbox.failed()) {
+          <li class="muted">{{ (unreadOnly() ? 'no_unread_updates' : 'no_updates') | t }}</li>
+        }
+      }
+    </ul>
+  }
+</section>

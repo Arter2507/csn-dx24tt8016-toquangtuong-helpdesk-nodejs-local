@@ -34,21 +34,32 @@
     @if (!secured) {
       <span class="badge" data-tone="neutral">{{ 'demo_data' | t }}</span>
     }
-    @if (mode() === 'list') {
-      <a
-        class="primary"
-        [routerLink]="['/', resource(), 'new']"
-        [queryParams]="isTicket && requesterId ? { requesterId } : null"
-        ><i class="bi bi-plus-lg" aria-hidden="true"></i
-        >{{ isTicket ? ('new_request' | t) : ('add_user' | t) }}</a
-      >
-    } @else {
+    @if (mode() !== 'list') {
       <a class="text-button" [routerLink]="['/', resource()]" [queryParams]="scope"
         ><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ 'back_to_list' | t }}</a
       >
     }
   </div>
 </div>
+@if (isTicket && editing && secured) {
+  <section class="panel ticket-actions-bar" [attr.aria-label]="'actions' | t">
+    <div class="iam-actions">
+      <span class="badge">{{ status(editing['status'])?.label | t }}</span>
+      @if (mode() === 'view' && canEdit(editing)) {
+        <a
+          class="text-button"
+          [routerLink]="['/tickets', editing.id, 'edit']"
+          [queryParams]="scope"
+          >{{ 'edit_request' | t }}</a
+        >
+      }
+    </div>
+    <app-ticket-actions [ticket]="editing" (changed)="changeTicket($event)" />
+  </section>
+}
+@if (isTicket && mode() === 'list') {
+  <app-quick-ticket [names]="accountNames" [scope]="scope" (changed)="changeTicket($event)" />
+}
 @if (notice) {
   <p class="notice success" role="status">
     <i class="bi bi-check-circle" aria-hidden="true"></i>
@@ -91,125 +102,145 @@
         <a class="notice-link" routerLink="/tickets">{{ 'see_all_requests' | t }}</a>
       </p>
     }
-    <form
-      class="toolbar"
-      [class.ticket-toolbar]="isTicket"
-      [class.users-toolbar]="!isTicket"
-      (ngSubmit)="applyFilters()"
-    >
-      <div
-        class="field search-field ticket-search-box"
-        (focusin)="searchOpen = true"
-        (focusout)="leaveSearch($event)"
-        (keydown.escape)="searchOpen = false"
+    <div class="table-command-strip">
+      <form
+        class="toolbar"
+        [class.ticket-toolbar]="isTicket"
+        [class.users-toolbar]="!isTicket"
+        (ngSubmit)="applyFilters()"
       >
-        <label for="workspace-search">{{ 'search' | t }}</label>
-        <input
-          id="workspace-search"
-          type="search"
-          name="search"
-          maxlength="100"
-          autocomplete="off"
-          [placeholder]="isTicket ? ('ticket_search_placeholder' | t) : ('name_or_email' | t)"
-          [ngModel]="search"
-          (ngModelChange)="searchChanged($event)"
-        />
-        @if (
-          isTicket &&
-          searchOpen &&
-          search.trim() &&
-          applied.search === search.trim() &&
-          !busy &&
-          !error
-        ) {
-          <section class="ticket-search-results" aria-label="{{ 'ticket_suggestions' | t }}">
-            <strong>{{ 'ticket_suggestions' | t }}</strong>
-            <ul>
-              @for (row of rows.slice(0, 5); track row.id) {
-                <li>
-                  <a [routerLink]="['/tickets', row.id, itemMode(row)]" [queryParams]="scope">
-                    <span>{{ ticketReference(row) }} · {{ row['title'] }}</span>
-                    <small class="muted">{{ categoryName(+(row['categoryId'] ?? 0)) }}</small>
-                  </a>
-                </li>
-              } @empty {
-                <li class="muted">{{ 'no_matching_results' | t }}</li>
-              }
-            </ul>
-          </section>
-        }
-      </div>
-      <label class="field"
-        >{{ isTicket ? ('status' | t) : ('role' | t) }}
-        <select name="filter" [ngModel]="filter" (ngModelChange)="filter = $event; applyFilters()">
-          <option value="">{{ 'all' | t }}</option>
-          @for (item of filters; track item.value) {
-            <option [value]="item.value">{{ item.label | t }}</option>
+        <div
+          class="field search-field ticket-search-box"
+          (focusin)="searchOpen = true"
+          (focusout)="leaveSearch($event)"
+          (keydown.escape)="searchOpen = false"
+        >
+          <label for="workspace-search">{{ 'search' | t }}</label>
+          <input
+            id="workspace-search"
+            type="search"
+            name="search"
+            maxlength="100"
+            autocomplete="off"
+            [disabled]="batchBusy()"
+            [placeholder]="isTicket ? ('ticket_search_placeholder' | t) : ('name_or_email' | t)"
+            [ngModel]="search"
+            (ngModelChange)="searchChanged($event)"
+          />
+          @if (
+            isTicket &&
+            searchOpen &&
+            search.trim() &&
+            applied.search === search.trim() &&
+            !busy &&
+            !error
+          ) {
+            <section class="ticket-search-results" aria-label="{{ 'ticket_suggestions' | t }}">
+              <strong>{{ 'ticket_suggestions' | t }}</strong>
+              <ul>
+                @for (row of rows.slice(0, 5); track row.id) {
+                  <li>
+                    <a [routerLink]="['/tickets', row.id, itemMode(row)]" [queryParams]="scope">
+                      <span>{{ ticketReference(row) }} · {{ row['title'] }}</span>
+                      <small class="muted">{{ categoryName(+(row['categoryId'] ?? 0)) }}</small>
+                    </a>
+                  </li>
+                } @empty {
+                  <li class="muted">{{ 'no_matching_results' | t }}</li>
+                }
+              </ul>
+            </section>
           }
-        </select>
-      </label>
-      @if (isTicket) {
+        </div>
         <label class="field"
-          >{{ 'priority' | t }}
+          >{{ isTicket ? ('status' | t) : ('role' | t) }}
           <select
-            name="priorityFilter"
-            [ngModel]="priorityFilter"
-            (ngModelChange)="priorityFilter = $event; applyFilters()"
+            name="filter"
+            [disabled]="batchBusy()"
+            [ngModel]="filter"
+            (ngModelChange)="filter = $event; applyFilters()"
           >
             <option value="">{{ 'all' | t }}</option>
-            @for (item of priorities; track item.value) {
+            @for (item of filters; track item.value) {
               <option [value]="item.value">{{ item.label | t }}</option>
             }
           </select>
         </label>
+        @if (isTicket) {
+          <label class="field"
+            >{{ 'priority' | t }}
+            <select
+              name="priorityFilter"
+              [disabled]="batchBusy()"
+              [ngModel]="priorityFilter"
+              (ngModelChange)="priorityFilter = $event; applyFilters()"
+            >
+              <option value="">{{ 'all' | t }}</option>
+              @for (item of priorities; track item.value) {
+                <option [value]="item.value">{{ item.label | t }}</option>
+              }
+            </select>
+          </label>
+          <label class="field"
+            >{{ 'request_category' | t }}
+            <select
+              name="categoryFilter"
+              [disabled]="batchBusy()"
+              [ngModel]="categoryFilter"
+              (ngModelChange)="categoryFilter = $event; applyFilters()"
+            >
+              <option [ngValue]="0">{{ 'all_categories' | t }}</option>
+              @for (item of categoryOptions; track item.id) {
+                <option [ngValue]="item.id">{{ categoryName(item.id) }}</option>
+              }
+            </select>
+          </label>
+        }
         <label class="field"
-          >{{ 'request_category' | t }}
+          >{{ 'sort_by' | t }}
           <select
-            name="categoryFilter"
-            [ngModel]="categoryFilter"
-            (ngModelChange)="categoryFilter = $event; applyFilters()"
+            name="order"
+            [disabled]="batchBusy()"
+            [ngModel]="order"
+            (ngModelChange)="order = $event; applyFilters()"
           >
-            <option [ngValue]="0">{{ 'all_categories' | t }}</option>
-            @for (item of categoryOptions; track item.id) {
-              <option [ngValue]="item.id">{{ i18n.category(item) }}</option>
+            @if (isTicket) {
+              <option value="recent">{{ 'newest_first' | t }}</option>
             }
+            <option value="asc">{{ 'a_to_z' | t }}</option>
+            <option value="desc">{{ 'z_to_a' | t }}</option>
           </select>
         </label>
+        <div class="toolbar-actions">
+          <button
+            class="text-button"
+            type="button"
+            [disabled]="busy || batchBusy()"
+            (click)="clearFilters()"
+          >
+            {{ 'clear_filters' | t }}
+          </button>
+        </div>
+      </form>
+      @if (!selection.ids().size) {
+        <a
+          class="primary"
+          [routerLink]="['/', resource(), 'new']"
+          [queryParams]="isTicket && requesterId ? { requesterId } : null"
+          ><i class="bi bi-plus-lg" aria-hidden="true"></i
+          >{{ isTicket ? ('new_request' | t) : ('add_user' | t) }}</a
+        >
       }
-      <label class="field"
-        >{{ 'sort_by' | t }}
-        <select name="order" [ngModel]="order" (ngModelChange)="order = $event; applyFilters()">
-          @if (isTicket) {
-            <option value="recent">{{ 'newest_first' | t }}</option>
-          }
-          <option value="asc">{{ 'a_to_z' | t }}</option>
-          <option value="desc">{{ 'z_to_a' | t }}</option>
-        </select>
-      </label>
-      <div class="toolbar-actions">
-        <button class="text-button" type="button" [disabled]="busy" (click)="clearFilters()">
-          {{ 'clear_filters' | t }}
-        </button>
-      </div>
-    </form>
-    @if (isTicket) {
-      <label class="field ticket-page-size">
-        <span>{{ 'rows_per_page' | t }}</span>
-        <select [ngModel]="pageSize" (ngModelChange)="pageSize = $event; applyFilters()">
-          @for (size of pageSizes; track size) {
-            <option [ngValue]="size">{{ size }}</option>
-          }
-        </select>
-      </label>
-    }
-    @if (canDelete) {
-      <app-bulk-actions
-        [selection]="selection"
-        [rows]="rows"
-        [batchEnabled]="secured"
-        (archived)="load(1)"
-      />
-    }
+      @if (canDelete) {
+        <app-bulk-actions
+          [selection]="selection"
+          [rows]="rows"
+          [scope]="scope"
+          [batchEnabled]="secured"
+          (archived)="load(1)"
+        />
+      }
+    </div>
     @if (busy) {
       <app-loading />
     } @else if (!error) {
@@ -244,7 +275,11 @@
           [attr.aria-label]="isTicket ? ('request_list' | t) : ('user_list' | t)"
           tabindex="0"
         >
-          <table [class.ticket-table]="isTicket">
+          <table
+            [class.ticket-table]="isTicket"
+            class="admin-data-table"
+            animate.enter="page-content-enter"
+          >
             <thead>
               <tr>
                 @if (canDelete) {
@@ -252,6 +287,7 @@
                     <input
                       type="checkbox"
                       [attr.aria-label]="'select_page' | t"
+                      [disabled]="batchBusy()"
                       [checked]="selection.ids().size === rowIds.length"
                       [indeterminate]="
                         selection.ids().size > 0 && selection.ids().size < rowIds.length
@@ -279,11 +315,12 @@
             </thead>
             <tbody>
               @for (row of rows; track row.id) {
-                <tr>
+                <tr [class.is-selected]="selection.ids().has(row.id)">
                   @if (canDelete) {
                     <td class="selection-cell">
                       <input
                         type="checkbox"
+                        [disabled]="batchBusy()"
                         [attr.aria-label]="
                           'select_item'
                             | t
@@ -299,10 +336,30 @@
                     </td>
                   }
                   <td>
-                    <span class="badge">{{ ticketReference(row) }}</span>
+                    @if (isTicket) {
+                      <button
+                        class="badge table-quick-view"
+                        type="button"
+                        (click)="quickTicket()?.open(row.id)"
+                      >
+                        {{ ticketReference(row) }}
+                      </button>
+                    } @else {
+                      <span class="badge">{{ ticketReference(row) }}</span>
+                    }
                   </td>
                   <td class="title-cell">
-                    <strong>{{ isTicket ? row[displayField] : (i18n.personKey(row) | t) }}</strong>
+                    @if (isTicket) {
+                      <button
+                        class="text-button table-quick-view"
+                        type="button"
+                        (click)="quickTicket()?.open(row.id)"
+                      >
+                        {{ row[displayField] }}
+                      </button>
+                    } @else {
+                      <strong>{{ i18n.personKey(row) | t }}</strong>
+                    }
                   </td>
                   @if (isTicket) {
                     <td>{{ categoryName(+(row['categoryId'] ?? 0)) }}</td>
@@ -347,23 +404,34 @@
                         isTicket ? (row[displayField]?.toString() ?? '') : (i18n.personKey(row) | t)
                       "
                     >
-                      <a
-                        class="row-menu-item"
-                        [routerLink]="['/', resource(), row.id, itemMode(row)]"
-                        [queryParams]="scope"
-                      >
-                        <i
-                          class="bi"
-                          [class]="itemMode(row) === 'view' ? 'bi-eye' : 'bi-pencil'"
-                          aria-hidden="true"
-                        ></i>
-                        {{ (itemMode(row) === 'view' ? 'view_action' : 'edit') | t }}
-                      </a>
+                      @if (isTicket) {
+                        <button
+                          class="row-menu-item"
+                          type="button"
+                          (click)="quickTicket()?.open(row.id)"
+                        >
+                          <i class="bi bi-eye" aria-hidden="true"></i>{{ 'view_action' | t }}
+                        </button>
+                      }
+                      @if (!isTicket || canEdit(row)) {
+                        <a
+                          class="row-menu-item"
+                          [routerLink]="['/', resource(), row.id, itemMode(row)]"
+                          [queryParams]="scope"
+                        >
+                          <i
+                            class="bi"
+                            [class]="itemMode(row) === 'view' ? 'bi-eye' : 'bi-pencil'"
+                            aria-hidden="true"
+                          ></i>
+                          {{ (itemMode(row) === 'view' ? 'view_action' : 'edit') | t }}
+                        </a>
+                      }
                       @if (canDelete) {
                         <button
                           class="row-menu-item is-danger"
                           type="button"
-                          [disabled]="bulk()?.busy()"
+                          [disabled]="batchBusy()"
                           (click)="bulk()?.ask([row.id])"
                         >
                           <i class="bi bi-trash" aria-hidden="true"></i>{{ 'delete_action' | t }}
@@ -390,33 +458,6 @@
             </tbody>
           </table>
         </div>
-        <div class="pagination">
-          <p role="status">
-            {{ 'showing' | t }} {{ startRow }}–{{ startRow + rows.length - 1 }} / {{ total }}
-            {{ 'results' | t }}
-          </p>
-          <div class="pager">
-            <button
-              class="secondary"
-              type="button"
-              [disabled]="page <= 1"
-              (click)="load(page - 1)"
-              [attr.aria-label]="'previous_page' | t"
-            >
-              <i class="bi bi-chevron-left" aria-hidden="true"></i>
-            </button>
-            <span>{{ 'page' | t }} {{ page }} / {{ totalPages }}</span>
-            <button
-              class="secondary"
-              type="button"
-              [disabled]="page >= totalPages"
-              (click)="load(page + 1)"
-              [attr.aria-label]="'next_page' | t"
-            >
-              <i class="bi bi-chevron-right" aria-hidden="true"></i>
-            </button>
-          </div>
-        </div>
       } @else {
         <div class="empty-data" role="status">
           <i class="bi bi-inbox" aria-hidden="true"></i>
@@ -430,6 +471,48 @@
           }
         </div>
       }
+      <div class="pagination table-footer">
+        <p role="status">
+          {{ 'showing' | t }} {{ rows.length ? startRow : 0 }}–{{
+            rows.length ? startRow + rows.length - 1 : 0
+          }}
+          / {{ total }}
+          {{ 'results' | t }}
+        </p>
+        <div class="table-footer-controls">
+          @if (isTicket) {
+            <label class="field ticket-page-size">
+              <span>{{ 'rows_per_page' | t }}</span>
+              <select [ngModel]="pageSize" (ngModelChange)="pageSize = $event; applyFilters()">
+                @for (size of pageSizes; track size) {
+                  <option [ngValue]="size">{{ size }}</option>
+                }
+              </select>
+            </label>
+          }
+          <div class="pager">
+            <button
+              class="secondary"
+              type="button"
+              [disabled]="page <= 1"
+              (click)="load(page - 1)"
+              [attr.aria-label]="'previous_page' | t"
+            >
+              <i class="bi bi-chevron-left" aria-hidden="true"></i>
+            </button>
+            <span>{{ 'page' | t }} {{ page }} / {{ totalPages || 1 }}</span>
+            <button
+              class="secondary"
+              type="button"
+              [disabled]="page >= totalPages"
+              (click)="load(page + 1)"
+              [attr.aria-label]="'next_page' | t"
+            >
+              <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+      </div>
     }
   </section>
 } @else if (busy) {
@@ -481,6 +564,29 @@
             <small class="field-error">{{ ticketNumberError | t }}</small>
           }
         </div>
+      }
+      @if (editing?.['responseDueAt']; as responseDueAt) {
+        <section class="wide iam-fieldset">
+          <h3>{{ 'sla_ticket' | t }}</h3>
+          <dl class="iam-fields iam-metadata">
+            <div>
+              <dt>{{ 'sla_response_due' | t }}</dt>
+              <dd>{{ $any(responseDueAt) | date: 'dd/MM/yyyy HH:mm' : '+0700' }}</dd>
+              <dd class="badge">
+                {{ slaStatus($any(responseDueAt), $any(editing?.['firstResponseAt'])) | t }}
+              </dd>
+            </div>
+            <div>
+              <dt>{{ 'sla_resolution_due' | t }}</dt>
+              <dd>{{ $any(editing?.['resolutionDueAt']) | date: 'dd/MM/yyyy HH:mm' : '+0700' }}</dd>
+              <dd class="badge">
+                {{
+                  slaStatus($any(editing?.['resolutionDueAt']), $any(editing?.['resolvedAt'])) | t
+                }}
+              </dd>
+            </div>
+          </dl>
+        </section>
       }
       @if (requesterProfile; as requester) {
         <section class="wide iam-fieldset">
@@ -572,6 +678,11 @@
           }}</span>
           <textarea name="note" [(ngModel)]="form['note']" maxlength="2000" required></textarea>
         </label>
+      }
+      @if (isTicket && secured && mode() === 'create') {
+        <div class="wide">
+          <app-knowledge-links mode="suggestions" [title]="form['title']?.toString() ?? ''" />
+        </div>
       }
       @if (isTicket) {
         <section class="attachments field wide" aria-labelledby="attachment-title">
@@ -766,11 +877,24 @@
   }
   @if (isTicket && secured && editing) {
     <section class="panel portal-card ticket-conversation" aria-labelledby="conversation-title">
-      <h2 id="conversation-title">{{ 'conversation' | t }}</h2>
+      <h2 id="conversation-title">{{ 'ticket_live_chat' | t }}</h2>
+      @if (editing['chatExpiresAt'] && !chatLocked) {
+        <p class="muted">
+          {{
+            'ticket_chat_until'
+              | t
+                : {
+                    at:
+                      (editing['chatExpiresAt']?.toString() | date: 'dd/MM/yyyy HH:mm' : '+0700') ??
+                      '',
+                  }
+          }}
+        </p>
+      }
       @if (commentError) {
         <p class="notice error" role="alert">{{ commentError | t }}</p>
       }
-      <ul class="portal-updates">
+      <ul class="portal-updates chat-messages" role="log" aria-live="polite">
         @for (item of comments; track item.id) {
           <li>
             <div>
@@ -781,14 +905,22 @@
               <time [attr.datetime]="item.createdAt">{{
                 item.createdAt | date: 'dd/MM/yyyy HH:mm' : '+0700'
               }}</time>
-              <p>{{ item.body }}</p>
+              @for (line of messageLines(item.body); track $index) {
+                @if (line.id) {
+                  <a [routerLink]="['/knowledge', line.id]" target="_blank" rel="noopener">{{
+                    line.text
+                  }}</a>
+                } @else {
+                  <p>{{ line.text }}</p>
+                }
+              }
             </div>
           </li>
         } @empty {
           <li class="muted">{{ 'no_comments' | t }}</li>
         }
       </ul>
-      @if (!closed && !editing?.mergedInto) {
+      @if (!chatLocked) {
         <form class="field" (ngSubmit)="sendComment()">
           <label for="ticket-comment">{{
             (internalNote ? 'internal_note' : 'public_reply') | t
@@ -811,12 +943,32 @@
             [readOnly]="commentSaving"
             maxlength="5000"
           ></textarea>
-          <div>
+          <div class="iam-actions">
             <button type="submit" class="secondary" [disabled]="commentSaving || !comment.trim()">
               {{ 'send_comment' | t }}
             </button>
+            @if (canWriteInternalNote) {
+              <button type="button" class="text-button" (click)="knowledgePicker.showModal()">
+                {{ 'knowledge_insert' | t }}
+              </button>
+              <dialog #knowledgePicker class="confirm-dialog quick-ticket">
+                <header class="iam-section-heading">
+                  <h3>{{ 'knowledge_insert' | t }}</h3>
+                  <button type="button" class="text-button" (click)="knowledgePicker.close()">
+                    {{ 'close' | t }}
+                  </button>
+                </header>
+                <app-knowledge-links
+                  mode="picker"
+                  [publicOnly]="!internalNote"
+                  (chosen)="appendArticle($event); knowledgePicker.close()"
+                />
+              </dialog>
+            }
           </div>
         </form>
+      } @else {
+        <p class="notice" role="status">{{ 'api_CHAT_EXPIRED' | t }}</p>
       }
     </section>
   }

@@ -21,15 +21,20 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS ticket_status_mail;
+DROP TABLE IF EXISTS inbound_ticket_mail;
 DROP TABLE IF EXISTS ticket_events;
 DROP TABLE IF EXISTS ticket_attachments;
 DROP TABLE IF EXISTS ticket_comments;
 DROP TABLE IF EXISTS ticket_number_rules;
 DROP TABLE IF EXISTS tickets;
 DROP TABLE IF EXISTS technician_categories;
+DROP TABLE IF EXISTS knowledge_articles;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS auth_sessions;
 DROP TABLE IF EXISTS organization_members;
+DROP TABLE IF EXISTS organization_units;
+DROP TABLE IF EXISTS sla_settings;
 DROP TABLE IF EXISTS organizations;
 DROP TABLE IF EXISTS user_roles;
 DROP TABLE IF EXISTS roles;
@@ -67,18 +72,37 @@ CREATE TABLE organizations (
   CONSTRAINT fk_organizations_owner FOREIGN KEY (owner_id) REFERENCES users(id) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE organization_units (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  organization_id TINYINT UNSIGNED NOT NULL,
+  parent_id BIGINT UNSIGNED NULL,
+  code VARCHAR(30) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  deleted_at DATETIME(3) NULL,
+  UNIQUE KEY uq_org_units_code (organization_id, code),
+  UNIQUE KEY uq_org_units_id (organization_id, id),
+  KEY idx_org_units_parent (organization_id, parent_id),
+  CONSTRAINT fk_org_units_org FOREIGN KEY (organization_id) REFERENCES organizations(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+  CONSTRAINT fk_org_units_parent FOREIGN KEY (organization_id, parent_id) REFERENCES organization_units(organization_id, id) ON UPDATE RESTRICT ON DELETE RESTRICT
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 CREATE TABLE organization_members (
   user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
   organization_id TINYINT UNSIGNED NOT NULL,
   employee_code VARCHAR(40) NULL,
   department VARCHAR(100) NOT NULL DEFAULT '',
+  unit_id BIGINT UNSIGNED NULL,
   position VARCHAR(100) NOT NULL DEFAULT '',
+  customer_tier ENUM('STANDARD', 'VIP') NOT NULL DEFAULT 'STANDARD',
   role ENUM('OWNER', 'ADMIN', 'TECHNICIAN', 'USER') NOT NULL,
   joined_at DATETIME(3) NOT NULL,
   UNIQUE KEY uq_members_employee_code (organization_id, employee_code),
   KEY idx_members_org_role (organization_id, role),
   CONSTRAINT fk_members_user FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
-  CONSTRAINT fk_members_organization FOREIGN KEY (organization_id) REFERENCES organizations(id) ON UPDATE RESTRICT ON DELETE RESTRICT
+  KEY idx_members_unit (organization_id, unit_id),
+  CONSTRAINT fk_members_organization FOREIGN KEY (organization_id) REFERENCES organizations(id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+  CONSTRAINT fk_members_unit FOREIGN KEY (organization_id, unit_id) REFERENCES organization_units(organization_id, id) ON UPDATE RESTRICT ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
@@ -132,11 +156,20 @@ CREATE TABLE categories (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   code VARCHAR(30) NOT NULL,
   name VARCHAR(100) NOT NULL,
+  parent_id BIGINT UNSIGNED NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at DATETIME(3) NOT NULL,
   updated_at DATETIME(3) NOT NULL,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_categories_code (code)
+  UNIQUE KEY uq_categories_code (code),
+  KEY idx_categories_parent (parent_id),
+  CONSTRAINT fk_categories_parent FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE SET NULL ON UPDATE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE sla_settings (
+  organization_id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+  policy JSON NOT NULL,
+  CONSTRAINT fk_sla_organization FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE technician_categories (
@@ -156,6 +189,19 @@ CREATE TABLE technician_categories (
 -- ---------------------------------------------------------------------------
 -- tickets
 -- ---------------------------------------------------------------------------
+CREATE TABLE knowledge_articles (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  category_id BIGINT UNSIGNED NULL,
+  title VARCHAR(200) NOT NULL,
+  body TEXT NOT NULL,
+  visibility ENUM('PUBLIC','INTERNAL') NOT NULL DEFAULT 'INTERNAL',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  archived_at DATETIME(3) NULL,
+  KEY idx_kb_category (category_id),
+  FULLTEXT KEY ft_kb_content (title, body),
+  CONSTRAINT fk_kb_category FOREIGN KEY (category_id) REFERENCES categories(id) ON UPDATE RESTRICT ON DELETE SET NULL
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+
 CREATE TABLE tickets (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   display_code VARCHAR(40) NOT NULL,
@@ -168,6 +214,11 @@ CREATE TABLE tickets (
   status VARCHAR(20) NOT NULL,
   version INT UNSIGNED NOT NULL DEFAULT 1,
   resolved_at DATETIME(3) NULL,
+  response_due_at DATETIME(3) NULL,
+  resolution_due_at DATETIME(3) NULL,
+  first_response_at DATETIME(3) NULL,
+  response_warning_due_at DATETIME(3) NULL,
+  resolution_warning_due_at DATETIME(3) NULL,
   closed_at DATETIME(3) NULL,
   archived_at DATETIME(3) NULL,
   created_at DATETIME(3) NOT NULL,
@@ -177,6 +228,8 @@ CREATE TABLE tickets (
   KEY idx_tickets_requester_created (requester_id, created_at, id),
   KEY idx_tickets_assignee_status_created (assignee_id, status, created_at, id),
   KEY idx_tickets_status_created (status, created_at, id),
+  KEY idx_tickets_response_due (response_due_at),
+  KEY idx_tickets_resolution_due (resolution_due_at),
   KEY idx_tickets_category_created (category_id, created_at, id),
   CONSTRAINT fk_tickets_requester
     FOREIGN KEY (requester_id) REFERENCES users (id)
@@ -285,6 +338,25 @@ CREATE TABLE ticket_events (
 -- ---------------------------------------------------------------------------
 -- notifications
 -- ---------------------------------------------------------------------------
+CREATE TABLE ticket_status_mail (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  ticket_id BIGINT UNSIGNED NOT NULL,
+  ticket_code VARCHAR(40) NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  ticket_status VARCHAR(20) NOT NULL,
+  attempts SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+  available_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  sent_at DATETIME(3) NULL,
+  failed_at DATETIME(3) NULL,
+  KEY idx_ticket_status_mail_ready (sent_at, failed_at, available_at, id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE inbound_ticket_mail (
+  fingerprint CHAR(64) NOT NULL PRIMARY KEY,
+  ticket_id BIGINT UNSIGNED NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE notifications (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,

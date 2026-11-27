@@ -1,0 +1,89 @@
+<dialog
+  #dialog
+  class="confirm-dialog quick-ticket"
+  aria-labelledby="quick-ticket-title"
+  (close)="reset()"
+>
+  <header class="iam-section-heading">
+    <h2 id="quick-ticket-title">{{ 'ticket_quick_view' | t }}</h2>
+    <button
+      type="button"
+      class="icon-button"
+      (click)="dialog.close()"
+      [attr.aria-label]="'close' | t"
+    >
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+    </button>
+  </header>
+  @if (error()) {
+    <p class="notice error" role="alert">{{ error() | t }}</p>
+  }
+  @if (busy()) {
+    <app-loading />
+  }
+  @if (ticket(); as row) {
+    <div>
+      <div class="iam-actions">
+        <span class="badge">{{ reference(row) }}</span>
+        <h3>{{ row['title'] }}</h3>
+      </div>
+      <dl class="iam-fields iam-metadata">
+        <div>
+          <dt>{{ 'status' | t }}</dt>
+          <dd>{{ status(row['status']) | t }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'priority' | t }}</dt>
+          <dd>{{ priority(row['priority']) | t }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'requester' | t }}</dt>
+          <dd>{{ names().get(+(row['requesterId'] ?? 0)) ?? '—' | t }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'technician_2' | t }}</dt>
+          <dd>{{ names().get(+(row['assigneeId'] ?? 0)) ?? 'unassigned' | t }}</dd>
+        </div>
+      </dl>
+      <p class="knowledge-body">{{ row['description'] }}</p>
+      @if (secured()) {
+        <app-ticket-actions [ticket]="row" (changed)="update($event)" />
+        <h3>{{ 'ticket_recent_history' | t }}</h3>
+        @if (historyError()) {
+          <p class="muted">{{ historyError() | t }}</p>
+        }
+        <ul class="quick-ticket-history">
+          @for (event of history(); track event.id) {
+            <li>
+              {{ event.createdAt | date: 'dd/MM/yyyy HH:mm' : '+0700' }} · {{ event.actorName }} ·
+              {{ 'ticket_event_' + event.type.toLowerCase() | t }}
+              @if (event.note) {
+                <p>{{ event.note }}</p>
+              }
+            </li>
+          } @empty {
+            <li class="muted">{{ 'no_matching_results' | t }}</li>
+          }
+        </ul>
+      }
+      <div class="iam-actions">
+        <a
+          class="secondary"
+          [routerLink]="['/tickets', row.id, 'view']"
+          [queryParams]="scope()"
+          (click)="dialog.close()"
+          >{{ 'ticket_open_full' | t }}</a
+        >
+        @if (canEdit(row)) {
+          <a
+            class="primary"
+            [routerLink]="['/tickets', row.id, 'edit']"
+            [queryParams]="scope()"
+            (click)="dialog.close()"
+            >{{ 'edit_request' | t }}</a
+          >
+        }
+      </div>
+    </div>
+  }
+</dialog>

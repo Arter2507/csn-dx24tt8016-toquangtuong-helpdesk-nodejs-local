@@ -1,0 +1,123 @@
+<section class="panel portal-card" aria-labelledby="ticket-number-settings-title">
+  <h2 id="ticket-number-settings-title">
+    <i class="bi bi-hash" aria-hidden="true"></i>{{ 'ticket_number_rules' | t }}
+  </h2>
+  <p class="muted">{{ 'ticket_number_description' | t }}</p>
+  @if (loadError()) {
+    <p class="notice error" role="alert">
+      {{ loadError() | t }}
+      <button class="text-button" type="button" (click)="load()">{{ 'try_again' | t }}</button>
+    </p>
+  }
+  @if (feedback()?.error === false) {
+    <p class="notice success" role="status">{{ 'ticket_number_saved' | t }}</p>
+  }
+  @if (rows(); as rules) {
+    <ul class="number-rule-list">
+      @for (row of rules; track row.categoryId) {
+        <li>
+          <div class="number-rule-heading">
+            <div>
+              <strong>{{ i18n.category(row.category) }}</strong>
+              @if (!row.configured) {
+                <small class="muted">{{ 'ticket_number_default' | t }}</small>
+              }
+            </div>
+            <span class="badge">{{ preview(row) || '—' }}</span>
+            <button
+              class="secondary"
+              type="button"
+              [disabled]="saving() !== null"
+              [attr.aria-expanded]="draft()?.categoryId === row.categoryId"
+              (click)="toggle(row)"
+            >
+              {{ (draft()?.categoryId === row.categoryId ? 'close' : 'edit') | t }}
+            </button>
+          </div>
+          @if (draft(); as edit) {
+            @if (edit.categoryId === row.categoryId) {
+              <form class="number-rule-editor" (ngSubmit)="save(edit)">
+                <div class="number-rule-fields">
+                  <label class="field">
+                    {{ 'ticket_number_prefix' | t }}
+                    <input
+                      name="prefix"
+                      [(ngModel)]="edit.prefix"
+                      maxlength="12"
+                      [disabled]="saving() !== null"
+                    />
+                    @if (!validAffix(edit.prefix)) {
+                      <small class="field-error">{{ 'number_rule_affix_error' | t }}</small>
+                    }
+                  </label>
+                  <label class="field">
+                    {{ 'ticket_number_value' | t }}
+                    <input
+                      type="number"
+                      name="nextNumber"
+                      [(ngModel)]="edit.nextNumber"
+                      min="1"
+                      max="999999999"
+                      [disabled]="saving() !== null"
+                    />
+                    @if (!validNumber(edit)) {
+                      <small class="field-error">{{ 'number_rule_value_error' | t }}</small>
+                    }
+                  </label>
+                  <label class="field">
+                    {{ 'ticket_number_digits' | t }}
+                    <input
+                      type="number"
+                      name="digits"
+                      [(ngModel)]="edit.digits"
+                      min="1"
+                      max="9"
+                      [disabled]="saving() !== null"
+                    />
+                    @if (!validDigits(edit)) {
+                      <small class="field-error">{{ 'number_rule_digits_error' | t }}</small>
+                    }
+                  </label>
+                  <label class="field">
+                    {{ 'ticket_number_suffix' | t }}
+                    <input
+                      name="suffix"
+                      [(ngModel)]="edit.suffix"
+                      maxlength="12"
+                      [disabled]="saving() !== null"
+                    />
+                    @if (!validAffix(edit.suffix)) {
+                      <small class="field-error">{{ 'number_rule_affix_error' | t }}</small>
+                    }
+                  </label>
+                </div>
+                @if (feedback(); as result) {
+                  @if (result.error) {
+                    <p class="notice error" role="alert">{{ result.message | t }}</p>
+                  }
+                }
+                <div class="number-rule-actions">
+                  <span
+                    >{{ 'ticket_number_preview' | t }}
+                    <output class="badge">{{ preview(edit) || '—' }}</output></span
+                  >
+                  <button
+                    class="primary"
+                    type="submit"
+                    [disabled]="saving() !== null || !preview(edit)"
+                  >
+                    {{ (saving() === edit.categoryId ? 'saving' : 'save_changes') | t }}
+                  </button>
+                </div>
+              </form>
+            }
+          }
+        </li>
+      } @empty {
+        <li class="muted">{{ 'ticket_number_no_categories' | t }}</li>
+      }
+    </ul>
+  } @else if (!loadError()) {
+    <app-loading />
+  }
+</section>

@@ -1,0 +1,128 @@
+<section class="panel iam-panel knowledge-page">
+  <div class="iam-section-heading">
+    <h1>{{ 'knowledge' | t }}</h1>
+    <div class="iam-actions">
+      @if (id()) {
+        <a class="secondary" routerLink="/knowledge">{{ 'back_to_list' | t }}</a>
+      }
+      @if (session.hasRole('ADMIN') && !form()) {
+        @if (current(); as article) {
+          <button type="button" class="secondary" (click)="edit(article)">{{ 'edit' | t }}</button>
+          <button type="button" class="text-button" (click)="confirm.showModal()">
+            {{ 'delete_action' | t }}
+          </button>
+        } @else if (!id()) {
+          <button type="button" class="primary" (click)="edit()">{{ 'knowledge_add' | t }}</button>
+        }
+      }
+    </div>
+  </div>
+  <dialog class="confirm-dialog" #confirm>
+    <h2>{{ 'knowledge_delete_confirm' | t }}</h2>
+    <div class="iam-actions">
+      <button type="button" class="secondary" (click)="confirm.close()">{{ 'cancel' | t }}</button>
+      <button type="button" class="danger-button" (click)="confirm.close(); remove(current()!.id)">
+        {{ 'delete_action' | t }}
+      </button>
+    </div>
+  </dialog>
+  @if (error()) {
+    <p class="notice error" role="alert">{{ error() | t }}</p>
+  }
+  @if (form(); as draft) {
+    <form class="iam-form" #editor="ngForm" (ngSubmit)="save(draft)">
+      <label class="field"
+        >{{ 'title' | t }}<input name="title" [(ngModel)]="draft.title" required maxlength="200"
+      /></label>
+      <div class="iam-fields">
+        <label class="field"
+          >{{ 'category' | t }}
+          <select name="categoryId" [(ngModel)]="draft.categoryId" required>
+            <option [ngValue]="null">{{ 'choose_a_category' | t }}</option>
+            @for (category of categories(); track category.id) {
+              <option [ngValue]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="field"
+          >{{ 'knowledge_visibility' | t }}
+          <select name="visibility" [(ngModel)]="draft.visibility">
+            <option value="INTERNAL">{{ 'knowledge_internal' | t }}</option>
+            <option value="PUBLIC">{{ 'knowledge_public' | t }}</option>
+          </select>
+        </label>
+      </div>
+      <label class="field"
+        >{{ 'knowledge_body' | t
+        }}<textarea
+          name="body"
+          rows="9"
+          [(ngModel)]="draft.body"
+          required
+          maxlength="12000"
+        ></textarea>
+      </label>
+      <div class="iam-actions">
+        <button type="submit" class="primary" [disabled]="editor.invalid || saving()">
+          {{ 'save_changes' | t }}
+        </button>
+        <button type="button" class="secondary" [disabled]="saving()" (click)="form.set(null)">
+          {{ 'cancel' | t }}
+        </button>
+      </div>
+    </form>
+  } @else if (current(); as article) {
+    <article>
+      <h2>{{ article.title }}</h2>
+      <p class="muted">
+        {{ article.category }} ·
+        {{ (article.visibility === 'INTERNAL' ? 'knowledge_internal' : 'knowledge_public') | t }}
+      </p>
+      <p class="knowledge-body">{{ article.body }}</p>
+    </article>
+  } @else if (!id()) {
+    <div class="toolbar">
+      <label class="field search-field"
+        >{{ 'knowledge_search' | t }}
+        <input type="search" [(ngModel)]="query" (ngModelChange)="filter()" maxlength="200" />
+      </label>
+      <label class="field"
+        >{{ 'category' | t }}
+        <select [(ngModel)]="categoryId" (ngModelChange)="filter()">
+          <option [ngValue]="null">{{ 'all_categories' | t }}</option>
+          @for (category of categories(); track category.id) {
+            <option [ngValue]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <ul class="portal-updates">
+      @for (article of rows(); track article.id) {
+        <li>
+          <div>
+            <a [routerLink]="['/knowledge', article.id]">{{ article.title }}</a>
+            <p class="muted">
+              {{ article.category }}
+              @if (article.visibility === 'INTERNAL') {
+                · {{ 'knowledge_internal' | t }}
+              }
+            </p>
+            <p>{{ article.excerpt }}</p>
+          </div>
+        </li>
+      } @empty {
+        @if (!loading() && !error()) {
+          <li>{{ 'no_matching_results' | t }}</li>
+        }
+      }
+    </ul>
+    @if (more()) {
+      <button type="button" class="secondary" [disabled]="loading()" (click)="next()">
+        {{ 'knowledge_more' | t }}
+      </button>
+    }
+  }
+  @if (loading()) {
+    <app-loading />
+  }
+</section>

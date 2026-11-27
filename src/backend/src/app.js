@@ -7,7 +7,9 @@ import { authRoutes, requireAccount, sameOrigin } from './modules/auth/auth.rout
 import { requireAdmin, requireMember, requireOwner } from './modules/organizations/permissions.js';
 import { memberRoutes, organizationRoutes } from './modules/organizations/organization.routes.js';
 import { members } from './modules/organizations/members.repository.js';
-import { accountsDirectory, notificationRoutes, technicianCategories } from './modules/accounts/accounts.routes.js';
+import { accountsDirectory, technicianCategories } from './modules/accounts/accounts.routes.js';
+import { notificationRoutes } from './modules/notifications/inbox.js';
+import { inboundTicketMail } from './modules/notifications/incoming-mail.js';
 import { z } from 'zod';
 import { registerTicketActions } from './modules/tickets/actions.js';
 import { numberRulesRoutes, previewTicketCode } from './modules/tickets/numbering.js';
@@ -24,9 +26,11 @@ import { mysqlRepository } from './modules/categories/mysql.repository.js';
 import { demoResourceRoutes } from './shared/demo-resource.routes.js';
 import { asyncResourceRoutes } from './shared/async-resource.routes.js';
 import { users, roles, userInput, userUpdate, createUser, updateUser } from './modules/users/users.js';
-import { tickets, statuses, ticketListFields, ticketInput, ticketUpdate, createTicket, updateTicket } from './modules/tickets/tickets.js';
+import { tickets, statuses, ticketListFields, ticketInput, ticketEdit, ticketUpdate, createTicket, updateTicket } from './modules/tickets/tickets.js';
+import { knowledgeRoutes } from './modules/knowledge/routes.js';
 import { ticketsMysql } from './modules/tickets/mysql.repository.js';
 import { discardFailedUpload, receiveTicket, sendAttachment } from './modules/tickets/attachments.js';
+import { slaRoutes } from './modules/sla/sla.routes.js';
 
 const useMysql = config.dataSource === 'mysql';
 
@@ -39,6 +43,8 @@ app.get('/api/v1/auth/mode', (req, res) => {
   res.set('Cache-Control', 'no-store').json({ success: true, data: config.dataSource, meta: null });
 });
 if (useMysql) {
+  app.use('/api/v1/knowledge', knowledgeRoutes);
+  app.post('/api/v1/mail/inbound', ...inboundTicketMail);
   app.use('/api/v1', sameOrigin, (req, res, next) => {
     res.set('Cache-Control', 'no-store');
     next();
@@ -60,6 +66,7 @@ app.get('/api/v1/tickets/number-preview', validate(z.object({
 });
 
 if (useMysql) {
+  app.use('/api/v1/settings/sla', requireAdmin, slaRoutes);
   app.get('/api/v1/directory', accountsDirectory);
   app.use('/api/v1/notifications', notificationRoutes);
   app.get('/api/v1/users/:id/categories', requireAdmin, validate(idSchema, 'params'), technicianCategories.list);
@@ -76,7 +83,7 @@ if (useMysql) {
   app.use('/api/v1/tickets', asyncResourceRoutes({
     repository: ticketsMysql,
     input: ticketInput,
-    updateInput: ticketUpdate.partial().required({ version: true }),
+    updateInput: ticketEdit,
     prepareCreate: (body, account) => ({ ...body, requesterId: account.id }),
     searchable: ['title', 'description'],
     filters: { field: 'status', values: statuses },

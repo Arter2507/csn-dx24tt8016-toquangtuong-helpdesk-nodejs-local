@@ -34,6 +34,9 @@ export const ticketUpdate = z.object({
   note: z.string().trim().max(2000).optional(),
   removeAttachments: z.array(z.string().regex(/^[a-f0-9]{32}$/)).max(5).optional()
 }).strict();
+export const ticketEdit = ticketUpdate.pick({
+  title: true, description: true, priority: true, version: true, removeAttachments: true,
+}).partial().required({ version: true });
 export const tickets = [];
 function checkCategory(id) {
   if (!demoRepository.isActive(id)) throw new AppError(422, 'INVALID_CATEGORY', 'Danh mục không hoạt động');

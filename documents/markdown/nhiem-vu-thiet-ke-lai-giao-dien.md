@@ -1,8 +1,20 @@
 # Nhiệm vụ thiết kế lại giao diện quản trị Trạm Mèo
 
-Ngày lập **26/11/2026** · Trạng thái **Chờ triển khai** · Bản đối chiếu `f205d9d`.
+Ngày cập nhật **26/11/2026** · Trạng thái **Đã triển khai và kiểm thử trên local** · Bản đối chiếu `f205d9d`.
 
 Hai ảnh đầu ghi nhận lỗi bố cục ở Cài đặt chung và Quy tắc đánh số phiếu. Ba ảnh kế tiếp gợi ý cách thay đổi thanh thao tác của bảng khi chọn dòng. Ảnh cuối tham chiếu bảng cây cho cơ cấu tổ chức. Áp dụng các luồng thao tác này với màu sắc, kiểu chữ, biểu tượng, bố cục và nội dung của Trạm Mèo.
+
+## Kết quả thực hiện
+
+| Mã | Kết quả kiểm tra |
+| --- | --- |
+| UI-01 | Bốn nhóm Cài đặt chung xếp hai cột cân hàng khi đủ chỗ và một cột ở vùng nội dung hẹp. Edge kiểm tra ở 1440, 1280, 1024, 768 và 390 px, có thu gọn thanh bên và tải lại tùy chọn giao diện. |
+| UI-02 | Chủ sở hữu lưu và đọc lại cả bốn quy tắc trong form từng dòng ở 390 và 1024 px. Form báo lỗi giá trị không hợp lệ và giữ bản nháp khi mô phỏng API từ chối lưu. Mốc 1024 px mô phỏng chiều rộng CSS của màn hình 1280 px khi zoom 125%. |
+| UI-03 | Edge kiểm tra tìm trực tiếp theo mã một phần, lọc loại, cỡ trang, chọn 0/1/nhiều dòng, chặn gộp khác loại, đổi người phụ trách, gộp và xóa mềm qua menu. MySQL kiểm tra xung đột phiên bản. |
+| UI-04 | Edge kiểm tra hủy xác nhận ở Danh mục, khóa và mở khóa Nhân sự, chặn Quản trị viên chọn Chủ sở hữu. API kiểm tra cả lô trước khi thay đổi và giữ tham chiếu phiếu sau khi ngưng sử dụng. |
+| UI-05 | Bảng cây mở và thu gọn được bằng bàn phím. Tìm theo mã giữ các nhánh tổ tiên. Chủ sở hữu thêm đơn vị con và Quản trị viên xem cơ cấu. Giao diện ở 390 px giữ tên, mã và trạng thái. |
+| IAM-02 | MySQL xác nhận phòng ban cũ trùng tên được gắn chung đơn vị và hồ sơ trống giữ trạng thái chưa gán. API chặn mã trùng, vòng lặp và việc gán mới vào đơn vị đã ngưng sử dụng. |
+| UI-06 | Edge chạy bốn vai trò và lưu ảnh Cài đặt sáng/tối, form đánh số, cơ cấu và trạng thái chọn phiếu. Build, kiểm tra định dạng và kiểm thử MySQL đã qua. Bundle đầu khoảng 519 kB so với ngưỡng cảnh báo 500 kB. |
 
 ## Phân công
 
@@ -50,7 +62,7 @@ Hai ảnh đầu ghi nhận lỗi bố cục ở Cài đặt chung và Quy tắc
 ## UI-05 · Bảng cây Cơ cấu tổ chức
 
 - Thêm bảng cây có cột tên thụt cấp, mã, thuộc nhóm hoặc đơn vị, cấp và trạng thái. Dòng có nhánh dùng nút mở hoặc thu gọn với nhãn truy cập. Giữ tìm kiếm và bộ lọc trên cùng, trạng thái phân trang hoặc số kết quả ở chân bảng.
-- Với dữ liệu hiện có, biểu diễn cây tổ chức, nhóm quyền và thành viên bằng quan hệ đang lưu. Hiển thị trạng thái ở dòng có dữ liệu trạng thái. Phần tìm kiếm giữ đường dẫn tổ tiên của kết quả để người xem hiểu cấp bậc. Giữ sơ đồ liên kết và bảng phân quyền để xem vai trò.
+- Biểu diễn tổ chức, đơn vị và thành viên bằng quan hệ đang lưu. Hiển thị trạng thái ở dòng có dữ liệu trạng thái. Phần tìm kiếm giữ đường dẫn tổ tiên của kết quả để người xem hiểu cấp bậc. Giữ danh sách phân cấp, sơ đồ liên kết và bảng phân quyền để xem vai trò.
 - Nghiệm thu khi có thể dùng bàn phím để mở, thu gọn và lọc cây. Nhãn dài có thể đọc đủ và trạng thái được diễn đạt bằng chữ. Với màn hình nhỏ, giữ tên và trạng thái dễ tiếp cận.
 
 ## IAM-02 · Dữ liệu đơn vị trực thuộc

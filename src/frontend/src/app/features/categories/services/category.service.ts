@@ -1,7 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { EMPTY, expand, map, reduce } from 'rxjs';
-import { ApiResponse, Category, CategoryInput, CategoryUpdate } from '../interfaces/category';
+import { Category, CategoryInput, CategoryUpdate } from '../interfaces/category';
+import { ApiResponse } from '../../../core/http/api-response';
 
 @Injectable({ providedIn: 'root' })
 export class CategoryService {
@@ -37,5 +38,11 @@ export class CategoryService {
   }
   update(id: number, value: CategoryUpdate) {
     return this.http.patch<ApiResponse<Category>>(this.url + '/' + id, value);
+  }
+  batchState(ids: number[], isActive: boolean) {
+    return this.http.patch<ApiResponse<{ count: number }>>(this.url + '/batch-state', {
+      ids,
+      isActive,
+    });
   }
 }

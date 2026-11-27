@@ -8,6 +8,8 @@ import { idSchema } from '../categories/category.validator.js';
 import { avatarImage, receiveAvatar, saveAvatar } from '../accounts/profile.routes.js';
 import { manageableMember, manageOrganization, members } from './members.repository.js';
 import { forbidden, isOwner, memberRoles, requireAdmin, requireOwner } from './permissions.js';
+import { batchStateSchema } from '../../shared/batch-state.js';
+import { unitRoutes } from './units.routes.js';
 
 const text = max => z.string().trim().max(max);
 const email = z.email().max(254).transform(value => value.toLowerCase());
@@ -17,7 +19,9 @@ const employee = z.object({
   phone: text(30),
   employeeCode: text(40).transform(code => code.toUpperCase()),
   department: text(100),
+  unitId: z.number().int().positive().safe().nullable().optional(),
   position: text(100),
+  customerTier: z.enum(['STANDARD', 'VIP']).optional(),
   role: z.enum(['ADMIN', 'TECHNICIAN', 'USER']),
 }).strict();
 const memberStatus = z.enum(['ACTIVE', 'PENDING_ACTIVATION', 'DISABLED']);
@@ -38,6 +42,7 @@ async function organizationInfo(id, connection = pool) {
 
 export const organizationRoutes = Router();
 organizationRoutes.use(requireAdmin);
+organizationRoutes.use('/units', unitRoutes);
 organizationRoutes.get('/', async (req, res) => {
   res.json({ success: true, data: await organizationInfo(req.account.organizationId), meta: null });
 });
@@ -53,6 +58,11 @@ organizationRoutes.put('/', requireOwner, validate(organizationInput, 'body'), a
 
 export const memberRoutes = Router();
 memberRoutes.use(requireAdmin);
+memberRoutes.patch('/batch-state', validate(batchStateSchema, 'body'), async (req, res) => {
+  const { ids, isActive } = req.validated.body;
+  const count = await members.batchState(ids, isActive, req.account);
+  res.json({ success: true, data: { count }, meta: null });
+});
 memberRoutes.post('/:id/invitation', validate(idSchema, 'params'), async (req, res) => {
   const data = await members.invite(req.validated.params.id, req.account);
   res.json({ success: true, data, meta: null });

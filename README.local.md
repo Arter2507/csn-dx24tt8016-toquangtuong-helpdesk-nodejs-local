@@ -14,7 +14,7 @@ Set-Location .\csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local
 pnpm dev
 ```
 
-Mở [localhost:4200](http://localhost:4200/) hoặc [127.0.0.1:4200](http://127.0.0.1:4200/). Lần đầu build có thể mất vài phút vì Docker tải image và cài thư viện.
+Mở [http://127.0.0.1:4200/](http://127.0.0.1:4200/). Terminal hiển thị `Local: http://localhost:4200/` và `Network: http://127.0.0.1:4200/` theo cổng cấu hình. Lần đầu build có thể mất vài phút vì Docker tải image và cài thư viện.
 
 `pnpm dev` khởi động Angular, Express và MySQL. Lệnh tự tạo `docker/.env` ở lần chạy đầu và áp dụng Prisma migration. Database trống nhận bộ dữ liệu rà soát khi `MYSQL_SEED_SAMPLE=true`. `pnpm dev:mysql` là tên lệnh tương thích.
 
@@ -43,22 +43,31 @@ Cấu hình cổng, dữ liệu và cách xem log nằm trong [hướng dẫn Do
 
 ### Rà soát trên dữ liệu thật trong MySQL local
 
-- Đăng nhập bằng tài khoản Chủ sở hữu mẫu. Trong **Cài đặt → Tổ chức**, thử danh sách phân cấp, cây thu gọn, sơ đồ liên kết và bảng phân quyền. Mở **Nhân sự** để lọc theo vai trò và trạng thái.
+- Đăng nhập bằng tài khoản Chủ sở hữu mẫu. Trong **Cài đặt → Tổ chức → Cơ cấu tổ chức → Sơ đồ cây**, tìm mã `HA-TANG` để xem đơn vị Mạng & Hạ tầng cùng các nhánh cấp trên trong dữ liệu mẫu của bản cài mới. Dùng nút cạnh tên để mở hoặc thu gọn nhánh. Chủ sở hữu có thể thêm, chuyển hoặc ngưng sử dụng đơn vị. Danh sách phân cấp, sơ đồ liên kết và bảng phân quyền vẫn dùng để tra cứu vai trò.
+- Trong **Nhân sự**, chọn đơn vị tại phần Thông tin công việc. Tích các tài khoản cấp dưới để khóa hoặc mở khóa cùng lúc. Tại **Danh mục → Loại phiếu**, tích các dòng để bật hoặc ngưng sử dụng. Việc ngưng sử dụng giữ lại liên kết trên các phiếu đã có.
 - Mở **Yêu cầu hỗ trợ** và gõ `TM`, `MAU`, `TM-MAU-05` hoặc `mạng` để xem gợi ý và kết quả khi nhập. Các bộ lọc tự áp dụng khi chọn. Đổi cỡ trang tại **Số dòng mỗi trang**. Bộ dữ liệu mới có 10 phiếu rải theo nhiều ngày và tháng.
 - Đăng nhập bằng chuyên viên mẫu để xem **Lịch tuần**. Chọn ngày có dấu màu rồi bấm tên nhiệm vụ. Trong **Nhiệm vụ nhóm → Lịch**, ngày hôm nay có nhãn và mỗi nhiệm vụ có trạng thái. Bấm nhiệm vụ để xem trường chi tiết.
 - Bộ mẫu này chạy trên MySQL local. [Thiết lập máy chủ production](docker/production.md) và [kế hoạch IAM/RBAC](documents/markdown/ke-hoach-iam-rbac.md) dùng cấu hình riêng.
 
 ### Mã phiếu và quy trình xử lý
 
-- Chủ sở hữu vào **Cài đặt → Quy tắc đánh số phiếu**. Chọn dòng **Mạng**, nhập tiền tố `PYCM`, giá trị phần số `1`, số ký tự `5` và để trống hậu tố. Bản xem trước là `PYCM00001`. Phiếu tiếp theo nhận `PYCM00002`.
+- Chủ sở hữu vào **Cài đặt → Quy tắc đánh số phiếu**, bấm **Sửa** trên dòng **Mạng**. Nhập tiền tố `PYCM`, giá trị phần số `1`, số ký tự `5` và để trống hậu tố. Sau khi bấm **Lưu thay đổi**, nếu mã chưa được sử dụng, phiếu mới đầu tiên nhận `PYCM00001` và phiếu kế tiếp nhận `PYCM00002`.
 - Form tạo phiếu hiện `#0000` trước khi chọn loại. Sau khi chọn, form hiện số tiếp theo theo quy tắc hiện hành. Các loại chưa đặt quy tắc dùng dãy chung bắt đầu từ `#0001`. Hệ thống chốt mã khi gửi phiếu, vì vậy số xem trước có thể đổi nếu có phiếu khác được tạo trước. Có thể tìm phiếu bằng mã đã cấp, có hoặc không có dấu `#`.
 - Trên MySQL, quản trị viên hoặc chuyên viên phụ trách có thể chuyển phiếu đang xử lý sang **Chờ người gửi phản hồi** và ghi rõ thông tin còn thiếu. Khi người gửi trả lời trong phiếu, trạng thái tự trở về **Đang xử lý**. Ghi chú nội bộ chỉ quản trị viên và chuyên viên phụ trách xem được.
+- Bấm mã, tiêu đề hoặc **Xem** để mở cửa sổ xem nhanh. **Sửa phiếu** dùng để cập nhật nội dung và tệp theo quyền. Ở phần chi tiết, quản trị viên chọn người phụ trách từ danh sách xếp theo chuyên môn và số phiếu đang xử lý. Chuyên viên tiếp nhận và ghi giải pháp khi hoàn tất. Người gửi xác nhận đóng hoặc yêu cầu xử lý lại.
+- **Chat hỗ trợ** cập nhật định kỳ khi tab đang mở. Sau khi hoàn tất hoặc đóng phiếu, người xem được gửi thêm trong 24 giờ tính từ lần chuyển trạng thái tương ứng. Hết hạn, lịch sử vẫn xem được. Trợ giúp viên có thể chèn hướng dẫn công khai vào phản hồi và chèn hướng dẫn nội bộ vào ghi chú nội bộ.
 - Quy tắc đánh số và bộ đếm lưu trong MySQL. Bản sao ZIP chứa mã phiếu và quy tắc đánh số.
-- Quản trị viên chọn nhiều phiếu để xóa mềm, đổi người phụ trách hoặc gộp. Đổi người phụ trách và gộp yêu cầu cùng loại. Khi gộp, chọn phiếu chính chưa đóng trong nhóm cùng người gửi. Phiếu chính liên kết tới các phiếu gốc để xem lại.
+- Chủ sở hữu và Quản trị viên tích phiếu để mở các thao tác ngay trên bảng. Một dòng cho phép sửa hoặc xem theo quyền và xóa mềm. Nhiều dòng cho phép đổi người phụ trách, gộp hoặc xóa mềm qua menu thao tác. Đổi người phụ trách và gộp yêu cầu cùng loại. Khi gộp, chọn phiếu chính chưa đóng trong nhóm cùng người gửi. Phiếu chính liên kết tới các phiếu gốc để xem lại.
 
-## Tiến độ đến 26/11/2026
+## Tiến độ đến 27/11/2026
 
-Bấm chuông để mở bảng xem nhanh. Thông báo mới xuất hiện dưới dạng toast khi web đang mở và tab hiển thị. Giao diện kiểm tra cập nhật mỗi 15 giây hoặc khi quay lại cửa sổ. Trong Cài đặt có thể bật/tắt toast và để nền sáng/tối theo thiết bị.
+**Danh mục dịch vụ và SLA.** Admin và Owner tạo danh mục cha–con, chỉnh lịch làm việc và đặt hạn theo mức ưu tiên hoặc nhóm VIP. Trong **Cài đặt → Thời hạn hỗ trợ (SLA)**, bật áp dụng sau khi kiểm tra lịch. Phiếu mới hiện hạn phản hồi và xử lý. [Hướng dẫn và kế hoạch SLA](documents/markdown/ke-hoach-danh-muc-dich-vu-sla.md)
+
+**Cơ cấu tổ chức.** Sơ đồ liên kết dùng thẻ tổ chức, đơn vị và nhân sự, có đường nối phân cấp. Kéo để di chuyển khung nhìn, cuộn hoặc dùng nút để thu phóng, chọn **Vừa khung** để xem toàn bộ. Mở **Danh sách phân cấp** để đổi vai trò hoặc khóa/mở khóa nhân sự theo quyền. Có thể sửa đơn vị và xóa mềm đơn vị trống từ bảng cây.
+
+**Kho hướng dẫn.** Mở **Kho hướng dẫn** từ màn hình đăng nhập hoặc thanh điều hướng. Tìm theo tiêu đề, nội dung hoặc loại phiếu. Bài công khai xuất hiện trong gợi ý khi nhập tiêu đề phiếu. Owner/Admin tạo, sửa và lưu trữ bài. Bài nội bộ mở được với Owner, Admin và Technician. Cài mới có bộ bài hướng dẫn mẫu nếu bật nạp dữ liệu rà soát. Hệ thống chạy migration để tạo bảng trên các database đã có dữ liệu.
+
+Bấm chuông để mở bảng xem nhanh. MySQL lưu thông báo phân công, phản hồi, thay đổi trạng thái và cảnh báo sắp đến hạn SLA. SSE cập nhật chuông, toast và trang Thông báo khi có thay đổi. Có thể bật/tắt toast trong Cài đặt. [Cấu hình Email và Email-to-Ticket](documents/markdown/thong-bao-da-kenh.md)
 
 | Hạng mục | Trạng thái |
 | --- | --- |
@@ -66,7 +75,7 @@ Bấm chuông để mở bảng xem nhanh. Thông báo mới xuất hiện dư�
 | Môi trường Docker Compose | MySQL là mặc định. Có cấu hình production riêng với frontend tĩnh, HTTPS và API cùng origin. |
 | MySQL schema, Prisma migration, seed/sample SQL | Xong (B1) |
 | API categories / users / tickets đọc MySQL khi `DATA_SOURCE=mysql` | Xong khung CRUD |
-| Tổ chức và nhân sự | Cơ cấu bốn vai trò, danh sách phân cấp, cây thu gọn, sơ đồ liên kết, hồ sơ nhân sự, đổi vai trò, khóa và mở khóa. |
+| Tổ chức và nhân sự | Cơ cấu bốn vai trò, bảng cây đơn vị, sơ đồ liên kết, hồ sơ nhân sự, đổi vai trò, khóa và mở khóa từng tài khoản hoặc hàng loạt. |
 | Đăng nhập và phiên MySQL | Tự đăng ký, chờ cấp quyền, liên kết tài khoản theo email hoặc đặt mật khẩu bằng liên kết kích hoạt dùng một lần. |
 | Bộ nhận diện Trạm Mèo | Logo trên tổng quan, favicon 32/48/64 px, minh họa nét bút ở trang đăng nhập và mascot ở trang chờ cấp quyền. |
 | Xử lý yêu cầu MySQL | Tìm trực tiếp theo mã một phần và loại, lọc ngay, phân trang, phân công, trao đổi, xóa mềm và gộp phiếu. |
@@ -75,9 +84,9 @@ Bấm chuông để mở bảng xem nhanh. Thông báo mới xuất hiện dư�
 | Hồ sơ | Tab thông tin, vai trò, bảo mật và quản lý ảnh đại diện. Người quản lý cấp trên có thể đổi email của nhân sự dưới quyền. |
 | Nhiệm vụ nhóm | Bảng kéo thả, lịch tháng, lịch tuần của chuyên viên và chi tiết mở từ lịch. |
 | Danh mục chung | Tập trung danh sách người dùng và loại phiếu. |
-| Phòng ban và quyền theo phòng | Hồ sơ lưu phòng ban và chức danh. Danh mục phòng ban, hàng đợi và quyền theo phòng thuộc giai đoạn tiếp theo. |
+| Phòng ban và quyền theo phòng | Đơn vị trực thuộc và liên kết hồ sơ đã lưu trong MySQL. Hàng đợi, định tuyến và quyền trên phiếu theo phòng thuộc giai đoạn tiếp theo. |
 
-Xem [báo cáo tiến độ hiện hành](progress-report/bao-cao-tien-do-local-2026-11-26.md), [bảng phân công](documents/markdown/tram-meo-tien-do-va-phan-cong.md) và [nhiệm vụ thiết kế lại giao diện](documents/markdown/nhiem-vu-thiet-ke-lai-giao-dien.md).
+Xem [báo cáo tiến độ hiện hành](progress-report/bao-cao-tien-do-local-2026-11-27.md), [bảng phân công](documents/markdown/tram-meo-tien-do-va-phan-cong.md) và [nhiệm vụ thiết kế lại giao diện](documents/markdown/nhiem-vu-thiet-ke-lai-giao-dien.md).
 
 ### Cấp quyền cho nhân sự
 
@@ -86,12 +95,12 @@ Xem [báo cáo tiến độ hiện hành](progress-report/bao-cao-tien-do-local-
 3. Với email đã đăng ký, người dùng đăng nhập lại để mở không gian được cấp. Với email mới, sao chép liên kết kích hoạt đang hiển thị và gửi riêng để người dùng đặt mật khẩu. Liên kết có hạn 24 giờ, dùng một lần và có thể cấp lại từ menu **Thao tác**.
 4. Chủ sở hữu quản lý Admin trở xuống. Admin quản lý Chuyên viên và Người dùng. Việc khóa hoặc đổi vai trò thu hồi các phiên hiện hành của tài khoản đó.
 
-Mỗi bản cài đặt phục vụ một tổ chức. Kỹ thuật viên tiếp tục gửi phiếu của mình từ **Không gian người dùng**. [Mô hình IAM/RBAC, ERD và API](documents/markdown/ke-hoach-iam-rbac.md)
+Mỗi bản cài đặt phục vụ một tổ chức. Chuyên viên theo dõi phiếu được giao và phiếu mình tạo trong cùng một dashboard. [Mô hình IAM/RBAC, ERD và API](documents/markdown/ke-hoach-iam-rbac.md)
 
 ### Thử nhanh trên web
 
 1. **Người dùng → Tạo yêu cầu** (kéo thả tối đa 5 tệp, tổng 50 MB).
-2. **Tổng quan → chưa phân công** → chọn kỹ thuật viên → **Đang xử lý**.
+2. Trong **Yêu cầu hỗ trợ**, mở phiếu mới, chọn **Phân công / Điều phối lại**, rồi bấm **Tiếp nhận xử lý** bằng tài khoản phụ trách.
 3. Mở **Hồ sơ** để thử các tab, tải ảnh và kiểm tra email ở chế độ chỉ đọc. Đổi email của tài khoản khác từ **Người dùng** bằng tài khoản quản trị.
 4. Mở **Nhiệm vụ nhóm** bằng vai trò quản trị hoặc chuyên viên để tạo, phân công và chuyển trạng thái. Kiểm tra cùng nhiệm vụ trên **Lịch** và **Danh sách**.
 5. Trên dữ liệu thử, tạo bản sao ở **Sao lưu**, sửa một nhiệm vụ rồi chọn **Khôi phục** để kiểm tra kết quả và bản dự phòng.
@@ -108,7 +117,9 @@ Với MySQL, Docker nạp ticket mẫu khi khởi tạo database trống theo c�
 
 Xem [lệnh kiểm thử trong Docker](src/README.md#kiểm-thử-thông-qua-docker). Ca tích hợp MySQL tùy chọn cần `HELPDESK_TEST_MYSQL=1` và các biến `DB_*` dành riêng cho kiểm thử. Ca này tạo và dọn schema thử, nên tài khoản kiểm thử cần quyền tạo và xóa schema thử.
 
-Ngày 26/11/2026 đã kiểm tra hai địa chỉ đăng nhập local, khởi tạo MySQL trống và nâng cấp dữ liệu có sẵn. Edge xác nhận tìm trực tiếp, bộ lọc, cỡ trang, bảng nhân sự và ba chế độ xem tổ chức. MySQL xác nhận phân quyền và thao tác phân công, gộp nhiều phiếu. [Kết quả kiểm tra hiện hành](progress-report/bao-cao-tien-do-local-2026-11-26.md#kiểm-chứng)
+Ngày 27/11/2026 đã kiểm tra Angular và Express, quy trình phiếu trên MySQL, quyền của Kho hướng dẫn, khóa chat 24 giờ, khôi phục nội dung bài viết và địa chỉ truy cập trong Docker. [Kết quả kiểm tra hiện hành](progress-report/bao-cao-tien-do-local-2026-11-27.md#kiểm-chứng)
+
+Ngày 26/11/2026 đã kiểm tra hai địa chỉ đăng nhập local, khởi tạo MySQL trống và nâng cấp dữ liệu có sẵn. Edge xác nhận tìm trực tiếp, bộ lọc, cỡ trang, bảng nhân sự và ba chế độ xem tổ chức. MySQL xác nhận phân quyền và thao tác phân công, gộp nhiều phiếu. [Kết quả ngày 26/11](progress-report/bao-cao-tien-do-local-2026-11-26.md#kiểm-chứng)
 
 Ngày 25/11/2026 đã kiểm tra Docker, dữ liệu rà soát, danh mục và lịch. Cấu hình production được thử qua HTTPS cục bộ với dữ liệu riêng. [Kết quả ngày 25/11](progress-report/bao-cao-tien-do-local-2026-11-25.md#kiểm-chứng)
 

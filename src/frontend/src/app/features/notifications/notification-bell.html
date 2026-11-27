@@ -1,0 +1,151 @@
+<button
+  class="icon-button notification-trigger"
+  type="button"
+  popovertarget="notification-preview"
+  [attr.aria-label]="'notifications' | t"
+  [attr.aria-expanded]="open()"
+  [attr.aria-description]="'unread_count' | t: { count: inbox.unread().length }"
+>
+  <i class="bi bi-bell" aria-hidden="true"></i>
+  @if (inbox.unread().length; as unread) {
+    <span class="notification-count" aria-hidden="true">{{ unread > 99 ? '99+' : unread }}</span>
+  }
+</button>
+
+<section
+  #panel
+  id="notification-preview"
+  class="notification-preview"
+  popover="auto"
+  aria-labelledby="notification-preview-title"
+  (toggle)="updateOpen($event)"
+>
+  <header class="notification-preview-heading">
+    <div>
+      <h2 id="notification-preview-title">{{ 'notifications' | t }}</h2>
+      <p>{{ 'unread_count' | t: { count: inbox.unread().length } }}</p>
+    </div>
+    <button
+      class="text-button"
+      type="button"
+      [disabled]="!inbox.unread().length || inbox.saving()"
+      (click)="inbox.readAll()"
+    >
+      {{ 'mark_all_read' | t }}
+    </button>
+  </header>
+  @if (inbox.readFailed()) {
+    <p class="notice error" role="alert">{{ 'notification_read_error' | t }}</p>
+  }
+  @if (inbox.failed()) {
+    <div class="notification-empty">
+      <p>{{ 'we_couldnt_load_your_data' | t }}</p>
+      <button class="text-button" type="button" (click)="inbox.refresh()">
+        {{ 'try_again' | t }}
+      </button>
+    </div>
+  }
+  @if (inbox.loading()) {
+    <p class="notification-empty" role="status">{{ 'loading' | t }}</p>
+  } @else {
+    <ul class="notification-preview-list">
+      @for (item of inbox.updates().slice(0, 6); track item.id) {
+        <li [class.unread]="!item.read">
+          <span class="notification-symbol" aria-hidden="true">
+            <i
+              class="bi"
+              [class]="item.type === 'COMMENT_ADDED' ? 'bi-chat-dots' : 'bi-ticket-perforated'"
+            ></i>
+          </span>
+          <div>
+            <div class="notification-line">
+              <span>{{ item.label | t }}</span>
+              <time [attr.datetime]="item.createdAt">{{
+                item.createdAt | date: 'dd/MM HH:mm' : '+0700'
+              }}</time>
+            </div>
+            @if (item.ticketId) {
+              <a
+                [routerLink]="['/tickets', item.ticketId, item.assigned ? 'edit' : 'view']"
+                [queryParams]="inbox.ticketQuery(item)"
+                (click)="inbox.markRead([item.id]); panel.hidePopover()"
+                >{{ item.title }}</a
+              >
+            } @else {
+              <strong>{{ item.title }}</strong>
+            }
+          </div>
+          @if (!item.read) {
+            <button
+              class="icon-button notification-read"
+              type="button"
+              [attr.aria-label]="'mark_read' | t"
+              [attr.title]="'mark_read' | t"
+              [disabled]="inbox.saving()"
+              (click)="inbox.markRead([item.id])"
+            >
+              <span aria-hidden="true"></span>
+            </button>
+          }
+        </li>
+      } @empty {
+        @if (!inbox.failed()) {
+          <li class="notification-empty">
+            <i class="bi bi-bell" aria-hidden="true"></i>{{ 'no_updates' | t }}
+          </li>
+        }
+      }
+    </ul>
+  }
+  <footer>
+    <a
+      class="text-button"
+      routerLink="/notifications"
+      [queryParams]="inbox.demoScope() ? { account: inbox.demoScope() } : null"
+      (click)="panel.hidePopover()"
+      >{{ 'view_all_notifications' | t }} <i class="bi bi-arrow-right" aria-hidden="true"></i
+    ></a>
+  </footer>
+</section>
+
+<div
+  class="notification-toasts"
+  role="region"
+  [attr.aria-label]="'notifications' | t"
+  aria-live="polite"
+  aria-relevant="additions"
+>
+  @for (toast of inbox.toasts(); track toast.id) {
+    <div
+      class="notification-toast"
+      animate.leave="toast-exit"
+      (mouseenter)="inbox.pauseToast(toast.id)"
+      (mouseleave)="inbox.resumeToast(toast.id)"
+      (focusin)="inbox.pauseToast(toast.id)"
+      (focusout)="inbox.resumeToast(toast.id)"
+    >
+      <span class="notification-symbol" aria-hidden="true"><i class="bi bi-bell"></i></span>
+      <div>
+        <span class="muted">{{ label(toast) | t }}</span>
+        @if (toast.ticketId) {
+          <a
+            [routerLink]="['/tickets', toast.ticketId, toast.assigned ? 'edit' : 'view']"
+            [queryParams]="inbox.ticketQuery(toast)"
+            (click)="inbox.markRead([toast.id.toString()]); inbox.dismissToast(toast.id)"
+            >{{ toast.title }}</a
+          >
+        } @else {
+          <strong>{{ toast.title }}</strong>
+        }
+      </div>
+      <button
+        class="icon-button notification-toast-close"
+        type="button"
+        [attr.aria-label]="'dismiss_notification' | t"
+        (click)="inbox.dismissToast(toast.id)"
+      >
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+    </div>
+  }
+</div>

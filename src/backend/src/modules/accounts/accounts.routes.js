@@ -1,16 +1,14 @@
-import { Router } from 'express';
-import { z } from 'zod';
 import { AppError } from '../../shared/errors.js';
 import { pool } from '../../database/pool.js';
-import { validate } from '../../middlewares/validate.js';
 import { isTechnician } from '../organizations/permissions.js';
 import { manageableMember, manageOrganization, members } from '../organizations/members.repository.js';
 
 export async function accountsDirectory(req, res) {
   const { id, organizationId } = req.account;
   const [rows] = await pool.execute(
-    `SELECT u.id, u.full_name AS fullName, u.is_active AS isActive, m.role, m.department, m.position
+    `SELECT u.id, u.full_name AS fullName, u.is_active AS isActive, m.role, COALESCE(unit.name, m.department) AS department, m.position
      FROM users u JOIN organization_members m ON m.user_id = u.id
+     LEFT JOIN organization_units unit ON unit.organization_id = m.organization_id AND unit.id = m.unit_id
      WHERE m.organization_id = ? AND (u.id = ? OR EXISTS (
        SELECT 1 FROM tickets t WHERE t.archived_at IS NULL AND (u.id = t.requester_id OR u.id = t.assignee_id)
          AND (t.requester_id = ? OR (? = 1 AND t.assignee_id = ?))
@@ -18,33 +16,6 @@ export async function accountsDirectory(req, res) {
     [organizationId, id, id, isTechnician(req.account), id],
   );
   res.json({ success: true, data: rows.map(row => ({ ...row, id: Number(row.id), isActive: Boolean(row.isActive) })), meta: null });
-}
-
-export const notificationRoutes = Router();
-notificationRoutes.get('/', async (req, res) => {
-  const [rows] = await pool.execute(
-    `SELECT id, ticket_id AS ticketId, type, title, body AS status, read_at AS readAt, created_at AS createdAt
-     FROM notifications WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 100`, [req.account.id],
-  );
-  res.json({ success: true, data: rows.map(row => ({ ...row, id: Number(row.id), ticketId: Number(row.ticketId) || null })), meta: null });
-});
-notificationRoutes.patch('/read', validate(z.object({
-  ids: z.array(z.number().int().positive().safe()).min(1).max(100),
-}).strict(), 'body'), async (req, res) => {
-  const { ids } = req.validated.body;
-  await pool.execute(
-    `UPDATE notifications SET read_at = UTC_TIMESTAMP(3)
-     WHERE user_id = ? AND read_at IS NULL AND id IN (${ids.map(() => '?').join(',')})`,
-    [req.account.id, ...ids],
-  );
-  res.status(204).end();
-});
-
-export async function notify(conn, { userId, ticketId, type, title, status = '' }) {
-  await conn.execute(
-    `INSERT INTO notifications (user_id, ticket_id, type, title, body, created_at)
-     VALUES (?, ?, ?, ?, ?, UTC_TIMESTAMP(3))`, [userId, ticketId, type, title, status],
-  );
 }
 
 export const technicianCategories = {

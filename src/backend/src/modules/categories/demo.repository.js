@@ -1,3 +1,6 @@
+import { AppError } from '../../shared/errors.js';
+import { assertCategoryTree } from './hierarchy.js';
+
 let rows = [
   { id: 1, code: 'SOFTWARE', name: 'Phần mềm', isActive: true },
   { id: 2, code: 'HARDWARE', name: 'Phần cứng', isActive: true },
@@ -6,6 +9,13 @@ let rows = [
 ];
 let nextId = 5;
 export const demoRepository = {
+  batchState(ids, isActive) {
+    const selected = rows.filter(row => ids.includes(row.id));
+    if (selected.length !== ids.length) throw new AppError(404, 'RECORD_MISSING');
+    assertCategoryTree(rows.map(row => ids.includes(row.id) ? { ...row, isActive } : row));
+    for (const row of selected) row.isActive = isActive;
+    return selected.length;
+  },
   snapshot: () => rows,
   replace(restored) { rows = restored; nextId = rows.reduce((max, row) => Math.max(max, row.id), 0) + 1; },
   isActive: id => rows.some(row => row.id === id && row.isActive),
@@ -16,6 +26,18 @@ export const demoRepository = {
     return { items: filtered.slice((q.page - 1) * q.pageSize, q.page * q.pageSize), total: filtered.length };
   },
   async find(id) { return rows.find(r => r.id === id); },
-  async create(data) { if (rows.some(r => r.code === data.code)) { const e = new Error(); e.code = 'ER_DUP_ENTRY'; throw e; } const row = { id: nextId++, ...data, isActive: true }; rows.push(row); return row; },
-  async update(id, data) { const row = rows.find(r => r.id === id); if (!row) return null; Object.assign(row, data); return row; }
+  async create(data) {
+    if (rows.some(row => row.code === data.code)) throw new AppError(409, 'CONFLICT');
+    const row = { id: nextId, parentId: null, ...data, isActive: true };
+    assertCategoryTree([...rows, row]);
+    nextId++;
+    rows.push(row);
+    return row;
+  },
+  async update(id, data) {
+    const row = rows.find(item => item.id === id);
+    if (!row) return null;
+    assertCategoryTree(rows.map(item => item === row ? { ...row, ...data } : item));
+    return Object.assign(row, data);
+  },
 };

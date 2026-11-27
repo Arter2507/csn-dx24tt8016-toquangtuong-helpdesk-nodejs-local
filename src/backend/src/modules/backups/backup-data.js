@@ -11,10 +11,13 @@ import { users } from '../users/users.js';
 const selects = {
   users: 'SELECT u.id, u.email, u.full_name, u.phone, u.is_active, u.created_at, u.updated_at FROM users u JOIN organization_members m ON m.user_id = u.id ORDER BY u.id',
   organizations: 'SELECT * FROM organizations ORDER BY id',
+  organization_units: 'SELECT * FROM organization_units ORDER BY id',
   organization_members: 'SELECT * FROM organization_members ORDER BY user_id',
   roles: 'SELECT * FROM roles ORDER BY id',
   user_roles: 'SELECT * FROM user_roles ORDER BY user_id, role_id',
   categories: 'SELECT * FROM categories ORDER BY id',
+  knowledge_articles: 'SELECT * FROM knowledge_articles ORDER BY id',
+  sla_settings: 'SELECT * FROM sla_settings ORDER BY organization_id',
   technician_categories: 'SELECT * FROM technician_categories ORDER BY user_id, category_id',
   tickets: 'SELECT * FROM tickets ORDER BY id',
   ticket_number_rules: 'SELECT * FROM ticket_number_rules ORDER BY category_id',

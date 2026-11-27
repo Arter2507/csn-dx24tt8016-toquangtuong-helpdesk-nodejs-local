@@ -58,8 +58,30 @@ model Organization {
 
   owner       User?    @relation("OrganizationOwner", fields: [ownerId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   members     OrganizationMember[]
+  units       OrganizationUnit[]
+  slaSettings SlaSettings?
 
   @@map("organizations")
+}
+
+model OrganizationUnit {
+  id             BigInt  @id @default(autoincrement()) @db.UnsignedBigInt
+  organizationId Int     @map("organization_id") @db.UnsignedTinyInt
+  parentId       BigInt? @map("parent_id") @db.UnsignedBigInt
+  code           String  @db.VarChar(30)
+  name           String  @db.VarChar(100)
+  isActive       Boolean @default(true) @map("is_active")
+  deletedAt      DateTime? @map("deleted_at") @db.DateTime(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_org_units_org")
+  parent OrganizationUnit? @relation("UnitTree", fields: [organizationId, parentId], references: [organizationId, id], onDelete: Restrict, onUpdate: Restrict, map: "fk_org_units_parent")
+  children OrganizationUnit[] @relation("UnitTree")
+  members OrganizationMember[]
+
+  @@unique([organizationId, code], map: "uq_org_units_code")
+  @@unique([organizationId, id], map: "uq_org_units_id")
+  @@index([organizationId, parentId], map: "idx_org_units_parent")
+  @@map("organization_units")
 }
 
 model OrganizationMember {
@@ -67,16 +89,33 @@ model OrganizationMember {
   organizationId Int       @map("organization_id") @db.UnsignedTinyInt
   employeeCode   String?    @map("employee_code") @db.VarChar(40)
   department     String     @default("") @db.VarChar(100)
+  unitId         BigInt?    @map("unit_id") @db.UnsignedBigInt
   position       String     @default("") @db.VarChar(100)
+  customerTier   CustomerTier @default(STANDARD) @map("customer_tier")
   role           MemberRole
   joinedAt       DateTime   @map("joined_at") @db.DateTime(3)
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  unit OrganizationUnit? @relation(fields: [organizationId, unitId], references: [organizationId, id], onDelete: Restrict, onUpdate: Restrict, map: "fk_members_unit")
 
   @@unique([organizationId, employeeCode], map: "uq_members_employee_code")
   @@index([organizationId, role], map: "idx_members_org_role")
+  @@index([organizationId, unitId], map: "idx_members_unit")
   @@map("organization_members")
+}
+
+enum CustomerTier {
+  STANDARD
+  VIP
+}
+
+model SlaSettings {
+  organizationId Int @id @map("organization_id") @db.UnsignedTinyInt
+  policy Json
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_sla_organization")
+
+  @@map("sla_settings")
 }
 
 model Role {
@@ -121,14 +160,39 @@ model Category {
   id        BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
   code      String   @unique @db.VarChar(30)
   name      String   @db.VarChar(100)
+  parentId  BigInt? @map("parent_id") @db.UnsignedBigInt
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @map("created_at") @db.DateTime(3)
   updatedAt DateTime @map("updated_at") @db.DateTime(3)
 
   technicians TechnicianCategory[]
   tickets     Ticket[]
+  articles    KnowledgeArticle[]
+  parent      Category? @relation("ServiceCatalog", fields: [parentId], references: [id], onDelete: SetNull, onUpdate: Restrict, map: "fk_categories_parent")
+  children    Category[] @relation("ServiceCatalog")
 
+  @@index([parentId], map: "idx_categories_parent")
   @@map("categories")
+}
+
+model KnowledgeArticle {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  categoryId BigInt? @map("category_id") @db.UnsignedBigInt
+  title String @db.VarChar(200)
+  body String @db.Text
+  visibility KnowledgeVisibility @default(INTERNAL)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.DateTime(3)
+  archivedAt DateTime? @map("archived_at") @db.DateTime(3)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Restrict, map: "fk_kb_category")
+
+  @@index([categoryId], map: "idx_kb_category")
+  @@fulltext([title, body], map: "ft_kb_content")
+  @@map("knowledge_articles")
+}
+
+enum KnowledgeVisibility {
+  PUBLIC
+  INTERNAL
 }
 
 model TechnicianCategory {
@@ -156,6 +220,11 @@ model Ticket {
   status      String    @db.VarChar(20)
   version     Int       @default(1) @db.UnsignedInt
   resolvedAt  DateTime? @map("resolved_at") @db.DateTime(3)
+  responseDueAt DateTime? @map("response_due_at") @db.DateTime(3)
+  resolutionDueAt DateTime? @map("resolution_due_at") @db.DateTime(3)
+  firstResponseAt DateTime? @map("first_response_at") @db.DateTime(3)
+  responseWarningDueAt DateTime? @map("response_warning_due_at") @db.DateTime(3)
+  resolutionWarningDueAt DateTime? @map("resolution_warning_due_at") @db.DateTime(3)
   closedAt    DateTime? @map("closed_at") @db.DateTime(3)
   archivedAt  DateTime? @map("archived_at") @db.DateTime(3)
   createdAt   DateTime  @map("created_at") @db.DateTime(3)
@@ -172,6 +241,8 @@ model Ticket {
   @@index([requesterId, createdAt, id], map: "idx_tickets_requester_created")
   @@index([assigneeId, status, createdAt, id], map: "idx_tickets_assignee_status_created")
   @@index([status, createdAt, id], map: "idx_tickets_status_created")
+  @@index([responseDueAt], map: "idx_tickets_response_due")
+  @@index([resolutionDueAt], map: "idx_tickets_resolution_due")
   @@index([categoryId, createdAt, id], map: "idx_tickets_category_created")
   @@map("tickets")
 }
@@ -234,6 +305,29 @@ model TicketEvent {
 
   @@index([ticketId, createdAt, id], map: "idx_ticket_events_ticket_created")
   @@map("ticket_events")
+}
+
+model TicketStatusMail {
+  id BigInt @id @default(autoincrement()) @db.UnsignedBigInt
+  ticketId BigInt @map("ticket_id") @db.UnsignedBigInt
+  ticketCode String @map("ticket_code") @db.VarChar(40)
+  userId BigInt @map("user_id") @db.UnsignedBigInt
+  ticketStatus String @map("ticket_status") @db.VarChar(20)
+  attempts Int @default(0) @db.UnsignedSmallInt
+  availableAt DateTime @default(now()) @map("available_at") @db.DateTime(3)
+  sentAt DateTime? @map("sent_at") @db.DateTime(3)
+  failedAt DateTime? @map("failed_at") @db.DateTime(3)
+
+  @@index([sentAt, failedAt, availableAt, id], map: "idx_ticket_status_mail_ready")
+  @@map("ticket_status_mail")
+}
+
+model InboundTicketMail {
+  fingerprint String @id @db.Char(64)
+  ticketId BigInt? @map("ticket_id") @db.UnsignedBigInt
+  createdAt DateTime @default(now()) @map("created_at") @db.DateTime(3)
+
+  @@map("inbound_ticket_mail")
 }
 
 model Notification {

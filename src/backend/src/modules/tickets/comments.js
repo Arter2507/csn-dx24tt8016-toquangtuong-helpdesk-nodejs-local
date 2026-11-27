@@ -3,7 +3,9 @@ import { pool } from '../../database/pool.js';
 import { AppError } from '../../shared/errors.js';
 import { insertEvent, ticketsMysql } from './mysql.repository.js';
 import { canHandle, isAdmin, isTechnician } from './ticket-access.js';
-import { notify } from '../accounts/accounts.routes.js';
+import { discardNotifications, notify, publishNotifications } from '../notifications/inbox.js';
+import { queueStatusMail } from '../notifications/outgoing-mail.js';
+import { chatExpiresAt } from './chat-session.js';
 
 async function visibleTicket(req) {
   const result = z.object({ ticketId: z.coerce.number().int().positive().safe() }).safeParse(req.params);
@@ -29,7 +31,8 @@ export const ticketComments = {
        ORDER BY c.id DESC LIMIT 100`,
       [ticket.id, !!ticket.mergedInto, isAdmin(account), isTechnician(account), account.id, account.id],
     );
-    res.json({ success: true, data: rows.reverse().map(mapComment), meta: null });
+    const { chatExpiresAt, status, version, firstResponseAt, resolvedAt } = ticket;
+    res.json({ success: true, data: rows.reverse().map(mapComment), meta: { chatExpiresAt, status, version, firstResponseAt, resolvedAt } });
   },
   async create(req, res) {
     const ticket = await visibleTicket(req);
@@ -43,14 +46,30 @@ export const ticketComments = {
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
-      const [current] = await conn.execute('SELECT status, version FROM tickets WHERE id = ? AND archived_at IS NULL FOR UPDATE', [ticket.id]);
-      if (!current[0] || Number(current[0].version) !== ticket.version || current[0].status === 'CLOSED') {
+      const [current] = await conn.execute('SELECT status, version, first_response_at AS firstResponseAt, resolved_at AS resolvedAt, closed_at AS closedAt FROM tickets WHERE id = ? AND archived_at IS NULL FOR UPDATE', [ticket.id]);
+      if (!current[0] || Number(current[0].version) !== ticket.version) {
         throw new AppError(409, 'CONFLICT', 'Yêu cầu đã thay đổi hoặc đã đóng');
+      }
+      const expiresAt = chatExpiresAt(current[0]);
+      if (expiresAt && expiresAt.getTime() <= Date.now()) throw new AppError(409, 'CHAT_EXPIRED');
+      const links = [...new Set(Array.from(body.matchAll(/(?:^|\s)\/knowledge\/(\d+)(?=\s|$)/g), match => match[1]))];
+      if (!internal && links.length) {
+        const [privateLinks] = await conn.execute(
+          `SELECT 1 FROM knowledge_articles WHERE visibility = 'INTERNAL' AND id IN (${links.map(() => '?').join(',')}) LIMIT 1`, links,
+        );
+        if (privateLinks.length) throw new AppError(422, 'KB_INTERNAL_LINK');
       }
       const [result] = await conn.execute(
         'INSERT INTO ticket_comments (ticket_id, author_id, body, is_internal, created_at) VALUES (?, ?, ?, ?, UTC_TIMESTAMP(3))',
         [ticket.id, req.account.id, body, internal],
       );
+      const firstResponse = !internal && !current[0].firstResponseAt && req.account.id !== ticket.requesterId && canHandle(req.account, ticket);
+      if (firstResponse) {
+        await conn.execute(
+          'UPDATE tickets SET first_response_at = (SELECT created_at FROM ticket_comments WHERE id = ?) WHERE id = ?',
+          [result.insertId, ticket.id],
+        );
+      }
       const resumed = !internal && ticket.status === 'PENDING_CUSTOMER' && req.account.id === ticket.requesterId;
       const status = resumed ? 'IN_PROGRESS' : ticket.status;
       if (resumed) {
@@ -59,6 +78,7 @@ export const ticketComments = {
           [status, ticket.id],
         );
         await insertEvent(conn, ticket.id, req.account.id, 'STATUS_CHANGED', { status: ticket.status }, { status });
+        await queueStatusMail(conn, ticket, status);
       }
       const recipients = new Set(internal ? [ticket.assigneeId] : [ticket.requesterId, ticket.assigneeId]);
       for (const userId of recipients) {
@@ -67,13 +87,16 @@ export const ticketComments = {
       }
       const [rows] = await conn.execute(commentSelect + ' WHERE c.id = ?', [result.insertId]);
       await conn.commit();
+      publishNotifications(conn);
       const data = mapComment(rows[0]);
+      if (firstResponse) data.firstResponseAt = data.createdAt;
       if (resumed) data.ticketUpdate = { status, version: ticket.version + 1, at: data.createdAt };
       res.status(201).json({ success: true, data, meta: null });
     } catch (error) {
       await conn.rollback();
       throw error;
     } finally {
+      discardNotifications(conn);
       conn.release();
     }
   },

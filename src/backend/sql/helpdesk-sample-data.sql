@@ -24,6 +24,11 @@ INSERT INTO categories (id, code, name, is_active, created_at, updated_at) VALUE
   (3, 'NETWORK', 'Mạng', 1, @now, @now),
   (4, 'ACCOUNT', 'Tài khoản', 1, @now, @now);
 
+INSERT INTO knowledge_articles (category_id, title, body, visibility) VALUES
+  (3, 'Kiểm tra khi máy tính mất kết nối Wi-Fi', 'Kiểm tra chế độ máy bay và thử kết nối lại Wi-Fi. Nếu nhiều thiết bị cùng mất kết nối, hãy ghi tên mạng, khu vực và thời điểm sự cố vào phiếu hỗ trợ.', 'PUBLIC'),
+  (4, 'Cần làm gì khi không đăng nhập được email?', 'Kiểm tra địa chỉ email và bộ gõ rồi thử lại. Nếu vẫn không được, gửi ảnh lỗi đã che thông tin cá nhân. Không đính kèm mật khẩu hoặc mã xác minh.', 'PUBLIC'),
+  (2, 'Thông tin cần thu thập khi máy in kẹt giấy', 'Ghi mã thiết bị, loại giấy và vị trí kẹt. Kiểm tra theo hướng dẫn của nhà sản xuất. Ghi kết quả in thử vào phiếu trước khi hoàn tất xử lý.', 'INTERNAL');
+
 INSERT INTO users (id, email, password_hash, full_name, phone, is_active, created_at, updated_at) VALUES
   (1, 'user@example.test', @password_hash, 'Người gửi mẫu', NULL, 1, @now, @now),
   (2, 'tech@example.test', @password_hash, 'Kỹ thuật viên mẫu', '0901000002', 1, @now, @now),
@@ -50,12 +55,22 @@ INSERT INTO technician_categories (user_id, category_id, created_at) VALUES
   (5, 3, @now);
 
 UPDATE organizations SET owner_id = 3 WHERE id = 1 AND owner_id IS NULL;
+INSERT INTO organization_units (id, organization_id, parent_id, code, name) VALUES
+  (1, 1, NULL, 'DIEU-HANH', 'Điều hành');
+INSERT INTO organization_units (id, organization_id, parent_id, code, name) VALUES
+  (2, 1, 1, 'VAN-PHONG', 'Văn phòng'),
+  (3, 1, 1, 'HO-TRO', 'Hỗ trợ kỹ thuật');
+INSERT INTO organization_units (id, organization_id, parent_id, code, name) VALUES
+  (4, 1, 3, 'HA-TANG', 'Mạng & Hạ tầng');
 INSERT INTO organization_members (user_id, organization_id, employee_code, department, position, role, joined_at) VALUES
   (1, 1, 'NV001', 'Văn phòng', 'Nhân viên', 'USER', @now),
   (2, 1, 'NV002', 'Hỗ trợ kỹ thuật', 'Chuyên viên', 'TECHNICIAN', @now),
   (3, 1, 'NV003', 'Điều hành', 'Chủ sở hữu', 'OWNER', @now),
   (4, 1, 'NV004', 'Văn phòng', 'Nhân viên', 'USER', @now),
   (5, 1, 'NV005', 'Mạng & Hạ tầng', 'Chuyên viên', 'TECHNICIAN', @now);
+UPDATE organization_members m JOIN organization_units unit
+  ON unit.organization_id = m.organization_id AND unit.name = m.department
+SET m.unit_id = unit.id;
 
 -- 5 yêu cầu mẫu (trạng thái khác nhau để dashboard/báo cáo có dữ liệu)
 INSERT INTO tickets (

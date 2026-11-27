@@ -14,7 +14,6 @@ export function canUpdateStatus(current, next) {
 
 export function needsTransitionNote(current, next) {
   return current !== next && (
-    next === 'RESOLVED' || next === 'PENDING_CUSTOMER' ||
-    (current === 'RESOLVED' && next === 'IN_PROGRESS')
+    next === 'RESOLVED' || next === 'PENDING_CUSTOMER'
   );
 }

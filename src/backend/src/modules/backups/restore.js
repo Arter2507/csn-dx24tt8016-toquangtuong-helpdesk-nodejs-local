@@ -14,13 +14,15 @@ import { ensureAttachmentDirectory, getAttachmentPath } from '../tickets/attachm
 import { tickets } from '../tickets/tickets.js';
 import { legacyTicketCode, restoreDemoNumberRules } from '../tickets/numbering.js';
 import { users } from '../users/users.js';
+import { assertCategoryTree } from '../categories/hierarchy.js';
+import { policySchema } from '../sla/policy.js';
 
 const invalid = () => new AppError(422, 'RESTORE_INVALID', 'Bản sao thiếu dữ liệu, hỏng hoặc khác chế độ');
 const tables = ['categories', 'technician_categories', 'tickets', 'ticket_comments', 'ticket_events',
-  'ticket_attachments', 'notifications', 'user_profiles', 'task_items', 'ticket_number_rules'];
-const optional = new Set(['user_profiles', 'task_items', 'ticket_number_rules']);
+  'ticket_attachments', 'notifications', 'user_profiles', 'task_items', 'ticket_number_rules', 'sla_settings', 'knowledge_articles'];
+const optional = new Set(['user_profiles', 'task_items', 'ticket_number_rules', 'sla_settings', 'knowledge_articles']);
 const versionedTables = new Set(['tickets', 'task_items']);
-const jsonColumns = new Set(['details', 'old_value', 'new_value']);
+const jsonColumns = new Set(['details', 'old_value', 'new_value', 'policy']);
 
 function value(column, input) {
   if (jsonColumns.has(column) && input !== null) return JSON.stringify(input);
@@ -42,6 +44,16 @@ function replaceRows(target, source) {
 }
 
 async function mysqlRestore(data) {
+  try {
+    assertCategoryTree(data.categories.map(row => ({
+      id: Number(row.id),
+      parentId: row.parent_id == null ? null : Number(row.parent_id),
+      isActive: Boolean(row.is_active),
+    })));
+    if (data.sla_settings?.some(row => !policySchema.safeParse(row.policy).success)) throw invalid();
+  } catch {
+    throw invalid();
+  }
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -54,6 +66,9 @@ async function mysqlRestore(data) {
       await conn.execute('UPDATE users SET full_name = ?, phone = ? WHERE id = ?', [user.full_name, user.phone, user.id]);
     }
     const included = tables.filter(table => Array.isArray(data[table]));
+    const [knowledgeCategories] = included.includes('knowledge_articles') ? [[]] : await conn.query(
+      'SELECT a.id, c.code FROM knowledge_articles a JOIN categories c ON c.id = a.category_id',
+    );
     for (const row of data.tickets) row.display_code ??= legacyTicketCode(row.id);
     for (const table of included.filter(table => versionedTables.has(table))) {
       const [current] = await conn.query('SELECT id, version FROM ' + table);
@@ -64,7 +79,8 @@ async function mysqlRestore(data) {
       const [columns] = await conn.query('SHOW COLUMNS FROM ' + table);
       const available = columns.map(column => column.Field);
       for (const row of data[table]) {
-        const selected = available.filter(column => Object.hasOwn(row, column));
+        const selected = available.filter(column => Object.hasOwn(row, column) &&
+          !(table === 'categories' && column === 'parent_id'));
         if (!selected.length) throw invalid();
         await conn.execute(
           'INSERT INTO ' + table + ' (' + selected.map(column => '\x60' + column + '\x60').join(',') +
@@ -72,6 +88,18 @@ async function mysqlRestore(data) {
           selected.map(column => value(column, row[column])),
         );
       }
+    }
+    for (const row of data.categories) {
+      if (row.parent_id != null) {
+        await conn.execute('UPDATE categories SET parent_id = ? WHERE id = ?', [row.parent_id, row.id]);
+      }
+    }
+    await conn.query('UPDATE ticket_status_mail SET failed_at = UTC_TIMESTAMP(3) WHERE sent_at IS NULL AND failed_at IS NULL');
+    for (const { id, code } of knowledgeCategories) {
+      await conn.execute(
+        'UPDATE knowledge_articles a JOIN categories c ON c.code = ? SET a.category_id = c.id WHERE a.id = ?',
+        [code, id],
+      );
     }
     if (included.includes('ticket_number_rules')) {
       await conn.query('INSERT IGNORE INTO ticket_number_rules (category_id) VALUES (0)');

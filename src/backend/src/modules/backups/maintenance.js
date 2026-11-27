@@ -27,3 +27,15 @@ export async function duringRestore(operation) {
     paused = false;
   }
 }
+
+export async function runBackgroundWrite(operation) {
+  if (paused) return;
+  const active = Promise.resolve().then(operation);
+  const settled = active.catch(() => {});
+  writes.add(settled);
+  try {
+    await active;
+  } finally {
+    writes.delete(settled);
+  }
+}

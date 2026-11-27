@@ -64,8 +64,8 @@ export function registerTicketActions(app) {
       `SELECT e.id, e.event_type AS type, e.old_value AS oldValue, e.new_value AS newValue,
          e.note, e.created_at AS createdAt, u.full_name AS actorName
        FROM ticket_events e JOIN users u ON u.id = e.actor_id
-       WHERE e.ticket_id = ? ORDER BY e.created_at ASC, e.id ASC`, [ticket.id],
+       WHERE e.ticket_id = ? ORDER BY e.created_at DESC, e.id DESC LIMIT 100`, [ticket.id],
     );
-    res.json({ success: true, data: rows.map(row => ({ ...row, id: Number(row.id) })), meta: null });
+    res.json({ success: true, data: rows.reverse().map(row => ({ ...row, id: Number(row.id) })), meta: null });
   });
 }

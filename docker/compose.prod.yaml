@@ -38,6 +38,14 @@ services:
       MYSQL_SEED_SAMPLE: "false"
       UPLOAD_DIR: /data/uploads
       BACKUP_DIR: /data/backups
+      SMTP_HOST: "${SMTP_HOST:-}"
+      SMTP_PORT: "${SMTP_PORT:-587}"
+      SMTP_USER: "${SMTP_USER:-}"
+      SMTP_PASSWORD: "${SMTP_PASSWORD:-}"
+      MAIL_FROM: "${MAIL_FROM:-}"
+      MAIL_LANGUAGE: "${MAIL_LANGUAGE:-vi}"
+      INBOUND_MAIL_TOKEN: "${INBOUND_MAIL_TOKEN:-}"
+      INBOUND_MAIL_CATEGORY_ID: "${INBOUND_MAIL_CATEGORY_ID:-0}"
     volumes:
       - uploads:/data/uploads
       - backups:/data/backups
