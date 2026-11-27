@@ -8,6 +8,7 @@ import {
   input,
   output,
   signal,
+  TemplateRef,
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -40,6 +41,7 @@ interface TreeNode {
   type: string;
   status?: MemberStatus;
   unit?: OrganizationUnit;
+  member?: TreeMember;
   children: TreeNode[];
 }
 
@@ -73,7 +75,10 @@ export class UnitTree {
   readonly chart = input(false);
   readonly units = input.required<OrganizationUnit[]>();
   readonly members = input.required<TreeMember[]>();
+  readonly memberActions =
+    input.required<TemplateRef<{ $implicit: TreeMember; compact: boolean }>>();
   readonly changed = output<void>();
+  readonly editOrganization = output<void>();
   readonly session = inject(Session);
   private readonly http = inject(HttpClient);
   private readonly i18n = inject(I18n);
@@ -100,6 +105,7 @@ export class UnitTree {
         code: member.employeeCode ?? undefined,
         type: memberRoleLabel(member.role),
         status: member.status,
+        member,
         children: [],
       }));
     const branch = (parentId: number | null): TreeNode[] =>
@@ -123,7 +129,7 @@ export class UnitTree {
               {
                 key: 'unassigned',
                 name: this.i18n.text('unit_unassigned'),
-                type: 'unit_type',
+                type: 'members',
                 children: byUnit(null),
               },
             ]

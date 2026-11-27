@@ -63,7 +63,7 @@ Cấu hình cổng, dữ liệu và cách xem log nằm trong [hướng dẫn Do
 
 **Danh mục dịch vụ và SLA.** Admin và Owner tạo danh mục cha–con, chỉnh lịch làm việc và đặt hạn theo mức ưu tiên hoặc nhóm VIP. Trong **Cài đặt → Thời hạn hỗ trợ (SLA)**, bật áp dụng sau khi kiểm tra lịch. Phiếu mới hiện hạn phản hồi và xử lý. [Hướng dẫn và kế hoạch SLA](documents/markdown/ke-hoach-danh-muc-dich-vu-sla.md)
 
-**Cơ cấu tổ chức.** Sơ đồ liên kết dùng thẻ tổ chức, đơn vị và nhân sự, có đường nối phân cấp. Kéo để di chuyển khung nhìn, cuộn hoặc dùng nút để thu phóng, chọn **Vừa khung** để xem toàn bộ. Mở **Danh sách phân cấp** để đổi vai trò hoặc khóa/mở khóa nhân sự theo quyền. Có thể sửa đơn vị và xóa mềm đơn vị trống từ bảng cây.
+**Cơ cấu tổ chức.** Trong **Sơ đồ cây** hoặc **Sơ đồ liên kết**, Chủ sở hữu mở **Thao tác** trên dòng đơn vị để chọn **Sửa đơn vị** hoặc **Xóa đơn vị**. Xóa mềm áp dụng cho đơn vị đã chuyển hết nhân sự và đơn vị trực thuộc. Menu của dòng nhân sự dùng để sửa hồ sơ hoặc khóa/mở khóa tài khoản theo quyền. Nếu cơ cấu chưa có đơn vị, bấm **Thêm đơn vị** để tạo đơn vị đầu tiên. Trong sơ đồ liên kết, kéo để di chuyển, cuộn hoặc dùng nút để thu phóng và chọn **Vừa khung** để xem toàn bộ.
 
 **Kho hướng dẫn.** Mở **Kho hướng dẫn** từ màn hình đăng nhập hoặc thanh điều hướng. Tìm theo tiêu đề, nội dung hoặc loại phiếu. Bài công khai xuất hiện trong gợi ý khi nhập tiêu đề phiếu. Owner/Admin tạo, sửa và lưu trữ bài. Bài nội bộ mở được với Owner, Admin và Technician. Cài mới có bộ bài hướng dẫn mẫu nếu bật nạp dữ liệu rà soát. Hệ thống chạy migration để tạo bảng trên các database đã có dữ liệu.
 

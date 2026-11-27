@@ -40,6 +40,7 @@
               <div class="field">
                 <label for="organization-name">{{ 'organization_name' | t }}</label>
                 <input
+                  #organizationName
                   id="organization-name"
                   name="name"
                   required
@@ -108,9 +109,11 @@
     </section>
 
     @if (organization(); as org) {
-      <dialog #memberConfirm class="confirm-dialog">
+      <dialog #memberConfirm class="confirm-dialog" aria-labelledby="member-confirm-title">
         @if (pendingMember(); as member) {
-          <h2>{{ (member.status === 'DISABLED' ? 'enable_member' : 'disable_member') | t }}</h2>
+          <h2 id="member-confirm-title">
+            {{ (member.status === 'DISABLED' ? 'enable_member' : 'disable_member') | t }}
+          </h2>
           <p>{{ member.name }}</p>
           <div class="iam-actions">
             <button class="secondary" type="button" (click)="memberConfirm.close()">
@@ -121,11 +124,37 @@
               type="button"
               (click)="memberConfirm.close(); changeMemberStatus(member)"
             >
-              {{ 'confirm' | t }}
+              {{ (member.status === 'DISABLED' ? 'enable_member' : 'disable_member') | t }}
             </button>
           </div>
         }
       </dialog>
+      <ng-template #memberActions let-member let-compact="compact">
+        @if (canManageMember(member)) {
+          <app-row-menu
+            [menuId]="'org-member-actions-' + member.id"
+            [rowName]="member.name"
+            [compact]="compact"
+          >
+            <a class="row-menu-item" [routerLink]="['/users', member.id, 'edit']">
+              <i class="bi bi-pencil" aria-hidden="true"></i>{{ 'edit_member' | t }}
+            </a>
+            <button
+              class="row-menu-item"
+              type="button"
+              [disabled]="busy()"
+              (click)="pendingMember.set(member); memberConfirm.showModal()"
+            >
+              <i
+                class="bi"
+                [class]="member.status === 'DISABLED' ? 'bi-unlock' : 'bi-lock'"
+                aria-hidden="true"
+              ></i>
+              {{ (member.status === 'DISABLED' ? 'enable_member' : 'disable_member') | t }}
+            </button>
+          </app-row-menu>
+        }
+      </ng-template>
       <section class="panel iam-panel">
         <h2>{{ 'organization_hierarchy' | t }}</h2>
         <div class="org-view-layout">
@@ -177,25 +206,12 @@
                         <li>
                           {{ member.name }} <span class="muted">{{ member.department }}</span
                           ><span class="iam-status">{{ statusLabel(member.status) | t }}</span>
-                          @if (canManageMember(member)) {
-                            <div class="iam-actions">
-                              <a class="text-button" [routerLink]="['/users', member.id, 'edit']"
-                                >{{ 'role' | t }} / {{ 'edit' | t }}</a
-                              >
-                              <button
-                                class="text-button"
-                                type="button"
-                                (click)="pendingMember.set(member); memberConfirm.showModal()"
-                              >
-                                {{
-                                  (member.status === 'DISABLED'
-                                    ? 'enable_member'
-                                    : 'disable_member'
-                                  ) | t
-                                }}
-                              </button>
-                            </div>
-                          }
+                          <ng-container
+                            *ngTemplateOutlet="
+                              memberActions;
+                              context: { $implicit: member, compact: false }
+                            "
+                          />
                         </li>
                       } @empty {
                         <li class="muted">{{ 'no_members' | t }}</li>
@@ -228,8 +244,10 @@
                 [organization]="org"
                 [units]="units()"
                 [members]="treeMembers()"
+                [memberActions]="memberActions"
                 [chart]="view() === 'graph'"
                 (changed)="load()"
+                (editOrganization)="edit(org)"
               />
             }
           </div>

@@ -447,6 +447,10 @@
     "vi": "Thêm đơn vị",
     "en": "Add unit"
   },
+  "unit_empty": {
+    "vi": "Chưa có đơn vị trong cơ cấu.",
+    "en": "There are no units in the organization chart."
+  },
   "unit_edit": {
     "vi": "Sửa đơn vị",
     "en": "Edit unit"

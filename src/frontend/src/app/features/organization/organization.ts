@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { finalize, forkJoin } from 'rxjs';
@@ -17,6 +18,7 @@ import { errorKey, Translate } from '../../core/i18n/i18n';
 import { Session } from '../../core/auth/session';
 import { SettingsNav } from '../settings/settings-nav';
 import { TreeMember, UnitTree } from './unit-tree';
+import { RowMenu } from '../../shared/ui/row-menu';
 
 interface Organization {
   id: number;
@@ -27,7 +29,7 @@ interface Organization {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, Translate, SettingsNav, UnitTree],
+  imports: [FormsModule, NgTemplateOutlet, RouterLink, RowMenu, Translate, SettingsNav, UnitTree],
   templateUrl: './organization.html',
 })
 export class OrganizationPage {
@@ -52,6 +54,7 @@ export class OrganizationPage {
   readonly error = signal('');
   readonly saved = signal(false);
   readonly pendingMember = signal<TreeMember | null>(null);
+  private readonly organizationName = viewChild<ElementRef<HTMLInputElement>>('organizationName');
   form = { name: '', code: '', description: '' };
 
   constructor() {
@@ -101,6 +104,7 @@ export class OrganizationPage {
     this.editing.set(true);
     this.saved.set(false);
     this.error.set('');
+    requestAnimationFrame(() => this.organizationName()?.nativeElement.focus());
   }
 
   canManageMember(member: TreeMember) {

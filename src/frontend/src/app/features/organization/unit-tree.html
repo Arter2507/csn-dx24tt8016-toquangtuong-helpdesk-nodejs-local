@@ -24,6 +24,10 @@
   }
 </div>
 
+@if (!units().length) {
+  <p class="muted">{{ 'unit_empty' | t }}</p>
+}
+
 <dialog #removeDialog class="confirm-dialog" aria-labelledby="unit-remove-title">
   <h2 id="unit-remove-title">{{ 'unit_delete_title' | t }}</h2>
   @if (pendingRemoval(); as unit) {
@@ -123,9 +127,7 @@
             <small>{{ statusLabel(node.status) | t }}</small>
           }
         </div>
-        @if (node.unit && session.hasRole('OWNER')) {
-          <ng-container *ngTemplateOutlet="unitActions; context: { $implicit: node.unit }" />
-        }
+        <ng-container *ngTemplateOutlet="nodeActions; context: { $implicit: node }" />
         @if (node.children.length) {
           <button
             class="unit-tree-toggle"
@@ -166,9 +168,7 @@
           <th scope="col">{{ 'unit_parent' | t }}</th>
           <th scope="col">{{ 'unit_level' | t }}</th>
           <th scope="col">{{ 'status' | t }}</th>
-          @if (session.hasRole('OWNER')) {
-            <th scope="col">{{ 'actions' | t }}</th>
-          }
+          <th scope="col">{{ 'actions' | t }}</th>
         </tr>
       </thead>
       <tbody>
@@ -223,17 +223,13 @@
                 —
               }
             </td>
-            @if (session.hasRole('OWNER')) {
-              <td>
-                @if (row.node.unit; as unit) {
-                  <ng-container *ngTemplateOutlet="unitActions; context: { $implicit: unit }" />
-                }
-              </td>
-            }
+            <td>
+              <ng-container *ngTemplateOutlet="nodeActions; context: { $implicit: row.node }" />
+            </td>
           </tr>
         } @empty {
           <tr>
-            <td [attr.colspan]="session.hasRole('OWNER') ? 6 : 5">
+            <td colspan="6">
               {{ 'no_matching_results' | t }}
             </td>
           </tr>
@@ -244,18 +240,32 @@
   <p class="muted unit-tree-count" role="status">{{ rows().length }} {{ 'results' | t }}</p>
 }
 
-<ng-template #unitActions let-unit>
-  <app-row-menu [menuId]="'unit-actions-' + unit.id" [rowName]="unit.name" [compact]="chart()">
-    <button class="row-menu-item" type="button" [disabled]="busy()" (click)="edit(unit)">
-      <i class="bi bi-pencil" aria-hidden="true"></i>{{ 'edit' | t }}
-    </button>
-    <button
-      class="row-menu-item is-danger"
-      type="button"
-      [disabled]="busy()"
-      (click)="askRemove(unit)"
-    >
-      <i class="bi bi-trash" aria-hidden="true"></i>{{ 'delete_action' | t }}
-    </button>
-  </app-row-menu>
+<ng-template #nodeActions let-node>
+  @if (node.member; as member) {
+    <ng-container
+      *ngTemplateOutlet="memberActions(); context: { $implicit: member, compact: chart() }"
+    />
+  } @else if (session.hasRole('OWNER')) {
+    @if (node.unit; as unit) {
+      <app-row-menu [menuId]="'unit-actions-' + unit.id" [rowName]="unit.name" [compact]="chart()">
+        <button class="row-menu-item" type="button" [disabled]="busy()" (click)="edit(unit)">
+          <i class="bi bi-pencil" aria-hidden="true"></i>{{ 'unit_edit' | t }}
+        </button>
+        <button
+          class="row-menu-item is-danger"
+          type="button"
+          [disabled]="busy()"
+          (click)="askRemove(unit)"
+        >
+          <i class="bi bi-trash" aria-hidden="true"></i>{{ 'unit_delete_title' | t }}
+        </button>
+      </app-row-menu>
+    } @else if (node.key === 'organization') {
+      <app-row-menu menuId="organization-actions" [rowName]="node.name" [compact]="chart()">
+        <button class="row-menu-item" type="button" (click)="editOrganization.emit()">
+          <i class="bi bi-pencil" aria-hidden="true"></i>{{ 'organization_edit' | t }}
+        </button>
+      </app-row-menu>
+    }
+  }
 </ng-template>
