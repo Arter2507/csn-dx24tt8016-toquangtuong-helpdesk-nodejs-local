@@ -34,6 +34,7 @@ export interface TicketEvent {
   status: string;
   at: string;
   note?: string;
+  rating?: number;
 }
 
 export interface TicketComment {

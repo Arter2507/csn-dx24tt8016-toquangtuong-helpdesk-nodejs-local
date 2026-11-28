@@ -1,4 +1,4 @@
-# Tổng quan & Bản đồ Dự án — Trạm Mèo (Helpdesk System)
+# Tổng quan & Bản đồ Dự án — Trạm Hỗ Trợ (Helpdesk System)
 
 > **Phiên bản:** `0.2.0` · **Phạm vi tài liệu:** Mã nguồn và cấu hình hiện hành trong thư mục `local/` (nhánh `local`, repository `csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local`).
 
@@ -6,7 +6,7 @@
 
 ## 1. Giới thiệu & Mục tiêu Hệ thống
 
-**Trạm Mèo** (*"Có sự cố, có Mèo"*) là hệ thống web quản lý yêu cầu hỗ trợ kỹ thuật (IT Helpdesk & Ticketing System) được xây dựng theo kiến trúc **SPA + REST API** tách biệt, sử dụng **Angular**, **Node.js (Express)** và **MySQL 8.4** (quản lý schema/migration qua **Prisma** và truy vấn runtime qua `mysql2`).
+**Trạm Hỗ Trợ** (*"Tiếp nhận hỗ trợ yêu cầu kỹ thuật"*) là hệ thống web quản lý yêu cầu hỗ trợ kỹ thuật (IT Helpdesk & Ticketing System) được xây dựng theo kiến trúc **SPA + REST API** tách biệt, sử dụng **Angular**, **Node.js (Express)** và **MySQL 8.4** (quản lý schema/migration qua **Prisma** và truy vấn runtime qua `mysql2`).
 
 ### Mục tiêu cốt lõi
 1. **Tiếp nhận & Điều phối yêu cầu tập trung:** Chuẩn hóa quy trình tiếp nhận phiếu yêu cầu (Ticket) từ người dùng nội bộ/khách hàng (web form kèm tối đa 5 tệp/50 MB hoặc qua cổng Email-to-Ticket `POST /api/v1/mail/inbound`), tự động ước lượng mức ưu tiên (`LOW`, `MEDIUM`, `HIGH`, `URGENT`), cấp mã phiếu theo quy tắc cấu hình (`ticket_number_rules`) và tính toán hạn SLA theo giờ làm việc Việt Nam (`UTC+7`).
@@ -76,7 +76,7 @@ local/
 │   │           ├── tickets/          # Yêu cầu hỗ trợ, state machine, comment/chat, đính kèm, đánh số, batch
 │   │           └── users/            # Dữ liệu/schema người dùng cho chế độ demo
 │   └── frontend/                     # Angular 22 Standalone SPA (Signals + Vite + Vitest)
-│       ├── public/                   # Fonts (Chivo), favicon & bộ minh họa mascot Trạm Mèo
+│       ├── public/                   # Fonts (Chivo), favicon & bộ minh họa mascot Trạm Hỗ Trợ
 │       └── src/app/
 │           ├── app.config.ts         # Router, HttpClient + interceptor renewSession, I18n
 │           ├── app.routes.ts         # Định tuyến bảo vệ bằng `requireSession` & role `data.access`

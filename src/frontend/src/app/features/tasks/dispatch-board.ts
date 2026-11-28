@@ -16,8 +16,15 @@ import { QuickTicket } from '../workspace/quick-ticket';
     <section aria-labelledby="dispatch-title">
       <div class="section-heading">
         <h2 id="dispatch-title">{{ 'tasks_dispatch' | t }}</h2>
-        <button type="button" class="secondary" [disabled]="busy()" (click)="load()">
-          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+        <button
+          type="button"
+          [attr.aria-label]="'refresh_data' | t"
+          [attr.title]="'refresh_data' | t"
+          class="icon-button refresh-icon"
+          [disabled]="busy()"
+          (click)="load()"
+        >
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
         </button>
       </div>
       @if (error()) {

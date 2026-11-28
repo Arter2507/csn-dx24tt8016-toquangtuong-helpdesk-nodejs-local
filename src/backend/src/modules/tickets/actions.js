@@ -6,7 +6,7 @@ import { idSchema } from '../categories/category.validator.js';
 import { requireAdmin } from '../auth/auth.routes.js';
 import { ticketsMysql } from './mysql.repository.js';
 import { statuses } from './tickets.js';
-import { canHandle } from './ticket-access.js';
+import { canHandle, isAdmin, isTechnician } from './ticket-access.js';
 
 const id = z.number().int().positive().safe();
 const version = { version: id };
@@ -37,6 +37,11 @@ function update(schema, toChanges, requiresHandler = false) {
 }
 
 export function registerTicketActions(app) {
+  app.get('/api/v1/tickets/folders', async (req, res) => {
+    if (!isAdmin(req.account) && !isTechnician(req.account)) throw new AppError(403, 'FORBIDDEN');
+    const data = await ticketsMysql.folders(req.account);
+    res.json({ success: true, data, meta: null });
+  });
   app.get('/api/v1/tickets/technicians', requireAdmin,
     validate(z.object({ categoryId: z.coerce.number().int().positive().safe() }), 'query'),
     async (req, res) => {
@@ -68,7 +73,9 @@ export function registerTicketActions(app) {
     ...update(z.object({ ...version, categoryId: id, assigneeId: id }), body => body));
   app.post(route + 'transitions', ...update(z.object({
     ...version, toStatus: z.enum(statuses), note, cause: z.string().trim().max(800).optional(),
-  }).refine(body => body.toStatus !== 'RESOLVED' || Boolean(body.cause && body.note)),
+    rating: z.number().int().min(1).max(5).optional(),
+  }).refine(body => body.toStatus !== 'RESOLVED' || Boolean(body.cause && body.note))
+    .refine(body => body.rating === undefined || body.toStatus === 'CLOSED'),
   ({ toStatus, cause, note, ...body }) => ({
     ...body, status: toStatus,
     note: cause && toStatus === 'RESOLVED' ? `Nguyên nhân: ${cause}\nGiải pháp: ${note}` : note,

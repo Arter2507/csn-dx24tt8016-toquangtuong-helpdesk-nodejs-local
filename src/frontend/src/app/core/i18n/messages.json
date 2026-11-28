@@ -2886,5 +2886,177 @@
   "close": {
     "vi": "Đóng",
     "en": "Close"
+  },
+  "help_center": {
+    "vi": "Trung tâm hỗ trợ",
+    "en": "Help Center"
+  },
+  "management_portal": {
+    "vi": "Cổng quản lý",
+    "en": "Management Portal"
+  },
+  "frequently_asked": {
+    "vi": "Câu hỏi thường gặp",
+    "en": "Frequently asked questions"
+  },
+  "help_home_heading": {
+    "vi": "Bạn cần hỗ trợ gì?",
+    "en": "How can we help?"
+  },
+  "help_home_intro": {
+    "vi": "Tìm hướng dẫn tự xử lý sự cố hoặc gửi yêu cầu đến đội ngũ kỹ thuật.",
+    "en": "Find a guide to resolve an issue or send a request to the support team."
+  },
+  "help_search_hint": {
+    "vi": "Ví dụ: không vào được Wi-Fi",
+    "en": "For example, Wi-Fi not connecting"
+  },
+  "help_request_hint": {
+    "vi": "Mô tả sự cố để đội kỹ thuật hỗ trợ.",
+    "en": "Describe the issue so our support team can help."
+  },
+  "help_track_hint": {
+    "vi": "Theo dõi tiến độ và phản hồi kết quả xử lý.",
+    "en": "Track progress and respond to the support team."
+  },
+  "help_faq_hint": {
+    "vi": "Xem cách xử lý những vấn đề thường gặp.",
+    "en": "Find answers to common questions."
+  },
+  "theme_settings": {
+    "vi": "Giao diện",
+    "en": "Appearance"
+  },
+  "theme_settings_intro": {
+    "vi": "Chọn bộ màu hoặc ảnh nền cho giao diện. Lựa chọn được lưu trên trình duyệt này.",
+    "en": "Choose a color palette or background. Your choices are saved in this browser."
+  },
+  "theme_none": {
+    "vi": "Mặc định",
+    "en": "Default"
+  },
+  "theme_navy": {
+    "vi": "Xanh navy",
+    "en": "Navy"
+  },
+  "theme_peach": {
+    "vi": "Cam đào",
+    "en": "Peach"
+  },
+  "theme_rose": {
+    "vi": "Hồng phấn",
+    "en": "Rose"
+  },
+  "theme_lavender": {
+    "vi": "Tím lavender",
+    "en": "Lavender"
+  },
+  "theme_sage": {
+    "vi": "Xanh lá dịu",
+    "en": "Sage"
+  },
+  "theme_honey": {
+    "vi": "Vàng mật ong",
+    "en": "Honey"
+  },
+  "theme_smoke": {
+    "vi": "Xám khói",
+    "en": "Smoke"
+  },
+  "theme_teal": {
+    "vi": "Xanh ngọc",
+    "en": "Teal"
+  },
+  "theme_glass": {
+    "vi": "Kính mờ",
+    "en": "Frosted glass"
+  },
+  "theme_sky_option": {
+    "vi": "Bầu trời {number}",
+    "en": "Sky {number}"
+  },
+  "ticket_folders": {
+    "vi": "Thư mục phiếu",
+    "en": "Ticket folders"
+  },
+  "ticket_folders_intro": {
+    "vi": "Duyệt phiếu theo loại, năm, tháng hoặc phòng ban của người gửi.",
+    "en": "Browse requests by type, year, month or the requester’s department."
+  },
+  "folder_by_category": {
+    "vi": "Theo loại phiếu",
+    "en": "By request type"
+  },
+  "folder_by_unit": {
+    "vi": "Theo phòng ban",
+    "en": "By department"
+  },
+  "folder_count": {
+    "vi": "{count} phiếu",
+    "en": "{count} requests"
+  },
+  "ticket_folder_scope": {
+    "vi": "Đang xem phiếu trong thư mục đã chọn.",
+    "en": "Viewing requests in the selected folder."
+  },
+  "org_unassigned_unit": {
+    "vi": "Chưa gán đơn vị",
+    "en": "No assigned unit"
+  },
+  "feedback_rating": {
+    "vi": "Đánh giá hỗ trợ",
+    "en": "Support rating"
+  },
+  "feedback_comment": {
+    "vi": "Góp ý thêm (không bắt buộc)",
+    "en": "Additional feedback (optional)"
+  },
+  "feedback_close": {
+    "vi": "Xác nhận đóng phiếu",
+    "en": "Confirm and close"
+  },
+  "feedback_saved": {
+    "vi": "Điểm hỗ trợ: {rating}/5",
+    "en": "Support rating: {rating}/5"
+  },
+  "feedback_skip_rating": {
+    "vi": "Bỏ qua đánh giá",
+    "en": "Skip rating"
+  },
+  "forgot_password": {
+    "vi": "Quên mật khẩu?",
+    "en": "Forgot password?"
+  },
+  "reset_password": {
+    "vi": "Đặt lại mật khẩu",
+    "en": "Reset password"
+  },
+  "recovery_complete": {
+    "vi": "Đã đặt lại mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.",
+    "en": "Your password has been reset. You can now sign in with your new password."
+  },
+  "recovery_email_sent": {
+    "vi": "Nếu email thuộc tài khoản đang hoạt động, bạn sẽ nhận được liên kết đặt lại mật khẩu.",
+    "en": "If that email belongs to an active account, you will receive a reset link."
+  },
+  "send_recovery_email": {
+    "vi": "Gửi liên kết đặt lại",
+    "en": "Send reset link"
+  },
+  "api_PASSWORD_RECOVERY_UNAVAILABLE": {
+    "vi": "Hệ thống chưa gửi được email đặt lại mật khẩu. Vui lòng liên hệ quản trị viên.",
+    "en": "Password reset email is unavailable. Please contact your administrator."
+  },
+  "api_PASSWORD_RESET_INVALID": {
+    "vi": "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.",
+    "en": "This password reset link is invalid or expired."
+  },
+  "back_to_login": {
+    "vi": "Về trang đăng nhập",
+    "en": "Back to sign in"
+  },
+  "confirm_password": {
+    "vi": "Nhập lại mật khẩu",
+    "en": "Confirm password"
   }
 }

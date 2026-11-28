@@ -1,4 +1,4 @@
-# Thiết kế Cơ sở Dữ liệu (Database Design) — Trạm Mèo
+# Thiết kế Cơ sở Dữ liệu (Database Design) — Trạm Hỗ Trợ
 
 > **Hệ quản trị:** MySQL 8.4 (`utf8mb4`) · **Nguồn đối chiếu 1-1:** `local/src/backend/prisma/schema.prisma` và các bản migration trong `local/src/backend/prisma/migrations/`.
 > Tổng số bảng hiện có: **21 bảng**.
@@ -51,6 +51,8 @@ erDiagram
 | `password_hash` | `VARCHAR(255)` | `NULL` | Mật khẩu băm `bcryptjs` (`NULL` khi chờ kích hoạt) |
 | `activation_token_hash` | `CHAR(64)` | `UNIQUE` (`uq_users_activation_token_hash`) | SHA-256 của token kích hoạt |
 | `activation_expires_at` | `DATETIME(3)` | `NULL` | Hạn token kích hoạt (24 giờ) |
+| `password_reset_token_hash` | `CHAR(64)` | `UNIQUE`, `NULL` | SHA-256 của token đặt lại mật khẩu. Giá trị được xóa sau khi dùng. |
+| `password_reset_expires_at` | `DATETIME(3)` | `NULL` | Hạn dùng của token đặt lại mật khẩu (30 phút) |
 | `full_name` | `VARCHAR(150)` | `NOT NULL` | Họ và tên hiển thị |
 | `phone` | `VARCHAR(30)` | `NULL` | Số điện thoại |
 | `is_active` | `BOOLEAN` | `DEFAULT true` | Trạng thái khóa/mở tài khoản |

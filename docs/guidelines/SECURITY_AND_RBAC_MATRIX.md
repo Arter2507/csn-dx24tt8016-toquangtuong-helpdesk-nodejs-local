@@ -1,4 +1,4 @@
-# Ma trận Phân quyền & Bảo mật (Security & RBAC Matrix) — Trạm Mèo
+# Ma trận Phân quyền & Bảo mật (Security & RBAC Matrix) — Trạm Hỗ Trợ
 
 > **Nguồn đối chiếu thực tế:** `local/src/backend/src/modules/organizations/permissions.js`, `local/src/backend/src/modules/tickets/ticket-access.js`, `local/src/backend/src/app.js`, `local/src/frontend/src/app/app.routes.ts`, `local/src/frontend/src/app/core/auth/session.ts`.
 
@@ -25,6 +25,7 @@ Ký hiệu: **✅** Được phép · **🔒** Giới hạn theo sở hữu/ph�
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **Xác thực & Hồ sơ cá nhân** | | | | | | |
 | Đăng ký / Kích hoạt / Đăng nhập (`/auth/*`) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Yêu cầu email và đặt lại mật khẩu | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Xem/Sửa tên & đổi mật khẩu (`/auth/me*`) | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Xem/Sửa hồ sơ & Avatar (`/profile*`) | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
 | **Tổ chức & Nhân sự** | | | | | | |
@@ -41,9 +42,11 @@ Ký hiệu: **✅** Được phép · **🔒** Giới hạn theo sở hữu/ph�
 | **Yêu cầu Hỗ trợ (Tickets)** | | | | | | |
 | Tạo phiếu (`POST /tickets`) & Xem trước mã | ❌ | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Xem danh sách & chi tiết phiếu (`GET /tickets*`) | ❌ | ❌ | 🔒 *(Của mình)* | 🔒 *(Của mình / Được gán)* | ✅ | ✅ |
-| Sửa `title`, `description` | ❌ | ❌ | 🔒 *(Của mình)* | 🔒 *(Được gán)* | ✅ | ✅ |
-| Sửa `priority` | ❌ | ❌ | ❌ | 🔒 *(Được gán)* | ✅ | ✅ |
-| Phân công KTV / Đổi danh mục (`assignee`, `classification`, `batch`) | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Xem thư mục phiếu (`GET /tickets/folders`) | ❌ | ❌ | ❌ | 🔒 *(Của mình / Được gán)* | ✅ | ✅ |
+| Sửa `title`, `description` trong 10 phút đầu | ❌ | ❌ | 🔒 *(Người gửi)* | 🔒 *(Nếu là người gửi)* | 🔒 *(Nếu là người gửi)* | 🔒 *(Nếu là người gửi)* |
+| Sửa `priority` | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Phân công / chuyển phiếu (`assignee`) | ❌ | ❌ | ❌ | 🔒 *(Phiếu đang phụ trách và còn mở)* | ✅ | ✅ |
+| Đổi danh mục và thao tác hàng loạt (`classification`, `batch`) | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
 | Xóa mềm phiếu (`POST /tickets/archive`) | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
 | Chuyển `NEW → IN_PROGRESS → PENDING_CUSTOMER → RESOLVED` | ❌ | ❌ | ❌ | 🔒 *(Được gán)* | ✅ | ✅ |
 | Chuyển `RESOLVED → CLOSED` hoặc mở lại `IN_PROGRESS` | ❌ | ❌ | 🔒 *(Người gửi)* | 🔒 *(Nếu là người gửi)* | 🔒 *(Nếu là người gửi)* | 🔒 *(Nếu là người gửi)* |

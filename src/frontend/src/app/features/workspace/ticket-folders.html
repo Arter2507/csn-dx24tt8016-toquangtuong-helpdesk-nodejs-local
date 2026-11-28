@@ -1,0 +1,64 @@
+<header class="page-heading">
+  <div>
+    <h1>{{ 'ticket_folders' | t }}</h1>
+    <p>{{ 'ticket_folders_intro' | t }}</p>
+  </div>
+  <a class="secondary" [routerLink]="tickets"
+    ><i class="bi bi-list-ul" aria-hidden="true"></i>{{ 'see_all_requests' | t }}</a
+  >
+</header>
+<div class="folder-toolbar">
+  <nav class="portal-choices" [attr.aria-label]="'ticket_folders' | t">
+    <a class="secondary" [routerLink]="directory" [attr.aria-current]="!byUnit() ? 'page' : null">{{
+      'folder_by_category' | t
+    }}</a>
+    <a
+      class="secondary"
+      [routerLink]="directory"
+      [queryParams]="{ by: 'unit' }"
+      [attr.aria-current]="byUnit() ? 'page' : null"
+      >{{ 'folder_by_unit' | t }}</a
+    >
+  </nav>
+  <button
+    class="icon-button refresh-icon"
+    type="button"
+    [attr.aria-label]="'refresh_data' | t"
+    [title]="'refresh_data' | t"
+    (click)="load()"
+  >
+    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+  </button>
+</div>
+@if (!byUnit() && selectedCategory(); as group) {
+  <nav class="folder-trail" [attr.aria-label]="'breadcrumbs' | t">
+    <a [routerLink]="directory">{{ 'folder_by_category' | t }}</a>
+    <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    @if (selectedYear(); as activeYear) {
+      <a [routerLink]="directory" [queryParams]="{ category: group.categoryId }">{{
+        group.categoryName
+      }}</a>
+      <i class="bi bi-chevron-right" aria-hidden="true"></i
+      ><span aria-current="page">{{ activeYear }}</span>
+    } @else {
+      <span aria-current="page">{{ group.categoryName }}</span>
+    }
+  </nav>
+}
+@if (error()) {
+  <p class="notice error" role="alert">{{ error() | t }}</p>
+} @else if (rows()) {
+  <div class="ticket-folders">
+    @for (card of cards(); track card.key) {
+      <a class="ticket-folder" [routerLink]="card.path" [queryParams]="card.query">
+        <i class="bi bi-folder2" aria-hidden="true"></i>
+        <strong>{{ card.label | t }}</strong>
+        <span>{{ 'folder_count' | t: { count: card.total } }}</span>
+      </a>
+    } @empty {
+      <p class="panel muted">{{ 'no_matching_results' | t }}</p>
+    }
+  </div>
+} @else {
+  <app-loading />
+}

@@ -14,10 +14,16 @@
     </p>
   </div>
   <div class="heading-actions">
-    <button class="secondary" type="button" (click)="refresh()">
-      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+    <button
+      class="icon-button refresh-icon"
+      type="button"
+      [attr.aria-label]="'refresh_data' | t"
+      [attr.title]="'refresh_data' | t"
+      (click)="refresh()"
+    >
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
     </button>
-    <a class="primary" routerLink="/tickets/new" [queryParams]="{ requesterId: account() }"
+    <a class="primary" routerLink="/help-center/tickets/new"
       ><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'new_request' | t }}</a
     >
   </div>
@@ -29,82 +35,52 @@
     <button class="secondary" type="button" (click)="load()">{{ 'try_again' | t }}</button>
   </div>
 } @else if (data()) {
-  <div class="role-identity">
-    <div class="identity-copy">
-      <span class="identity-icon"><i class="bi bi-person" aria-hidden="true"></i></span>
-      <div>
-        <strong>{{ (profile() ? i18n.personKey(profile()!) : 'demo_account') | t }}</strong
-        ><small>{{ technician() ? ('technician' | t) : ('requester' | t) }}</small>
+  <div class="technician-overview">
+    <div class="role-identity panel">
+      <div class="identity-copy">
+        <span class="identity-icon"><i class="bi bi-person" aria-hidden="true"></i></span>
+        <div>
+          <strong>{{ (profile() ? i18n.personKey(profile()!) : 'demo_account') | t }}</strong
+          ><small>{{ technician() ? ('technician' | t) : ('requester' | t) }}</small>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="role-metrics">
-    <a class="panel role-metric" routerLink="/tickets" [queryParams]="scope()">
-      <span class="stat-icon"><i class="bi bi-ticket-perforated" aria-hidden="true"></i></span>
-      <span
-        >{{ technician() ? ('assigned_to_you' | t) : ('total_requests_sent' | t)
-        }}<strong>{{ tickets().length }}</strong></span
+    <div class="role-metrics">
+      <a class="panel role-metric" routerLink="/tickets" [queryParams]="scope()">
+        <span class="stat-icon"><i class="bi bi-ticket-perforated" aria-hidden="true"></i></span>
+        <span
+          >{{ technician() ? ('assigned_to_you' | t) : ('total_requests_sent' | t)
+          }}<strong>{{ tickets().length }}</strong></span
+        >
+      </a>
+      <a
+        class="panel role-metric"
+        routerLink="/tickets"
+        [queryParams]="{ ...scope(), status: 'IN_PROGRESS' }"
       >
-    </a>
-    <a
-      class="panel role-metric"
-      routerLink="/tickets"
-      [queryParams]="{ ...scope(), status: 'IN_PROGRESS' }"
-    >
-      <span class="stat-icon" data-tone="info"
-        ><i class="bi bi-arrow-repeat" aria-hidden="true"></i
-      ></span>
-      <span
-        >{{ 'in_progress' | t }}<strong>{{ processing() }}</strong></span
+        <span class="stat-icon" data-tone="info"
+          ><i class="bi bi-arrow-repeat" aria-hidden="true"></i
+        ></span>
+        <span
+          >{{ 'in_progress' | t }}<strong>{{ processing() }}</strong></span
+        >
+      </a>
+      <a
+        class="panel role-metric"
+        routerLink="/tickets"
+        [queryParams]="{ ...scope(), status: 'RESOLVED' }"
       >
-    </a>
-    <a
-      class="panel role-metric"
-      routerLink="/tickets"
-      [queryParams]="{ ...scope(), status: 'RESOLVED' }"
-    >
-      <span class="stat-icon" data-tone="warning"
-        ><i class="bi bi-clock-history" aria-hidden="true"></i
-      ></span>
-      <span
-        >{{ 'waiting_for_you_to_review' | t }}<strong>{{ waiting() }}</strong></span
-      >
-    </a>
-  </div>
-
-  @if (technician()) {
-    <div class="role-grid">
-      <section class="panel">
-        <header class="section-heading">
-          <h2>{{ 'ticket_assigned_performance' | t }}</h2>
-        </header>
-        <dl class="iam-fields iam-metadata">
-          <div>
-            <dt>{{ 'ticket_sla_due_soon' | t }}</dt>
-            <dd>{{ dueSoon() }}</dd>
-          </div>
-          <div>
-            <dt>{{ 'ticket_handled' | t }}</dt>
-            <dd>{{ handled() }}</dd>
-          </div>
-        </dl>
-      </section>
-      <section class="panel">
-        <header class="section-heading">
-          <h2>{{ 'ticket_created_by_me' | t }}</h2>
-        </header>
-        <ng-container
-          *ngTemplateOutlet="
-            ticketList;
-            context: { $implicit: createdByMe(), empty: 'no_matching_results', own: true }
-          "
-        />
-        <a class="text-button" routerLink="/tickets" [queryParams]="{ requesterId: account() }">{{
-          'see_all_my_requests' | t
-        }}</a>
-      </section>
+        <span class="stat-icon" data-tone="warning"
+          ><i class="bi bi-clock-history" aria-hidden="true"></i
+        ></span>
+        <span
+          >{{ 'waiting_for_you_to_review' | t }}<strong>{{ waiting() }}</strong></span
+        >
+      </a>
     </div>
+  </div>
+  @if (technician()) {
     <div class="role-grid">
       <section class="panel">
         <header class="section-heading">
@@ -265,11 +241,40 @@
             ><i class="bi bi-arrow-repeat" aria-hidden="true"></i> {{ 'work_in_progress' | t }}
             <i class="bi bi-arrow-up-right" aria-hidden="true"></i
           ></a>
-          <a routerLink="/tickets/new" [queryParams]="{ requesterId: technicianId }"
+          <a routerLink="/help-center/tickets/new"
             ><i class="bi bi-plus-circle" aria-hidden="true"></i> {{ 'send_my_own_request' | t }}
             <i class="bi bi-arrow-up-right" aria-hidden="true"></i
           ></a>
         </div>
+      </section>
+    </div>
+    <div class="role-grid">
+      <section class="panel">
+        <header class="section-heading">
+          <h2>{{ 'ticket_assigned_performance' | t }}</h2>
+        </header>
+        <dl class="iam-fields iam-metadata">
+          <div>
+            <dt>{{ 'ticket_sla_due_soon' | t }}</dt>
+            <dd>{{ dueSoon() }}</dd>
+          </div>
+          <div>
+            <dt>{{ 'ticket_handled' | t }}</dt>
+            <dd>{{ handled() }}</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="panel">
+        <header class="section-heading">
+          <h2>{{ 'ticket_created_by_me' | t }}</h2>
+        </header>
+        <ng-container
+          *ngTemplateOutlet="
+            ticketList;
+            context: { $implicit: createdByMe(), empty: 'no_matching_results', own: true }
+          "
+        />
+        <a class="text-button" routerLink="/help-center/tickets">{{ 'see_all_my_requests' | t }}</a>
       </section>
     </div>
   } @else {
@@ -359,7 +364,7 @@
       @for (row of rows; track row.id) {
         <li>
           <a
-            [routerLink]="['/tickets', row.id, 'view']"
+            [routerLink]="[own ? '/help-center/tickets' : '/management/tickets', row.id, 'view']"
             [queryParams]="own ? { requesterId: account() } : scope()"
           >
             <span class="ticket-reference">{{ ticketReference(row) }}</span>

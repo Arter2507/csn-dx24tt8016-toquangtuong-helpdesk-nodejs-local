@@ -21,10 +21,6 @@
       <a class="text-button" routerLink="/categories/ticket-types"
         ><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ 'back_to_list' | t }}</a
       >
-    } @else {
-      <button type="button" class="secondary" (click)="load()">
-        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
-      </button>
     }
   </div>
 </div>
@@ -81,6 +77,15 @@
           </select></label
         >
         <div class="toolbar-actions">
+          <button
+            type="button"
+            [attr.aria-label]="'refresh_data' | t"
+            [attr.title]="'refresh_data' | t"
+            class="icon-button refresh-icon"
+            (click)="load()"
+          >
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+          </button>
           <button class="primary" type="submit" [disabled]="loading || saving">
             <i class="bi bi-search" aria-hidden="true"></i> {{ 'search_2' | t }}
           </button>

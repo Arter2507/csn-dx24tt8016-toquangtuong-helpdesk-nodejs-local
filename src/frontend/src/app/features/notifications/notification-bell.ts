@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, effect, inject, signal } from '@angular/core';
+import { Component, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Translate } from '../../core/i18n/i18n';
 import { notificationLabel, Notifications } from './notifications';
@@ -11,6 +11,7 @@ import { Preferences } from '../../core/preferences/preferences';
   templateUrl: './notification-bell.html',
 })
 export class NotificationBell {
+  readonly basePath = input('/management');
   readonly inbox = inject(Notifications);
   private readonly preferences = inject(Preferences);
   readonly open = signal(false);

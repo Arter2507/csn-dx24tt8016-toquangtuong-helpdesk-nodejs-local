@@ -7,6 +7,7 @@
   <span></span>
 </div>
 @let showWorkspace = workspaceVisible();
+@let showHelp = portal() === 'help';
 @if (showWorkspace) {
   <header class="topbar">
     <button
@@ -26,7 +27,7 @@
       <span class="brand-wordmark">
         <strong>{{ 'tr_m_m_o' | t }}</strong>
         <span class="brand-tagline"
-          >{{ 'tech_trouble_m_o_can_help' | t }} <span class="brand-version">v0.3.0</span></span
+          >{{ 'tech_trouble_m_o_can_help' | t }} <span class="brand-version">v1.3.0</span></span
         >
       </span>
     </a>
@@ -46,52 +47,62 @@
         <i class="bi bi-search" aria-hidden="true"></i>
       </button>
     </form>
-    <app-notification-bell class="topbar-notifications" (click)="menuOpen.set(false)" />
-    <details
-      class="account-menu"
-      #account
-      (keydown.escape)="account.open = false; accountButton.focus()"
+    <a class="secondary portal-switch" routerLink="/help-center"
+      ><i class="bi bi-life-preserver" aria-hidden="true"></i>{{ 'help_center' | t }}</a
     >
-      <summary
-        #accountButton
-        [attr.aria-label]="session.account()?.fullName ?? ('demo_workspace' | t)"
-      >
-        <span class="account-avatar" aria-hidden="true">TM</span>
-        <span class="account-label">{{
-          session.account()?.fullName ?? ('demo_workspace' | t)
-        }}</span>
-        <i class="bi bi-chevron-down" aria-hidden="true"></i>
-      </summary>
-      <div class="account-links">
+    <ng-container *ngTemplateOutlet="accountControls" />
+  </header>
+} @else if (showHelp) {
+  <header class="help-topbar">
+    <div class="help-topbar-inner">
+      <a class="brand" routerLink="/help-center">
+        <span class="brand-mark"><i class="bi bi-headset" aria-hidden="true"></i></span>
+        <span>{{ 'tr_m_m_o' | t }}</span>
+      </a>
+      <nav [attr.aria-label]="'main_navigation' | t">
         <a
-          routerLink="/profile"
-          [queryParams]="accountParams()"
-          (click)="account.open = false; menuOpen.set(false)"
-          >{{ 'profile' | t }}</a
+          routerLink="/help-center/knowledge"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+          >{{ 'knowledge' | t }}</a
         >
-        <a
-          routerLink="/notifications"
-          [queryParams]="accountParams()"
-          (click)="account.open = false; menuOpen.set(false)"
-          >{{ 'notifications' | t }}</a
-        >
-        <a routerLink="/settings" (click)="account.open = false">{{ 'settings' | t }}</a>
-        @if (session.account()) {
-          <button type="button" class="text-button" (click)="signOut()">
-            {{ 'sign_out' | t }}
-          </button>
-          @if (signOutError()) {
-            <p role="alert">{{ 'we_couldnt_load_your_data' | t }}</p>
-          }
+        <a routerLink="/help-center/faq" routerLinkActive="active" ariaCurrentWhenActive="page">{{
+          'frequently_asked' | t
+        }}</a>
+        @if (session.account()?.organizationId || session.mode() === 'demo') {
+          <a
+            routerLink="/help-center/tickets"
+            routerLinkActive="active"
+            ariaCurrentWhenActive="page"
+            >{{ 'my_support_requests' | t }}</a
+          >
+        }
+      </nav>
+      <div class="help-header-actions">
+        @if (staffAccess() && (session.account()?.organizationId || session.mode() === 'demo')) {
+          <a class="secondary portal-switch" [routerLink]="session.home">
+            <i class="bi bi-grid" aria-hidden="true"></i>{{ 'management_portal' | t }}
+          </a>
+        }
+        @if (session.account()?.organizationId || session.mode() === 'demo') {
+          <ng-container *ngTemplateOutlet="accountControls" />
+        } @else {
+          <a
+            class="secondary"
+            [routerLink]="session.account() ? '/pending-assignment' : '/login'"
+            >{{ 'sign_in' | t }}</a
+          >
         }
       </div>
-    </details>
+    </div>
   </header>
 }
 <div
   class="layout"
   [class.collapsed]="showWorkspace && collapsed()"
-  [class.auth-layout]="!showWorkspace"
+  [class.auth-layout]="!showWorkspace && !showHelp"
+  [class.management-layout]="showWorkspace"
+  [class.help-layout]="showHelp"
 >
   @if (showWorkspace) {
     <div class="sidebar-frame" [class.open]="menuOpen()">
@@ -106,11 +117,10 @@
               @if (visibleLink(link.path)) {
                 <a
                   [routerLink]="link.path"
-                  routerLinkActive="active"
-                  [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+                  [class.active]="activeLink(link.path)"
                   [attr.aria-label]="link.label | t"
                   [attr.title]="link.label | t"
-                  ariaCurrentWhenActive="page"
+                  [attr.aria-current]="activeLink(link.path) ? 'page' : null"
                   (click)="menuOpen.set(false); content.focus()"
                 >
                   <i class="bi" [class]="link.icon" aria-hidden="true"></i
@@ -182,3 +192,50 @@
     <div class="route-view"><router-outlet /></div>
   </main>
 </div>
+
+<ng-template #accountControls>
+  <app-notification-bell
+    [basePath]="portalBase()"
+    class="topbar-notifications"
+    (click)="menuOpen.set(false)"
+  />
+  <details
+    class="account-menu"
+    #account
+    (keydown.escape)="account.open = false; accountButton.focus()"
+  >
+    <summary
+      #accountButton
+      [attr.aria-label]="session.account()?.fullName ?? ('demo_workspace' | t)"
+    >
+      <span class="account-avatar" aria-hidden="true">TM</span>
+      <span class="account-label">{{ session.account()?.fullName ?? ('demo_workspace' | t) }}</span>
+      <i class="bi bi-chevron-down" aria-hidden="true"></i>
+    </summary>
+    <div class="account-links">
+      <a
+        [routerLink]="portalBase() + '/profile'"
+        [queryParams]="accountParams()"
+        (click)="account.open = false; menuOpen.set(false)"
+        >{{ 'profile' | t }}</a
+      >
+      <a
+        [routerLink]="portalBase() + '/notifications'"
+        [queryParams]="accountParams()"
+        (click)="account.open = false; menuOpen.set(false)"
+        >{{ 'notifications' | t }}</a
+      >
+      <a [routerLink]="portalBase() + '/settings'" (click)="account.open = false">{{
+        'settings' | t
+      }}</a>
+      @if (session.account()) {
+        <button type="button" class="text-button" (click)="signOut()">
+          {{ 'sign_out' | t }}
+        </button>
+        @if (signOutError()) {
+          <p role="alert">{{ 'we_couldnt_load_your_data' | t }}</p>
+        }
+      }
+    </div>
+  </details>
+</ng-template>

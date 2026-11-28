@@ -17,14 +17,6 @@
     </div>
     <div class="iam-actions">
       @if (mode() === 'list') {
-        <button
-          type="button"
-          class="secondary"
-          [disabled]="busy()"
-          (click)="load(page()?.page ?? 1)"
-        >
-          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
-        </button>
         <a class="secondary" routerLink="/settings/organizations">{{ 'organization' | t }}</a>
       } @else {
         <a class="secondary" routerLink="/users">{{ 'members' | t }}</a>
@@ -103,7 +95,19 @@
             }
           </select>
         </div>
-        <button class="secondary" type="submit" [disabled]="busy()">{{ 'search' | t }}</button>
+        <div class="toolbar-actions">
+          <button class="secondary" type="submit" [disabled]="busy()">{{ 'search' | t }}</button
+          ><button
+            type="button"
+            [attr.aria-label]="'refresh_data' | t"
+            [attr.title]="'refresh_data' | t"
+            class="icon-button refresh-icon"
+            [disabled]="busy()"
+            (click)="load(page()?.page ?? 1)"
+          >
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+          </button>
+        </div>
       </form>
       @if (!selection.ids().size) {
         <a class="primary" routerLink="/users/new"

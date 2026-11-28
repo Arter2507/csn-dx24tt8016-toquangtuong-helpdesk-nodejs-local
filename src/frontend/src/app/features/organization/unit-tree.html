@@ -17,6 +17,16 @@
       <option value="DISABLED">{{ 'member_status_disabled' | t }}</option>
     </select>
   </label>
+  <button
+    type="button"
+    [attr.aria-label]="'refresh_data' | t"
+    [attr.title]="'refresh_data' | t"
+    class="icon-button refresh-icon"
+    [disabled]="busy()"
+    (click)="changed.emit()"
+  >
+    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+  </button>
   @if (session.hasRole('OWNER')) {
     <button class="primary" type="button" [disabled]="busy()" (click)="edit()">
       <i class="bi bi-plus-lg" aria-hidden="true"></i>{{ 'unit_add' | t }}

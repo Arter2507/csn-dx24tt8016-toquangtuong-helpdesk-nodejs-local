@@ -21,6 +21,6 @@
 
 1. Cấu hình một địa chỉ hỗ trợ trên cổng nhận thư của tổ chức. Đặt `INBOUND_MAIL_TOKEN` là chuỗi ngẫu nhiên tối thiểu 32 ký tự và `INBOUND_MAIL_CATEGORY_ID` là ID của loại phiếu đang dùng.
 2. Cấu hình relay để xác thực người gửi rồi chuyển MIME gốc bằng `POST /api/v1/mail/inbound` qua HTTPS. Relay phải tự thiết lập `X-Verified-Sender` từ danh tính đã xác thực và gắn `Authorization: Bearer <INBOUND_MAIL_TOKEN>`. Xóa mọi header cùng tên do người gửi cung cấp. Body dùng `Content-Type: message/rfc822`, tối đa 256 KB.
-3. Trạm Mèo đối chiếu địa chỉ đã xác thực với `From` và tài khoản đang hoạt động. Tiêu đề và nội dung chữ trở thành phiếu trong danh mục đã chọn. Phiếu nhận mã, ưu tiên và SLA từ luồng tạo phiếu chung. Email tự động được bỏ qua. Message-ID giúp relay thử lại mà giữ một phiếu duy nhất.
+3. Trạm Hỗ Trợ đối chiếu địa chỉ đã xác thực với `From` và tài khoản đang hoạt động. Tiêu đề và nội dung chữ trở thành phiếu trong danh mục đã chọn. Phiếu nhận mã, ưu tiên và SLA từ luồng tạo phiếu chung. Email tự động được bỏ qua. Message-ID giúp relay thử lại mà giữ một phiếu duy nhất.
 
 Email đến hiện lấy nội dung chữ của thư. Tệp đính kèm có thể bổ sung qua trang phiếu. Việc nhận thư từ địa chỉ công khai phụ thuộc vào cấu hình cổng nhận thư của tổ chức.

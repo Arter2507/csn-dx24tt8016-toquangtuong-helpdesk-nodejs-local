@@ -4,8 +4,14 @@
     <p>{{ 'admin_track_incoming_requests_assignments_and_progress' | t }}</p>
   </div>
   <div class="heading-actions">
-    <button type="button" class="secondary" (click)="load()">
-      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+    <button
+      type="button"
+      [attr.aria-label]="'refresh_data' | t"
+      [attr.title]="'refresh_data' | t"
+      class="icon-button refresh-icon"
+      (click)="load()"
+    >
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
     </button>
     <a class="primary" routerLink="/tickets/new"
       ><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'new_request' | t }}</a
@@ -19,7 +25,7 @@
   </div>
 } @else if (tickets(); as rows) {
   <div class="stack">
-    <div class="overview-grid">
+    <div class="admin-summary">
       <section class="panel welcome">
         <div>
           <h2>{{ 'hello' | t }}</h2>
@@ -27,27 +33,27 @@
         </div>
         <span class="brand-mark"><i class="bi bi-headset" aria-hidden="true"></i></span>
       </section>
-      <helpdesk-stat-cards [tickets]="rows" />
+      <section class="panel admin-shortcuts">
+        <div>
+          <h2><i class="bi bi-inboxes" aria-hidden="true"></i> {{ 'assignment_queue' | t }}</h2>
+          <p class="muted">
+            {{ unassigned() }} {{ 'new_requests_waiting_for_someone_to_pick_them_up' | t }}
+          </p>
+        </div>
+        <div class="heading-actions">
+          <a
+            class="secondary"
+            routerLink="/tickets"
+            [queryParams]="{ assigneeId: 0, status: 'NEW' }"
+            >{{ 'view_unassigned_requests' | t }}</a
+          >
+          <a class="text-button" routerLink="/reports"
+            ><i class="bi bi-bar-chart" aria-hidden="true"></i> {{ 'reports' | t }}</a
+          >
+        </div>
+      </section>
     </div>
-    <section class="panel admin-shortcuts">
-      <div>
-        <h2><i class="bi bi-inboxes" aria-hidden="true"></i> {{ 'assignment_queue' | t }}</h2>
-        <p class="muted">
-          {{ unassigned() }} {{ 'new_requests_waiting_for_someone_to_pick_them_up' | t }}
-        </p>
-      </div>
-      <div class="heading-actions">
-        <a
-          class="secondary"
-          routerLink="/tickets"
-          [queryParams]="{ assigneeId: 0, status: 'NEW' }"
-          >{{ 'view_unassigned_requests' | t }}</a
-        >
-        <a class="text-button" routerLink="/reports"
-          ><i class="bi bi-bar-chart" aria-hidden="true"></i> {{ 'reports' | t }}</a
-        >
-      </div>
-    </section>
+    <helpdesk-stat-cards [tickets]="rows" />
     <div class="charts">
       <section class="panel">
         <h2>{{ 'requests_by_day' | t }}</h2>

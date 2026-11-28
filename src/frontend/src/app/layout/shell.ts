@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { Translate, I18n } from '../core/i18n/i18n';
 import { Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { Title } from '@angular/platform-browser';
@@ -12,7 +13,14 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } fro
 
 @Component({
   selector: 'app-root',
-  imports: [Translate, RouterLink, RouterLinkActive, RouterOutlet, NotificationBell],
+  imports: [
+    Translate,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    NotificationBell,
+    NgTemplateOutlet,
+  ],
   templateUrl: './shell.html',
 })
 export class Shell {
@@ -23,10 +31,14 @@ export class Shell {
   readonly collapsed = signal(localStorage.getItem('helpdesk.sidebar') === 'collapsed');
   readonly preferences = inject(Preferences);
   readonly session = inject(Session);
-  private readonly workspaceRoute = signal(false);
+  readonly portal = signal<'help' | 'management' | null>(null);
+  readonly portalBase = computed(() => (this.portal() === 'help' ? '/help-center' : '/management'));
+  readonly staffAccess = computed(() =>
+    ['ADMIN', 'TECHNICIAN'].some((role) => this.session.allows(role)),
+  );
   readonly workspaceVisible = computed(
     () =>
-      this.workspaceRoute() &&
+      this.portal() === 'management' &&
       (this.session.mode() === 'demo' || !!this.session.account()?.organizationId),
   );
   readonly signOutError = signal(false);
@@ -41,83 +53,75 @@ export class Shell {
     {
       label: 'workspace',
       links: [
-        { path: '/', label: 'overview', icon: 'bi-grid-1x2' },
-        { path: '/dashboard/technician', label: 'technician', icon: 'bi-tools' },
-        { path: '/dashboard/user', label: 'requester_workspace', icon: 'bi-person' },
-        { path: '/tickets', label: 'support_requests', icon: 'bi-ticket-perforated' },
-        { path: '/knowledge', label: 'knowledge', icon: 'bi-book' },
-        { path: '/tasks', label: 'team_tasks', icon: 'bi-kanban' },
-        { path: '/notifications', label: 'notifications', icon: 'bi-bell' },
+        { path: '/management', label: 'overview', icon: 'bi-grid-1x2' },
+        { path: '/management/dashboard/technician', label: 'technician', icon: 'bi-tools' },
+        { path: '/management/tickets/folders', label: 'ticket_folders', icon: 'bi-folder2' },
+        { path: '/management/tickets', label: 'support_requests', icon: 'bi-ticket-perforated' },
+        { path: '/management/knowledge', label: 'knowledge', icon: 'bi-book' },
+        { path: '/management/tasks', label: 'team_tasks', icon: 'bi-kanban' },
+        { path: '/management/notifications', label: 'notifications', icon: 'bi-bell' },
       ],
     },
     {
       label: 'administration',
       links: [
-        { path: '/categories', label: 'categories', icon: 'bi-tags' },
-        { path: '/reports', label: 'reports', icon: 'bi-bar-chart' },
-        { path: '/backup', label: 'backups_2', icon: 'bi-database' },
-        { path: '/settings', label: 'settings', icon: 'bi-gear' },
+        { path: '/management/categories', label: 'categories', icon: 'bi-tags' },
+        { path: '/management/reports', label: 'reports', icon: 'bi-bar-chart' },
+        { path: '/management/backup', label: 'backups_2', icon: 'bi-database' },
+        { path: '/management/settings', label: 'settings', icon: 'bi-gear' },
       ],
     },
   ];
 
   readonly crumbs = signal<{ label: string; path?: string }[]>([]);
-  private currentPath = '';
+  private readonly currentPath = signal('');
 
   constructor() {
     inject(BackupScheduler);
     this.router.events.pipe(takeUntilDestroyed()).subscribe((event) => {
       if (!(event instanceof NavigationEnd)) return;
       const path = event.urlAfterRedirects.split(/[?#]/)[0];
-      this.workspaceRoute.set(
-        !['/login', '/register', '/activate', '/pending-assignment'].includes(path),
-      );
-      if (path !== this.currentPath) {
-        this.currentPath = path;
+      const route = this.router.routerState.snapshot.root.firstChild;
+      const portal = route?.data['portal'];
+      this.portal.set(portal === 'help' || portal === 'management' ? portal : null);
+      const base = portal === 'help' ? '/help-center' : '/management';
+      if (path !== this.currentPath()) {
+        this.currentPath.set(path);
         this.content()?.nativeElement.scrollTo(0, 0);
         if (window.matchMedia('(max-width: 767px)').matches) window.scrollTo(0, 0);
       }
-      const route = this.router.routerState.snapshot.root.firstChild;
-      const directoryResource = route?.url[0]?.path;
-      const section =
-        directoryResource === 'users'
-          ? { path: '/users', label: 'members' }
-          : directoryResource === 'categories' && path !== '/categories'
-            ? { path: '/categories/ticket-types', label: 'ticket_types' }
-            : this.groups
-                .flatMap((group) => group.links)
-                .find((link) => link.path === '/' + route?.url[0]?.path);
+      const section = route?.url[1]?.path;
       const account = Number(
         route?.queryParamMap.get('account') ??
           route?.queryParamMap.get('requesterId') ??
           route?.queryParamMap.get('assigneeId') ??
-          (route?.data['role'] === 'technician' ? 2 : route?.data['role'] === 'user' ? 1 : 0),
+          (route?.data['role'] === 'technician' ? 2 : 0),
       );
       this.accountParams.set(account > 0 ? { account } : null);
       this.inbox.demoScope.set(account > 0 ? account : null);
       const mode = route?.data['mode'];
-      let current = route?.data['crumb'] ?? section?.label ?? route?.data['title'] ?? 'overview';
+      const rootLabel = portal === 'help' ? 'help_center' : 'overview';
+      const ticketLabel = portal === 'help' ? 'my_support_requests' : 'support_requests';
+      const sectionLabel =
+        section === 'tickets'
+          ? ticketLabel
+          : this.groups
+              .flatMap((group) => group.links)
+              .find((link) => link.path === base + '/' + section)?.label;
+      let current = route?.data['crumb'] ?? sectionLabel ?? route?.data['title'] ?? rootLabel;
       if (mode === 'create')
         current =
-          section?.path === '/tickets'
-            ? 'new_request'
-            : section?.path === '/users'
-              ? 'add_user'
-              : 'add_category';
+          section === 'tickets' ? 'new_request' : section === 'users' ? 'add_user' : 'add_category';
       if (mode === 'edit') current = 'edit_2';
       if (mode === 'view') current = 'details';
       this.pageLabel.set(current);
       this.crumbs.set(
-        path === '/'
-          ? [{ label: 'overview' }]
+        path === base
+          ? [{ label: rootLabel }]
           : [
-              { label: 'overview', path: '/' },
-              ...(directoryResource === 'users' ||
-              (directoryResource === 'categories' && path !== '/categories')
-                ? [{ label: 'categories', path: '/categories' }]
-                : []),
-              ...(section && (mode === 'create' || mode === 'edit' || mode === 'view')
-                ? [section]
+              { label: rootLabel, path: base },
+              ...(section === 'tickets' && mode && mode !== 'list'
+                ? [{ label: ticketLabel, path: base + '/tickets' }]
                 : []),
               { label: current },
             ],
@@ -139,14 +143,21 @@ export class Shell {
   }
 
   visibleLink(path: string) {
-    if (path === '/backup') return this.session.allows('OWNER');
-    if (path === '/tasks') return this.session.allows('ADMIN') || this.session.allows('TECHNICIAN');
-    if (path === '/dashboard/technician') return this.session.allows('TECHNICIAN');
-    if (path === '/dashboard/user') return this.session.allows('USER');
-    if (path === '/knowledge') return this.session.mode() === 'mysql';
+    if (path === '/management/backup') return this.session.allows('OWNER');
+    if (path === '/management/tasks')
+      return this.session.allows('ADMIN') || this.session.allows('TECHNICIAN');
+    if (path === '/management/dashboard/technician') return this.session.allows('TECHNICIAN');
+    if (path === '/management/knowledge') return this.session.mode() === 'mysql';
     return (
-      !['/', '/users', '/categories', '/reports'].includes(path) || this.session.allows('ADMIN')
+      !['/management', '/management/categories', '/management/reports'].includes(path) ||
+      this.session.allows('ADMIN')
     );
+  }
+
+  activeLink(link: string) {
+    const path = this.currentPath();
+    if (link === '/management/tickets' && path === '/management/tickets/folders') return false;
+    return path === link || (link !== '/management' && path.startsWith(link + '/'));
   }
 
   search(value: string) {
@@ -161,6 +172,6 @@ export class Shell {
     for (const key of ['assigneeId', 'requesterId']) {
       if (route?.queryParamMap.has(key)) queryParams[key] = route.queryParamMap.get(key);
     }
-    void this.router.navigate(['/tickets'], { queryParams });
+    void this.router.navigate(['/management/tickets'], { queryParams });
   }
 }

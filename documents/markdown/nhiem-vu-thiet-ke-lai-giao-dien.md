@@ -1,8 +1,8 @@
-# Nhiệm vụ thiết kế lại giao diện quản trị Trạm Mèo
+# Nhiệm vụ thiết kế lại giao diện quản trị Trạm Hỗ Trợ
 
 Ngày cập nhật **26/11/2026** · Trạng thái **Đã triển khai và kiểm thử trên local** · Bản đối chiếu `f205d9d`.
 
-Hai ảnh đầu ghi nhận lỗi bố cục ở Cài đặt chung và Quy tắc đánh số phiếu. Ba ảnh kế tiếp gợi ý cách thay đổi thanh thao tác của bảng khi chọn dòng. Ảnh cuối tham chiếu bảng cây cho cơ cấu tổ chức. Áp dụng các luồng thao tác này với màu sắc, kiểu chữ, biểu tượng, bố cục và nội dung của Trạm Mèo.
+Hai ảnh đầu ghi nhận lỗi bố cục ở Cài đặt chung và Quy tắc đánh số phiếu. Ba ảnh kế tiếp gợi ý cách thay đổi thanh thao tác của bảng khi chọn dòng. Ảnh cuối tham chiếu bảng cây cho cơ cấu tổ chức. Áp dụng các luồng thao tác này với màu sắc, kiểu chữ, biểu tượng, bố cục và nội dung của Trạm Hỗ Trợ.
 
 ## Kết quả thực hiện
 
@@ -72,7 +72,7 @@ Hai ảnh đầu ghi nhận lỗi bố cục ở Cài đặt chung và Quy tắc
 
 ## UI-06 · Nghiệm thu
 
-- So sánh trước và sau trên Edge ở 1440, 1280, 768 và 390 px, thêm ca zoom 125%. Chạy chế độ sáng/tối và VI/EN. Ghi hình các trạng thái chưa chọn, chọn một, chọn nhiều và mở/thu gọn cây bằng dữ liệu rà soát của Trạm Mèo.
+- So sánh trước và sau trên Edge ở 1440, 1280, 768 và 390 px, thêm ca zoom 125%. Chạy chế độ sáng/tối và VI/EN. Ghi hình các trạng thái chưa chọn, chọn một, chọn nhiều và mở/thu gọn cây bằng dữ liệu rà soát của Trạm Hỗ Trợ.
 - Thử Owner, Admin, Technician và User. Đối chiếu kết quả thao tác qua API và dữ liệu MySQL thử. Mỗi hạng mục hoàn thành khi tiêu chí đạt và có ảnh hoặc kết quả kiểm thử tương ứng.
 
-[Báo cáo bản đối chiếu](../../progress-report/bao-cao-tien-do-local-2026-11-26.md) · [Phân công dự án](tram-meo-tien-do-va-phan-cong.md) · [Thiết kế IAM/RBAC](ke-hoach-iam-rbac.md)
+[Báo cáo bản đối chiếu](../../progress-report/bao-cao-tien-do-local-2026-11-26.md) · [Phân công dự án](tram-ho-tro-tien-do-va-phan-cong.md) · [Thiết kế IAM/RBAC](ke-hoach-iam-rbac.md)

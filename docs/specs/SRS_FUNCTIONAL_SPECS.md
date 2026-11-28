@@ -1,4 +1,4 @@
-# Đặc tả Yêu cầu & Nghiệp vụ Chức năng (SRS) — Trạm Mèo
+# Đặc tả Yêu cầu & Nghiệp vụ Chức năng (SRS) — Trạm Hỗ Trợ
 
 > **Nguồn đối chiếu thực tế:** `local/src/backend/src/modules/*`, `local/src/backend/prisma/schema.prisma`, `local/src/frontend/src/app/features/*`.
 > Các hạng mục có trong kế hoạch thiết kế (`local/documents/markdown/`) nhưng chưa triển khai trong mã nguồn được đánh dấu rõ **`[Draft / Planned]`**.

@@ -1,4 +1,4 @@
--- Dữ liệu mẫu ~5 ticket để xem trên web (Trạm Mèo)
+-- Dữ liệu mẫu ~5 ticket để xem trên web (Trạm Hỗ Trợ)
 -- Chạy SAU khi đã có schema (prisma migrate hoặc helpdesk-schema.sql).
 -- Chọn một database thử mới tạo, đã migrate và chưa có dữ liệu.
 --
@@ -23,11 +23,6 @@ INSERT INTO categories (id, code, name, is_active, created_at, updated_at) VALUE
   (2, 'HARDWARE', 'Phần cứng', 1, @now, @now),
   (3, 'NETWORK', 'Mạng', 1, @now, @now),
   (4, 'ACCOUNT', 'Tài khoản', 1, @now, @now);
-
-INSERT INTO knowledge_articles (category_id, title, body, visibility) VALUES
-  (3, 'Kiểm tra khi máy tính mất kết nối Wi-Fi', 'Kiểm tra chế độ máy bay và thử kết nối lại Wi-Fi. Nếu nhiều thiết bị cùng mất kết nối, hãy ghi tên mạng, khu vực và thời điểm sự cố vào phiếu hỗ trợ.', 'PUBLIC'),
-  (4, 'Cần làm gì khi không đăng nhập được email?', 'Kiểm tra địa chỉ email và bộ gõ rồi thử lại. Nếu vẫn không được, gửi ảnh lỗi đã che thông tin cá nhân. Không đính kèm mật khẩu hoặc mã xác minh.', 'PUBLIC'),
-  (2, 'Thông tin cần thu thập khi máy in kẹt giấy', 'Ghi mã thiết bị, loại giấy và vị trí kẹt. Kiểm tra theo hướng dẫn của nhà sản xuất. Ghi kết quả in thử vào phiếu trước khi hoàn tất xử lý.', 'INTERNAL');
 
 INSERT INTO users (id, email, password_hash, full_name, phone, is_active, created_at, updated_at) VALUES
   (1, 'user@example.test', @password_hash, 'Người gửi mẫu', NULL, 1, @now, @now),

@@ -50,10 +50,10 @@ export class Session {
   get home() {
     if (this.account()?.status === 'UNASSIGNED') return '/pending-assignment';
     return this.allows('ADMIN')
-      ? '/'
+      ? '/management'
       : this.hasRole('TECHNICIAN')
-        ? '/dashboard/technician'
-        : '/dashboard/user';
+        ? '/management/dashboard/technician'
+        : '/help-center';
   }
 
   initialize() {
@@ -100,10 +100,10 @@ export class Session {
     return this.http.post<void>('/api/v1/auth/logout', {}).pipe(tap(() => this.expired()));
   }
 
-  expired() {
+  expired(redirect = true) {
     const hadAccount = !!this.account();
     this.account.set(null);
-    if (hadAccount) void this.router.navigateByUrl('/login');
+    if (hadAccount && redirect) void this.router.navigateByUrl('/login');
   }
 
   updateProfile(fullName: string, email: string) {
@@ -119,7 +119,7 @@ export class Session {
   }
 }
 
-export const requireSession: CanActivateFn = async (route) => {
+export const requireSession: CanActivateFn = async (route, state) => {
   const session = inject(Session);
   const router = inject(Router);
   try {
@@ -128,7 +128,9 @@ export const requireSession: CanActivateFn = async (route) => {
     return router.parseUrl('/login');
   }
   if (session.mode() === 'demo') return true;
-  if (!session.account()) return router.parseUrl('/login');
+  if (!session.account()) {
+    return router.createUrlTree(['/login'], { queryParams: { next: state.url } });
+  }
   if (!session.account()?.organizationId) {
     return route.data['pending'] ? true : router.parseUrl('/pending-assignment');
   }

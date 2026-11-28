@@ -1,4 +1,4 @@
--- Trạm Mèo / Helpdesk — schema MySQL đầy đủ (InnoDB, utf8mb4)
+-- Trạm Hỗ Trợ / Helpdesk — schema MySQL đầy đủ (InnoDB, utf8mb4)
 -- Dùng để import bằng DBeaver hoặc Navicat cho đồ án 2 người.
 -- Nguồn thiết kế: documents/markdown/database-demo.md
 --
@@ -51,6 +51,8 @@ CREATE TABLE users (
   username VARCHAR(32) NULL,
   password_hash VARCHAR(255) NULL,
   activation_token_hash CHAR(64) NULL,
+  password_reset_token_hash CHAR(64) NULL,
+  password_reset_expires_at DATETIME(3) NULL,
   activation_expires_at DATETIME(3) NULL,
   full_name VARCHAR(150) NOT NULL,
   phone VARCHAR(30) NULL,
@@ -60,7 +62,8 @@ CREATE TABLE users (
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
   UNIQUE KEY uq_users_username (username),
-  UNIQUE KEY uq_users_activation_token_hash (activation_token_hash)
+  UNIQUE KEY uq_users_activation_token_hash (activation_token_hash),
+  UNIQUE KEY uq_users_password_reset_token_hash (password_reset_token_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE organizations (
@@ -414,7 +417,7 @@ INSERT INTO user_roles (user_id, role_id, created_at) VALUES
   (3, 3, @now);
 
 INSERT INTO organizations (id, name, code, owner_id, created_at)
-VALUES (1, 'Trạm Mèo', 'TRAM-MEO', 3, @now);
+VALUES (1, 'Trạm Hỗ Trợ', 'TRAM-MEO', 3, @now);
 INSERT INTO organization_members (user_id, organization_id, role, joined_at) VALUES
   (1, 1, 'USER', @now), (2, 1, 'TECHNICIAN', @now), (3, 1, 'OWNER', @now);
 

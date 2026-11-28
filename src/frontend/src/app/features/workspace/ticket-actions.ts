@@ -39,6 +39,9 @@ export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
         </button>
       }
     </div>
+    @if (ratingSaved(); as value) {
+      <p class="muted">{{ 'feedback_saved' | t: { rating: value } }}</p>
+    }
     @if (panel() !== 'assign' && suggested(); as name) {
       <p class="muted">{{ 'ticket_suggested_technician' | t: { name } }}</p>
     }
@@ -96,6 +99,30 @@ export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
           {{ 'cancel' | t }}
         </button>
       </form>
+    } @else if (panel() === 'feedback') {
+      <form class="ticket-action-form field" (ngSubmit)="closeRequest()">
+        <label class="field">
+          {{ 'feedback_rating' | t }}
+          <select name="rating" [(ngModel)]="rating">
+            <option [ngValue]="null">{{ 'feedback_skip_rating' | t }}</option>
+            @for (value of [5, 4, 3, 2, 1]; track value) {
+              <option [ngValue]="value">{{ value }} / 5</option>
+            }
+          </select>
+        </label>
+        <label class="field"
+          >{{ 'feedback_comment' | t }}
+          <textarea name="feedback" [(ngModel)]="note" maxlength="2000" rows="2"></textarea>
+        </label>
+        <div class="iam-actions">
+          <button type="submit" class="primary" [disabled]="busy()">
+            {{ 'feedback_close' | t }}
+          </button>
+          <button type="button" class="text-button" [disabled]="busy()" (click)="panel.set(null)">
+            {{ 'cancel' | t }}
+          </button>
+        </div>
+      </form>
     } @else if (panel() === 'note') {
       <form class="ticket-action-form field" (ngSubmit)="submitNote()">
         @if (selected?.target === 'RESOLVED') {
@@ -148,29 +175,36 @@ export class TicketActions {
   readonly busy = signal(false);
   readonly loadingOptions = signal(false);
   readonly error = signal('');
-  readonly panel = signal<'assign' | 'priority' | 'note' | null>(null);
+  readonly panel = signal<'assign' | 'priority' | 'note' | 'feedback' | null>(null);
+  readonly ratingSaved = computed(
+    () => this.ticket().history?.find((event) => event.status === 'CLOSED')?.rating,
+  );
   readonly technicians = signal<{ id: number; fullName: string }[]>([]);
   readonly suggested = signal('');
   assigneeId: number | null = null;
   note = '';
+  rating: number | null = null;
   cause = '';
   priority = '';
   readonly priorities = ticketPriorities;
   selected: { target: string; label: string } | null = null;
   readonly canTriage = computed(
     () =>
+      !this.requesterOnly() &&
       this.session.hasRole('ADMIN') &&
       !this.ticket().mergedInto &&
       this.ticket()['status'] !== 'CLOSED',
   );
   readonly canAssign = computed(
     () =>
-      this.canTriage() ||
-      (this.session.hasRole('TECHNICIAN') &&
-        this.session.account()?.id === this.ticket()['assigneeId'] &&
-        !this.ticket().mergedInto &&
-        !['RESOLVED', 'CLOSED'].includes(String(this.ticket()['status']))),
+      !this.requesterOnly() &&
+      (this.canTriage() ||
+        (this.session.hasRole('TECHNICIAN') &&
+          this.session.account()?.id === this.ticket()['assigneeId'] &&
+          !this.ticket().mergedInto &&
+          !['RESOLVED', 'CLOSED'].includes(String(this.ticket()['status'])))),
   );
+  readonly requesterOnly = input(false);
 
   constructor() {
     effect((onCleanup) => {
@@ -189,7 +223,9 @@ export class TicketActions {
     const ticket = this.ticket();
     const account = this.session.account();
     if (ticket.mergedInto || !account) return [];
-    const canHandle = this.session.hasRole('ADMIN') || account.id === ticket['assigneeId'];
+    const canHandle =
+      !this.requesterOnly() &&
+      (this.session.hasRole('ADMIN') || account.id === ticket['assigneeId']);
     switch (ticket['status']) {
       case 'NEW':
         return canHandle && ticket['assigneeId']
@@ -240,6 +276,12 @@ export class TicketActions {
 
   selectAction(action: { target: string; label: string }) {
     this.error.set('');
+    if (action.target === 'CLOSED') {
+      this.note = '';
+      this.rating = null;
+      this.panel.set('feedback');
+      return;
+    }
     if (
       action.target === 'RESOLVED' ||
       action.target === 'PENDING_CUSTOMER' ||
@@ -250,6 +292,14 @@ export class TicketActions {
       this.cause = '';
       this.panel.set('note');
     } else this.save('transitions', { toStatus: action.target });
+  }
+
+  closeRequest() {
+    this.save('transitions', {
+      toStatus: 'CLOSED',
+      ...(this.rating === null ? {} : { rating: this.rating }),
+      ...(this.note.trim() ? { note: this.note.trim() } : {}),
+    });
   }
 
   submitNote() {

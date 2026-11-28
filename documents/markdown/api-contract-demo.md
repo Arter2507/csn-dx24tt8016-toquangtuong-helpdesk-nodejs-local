@@ -80,7 +80,7 @@ Angular gọi HTTP API của Express; Express kiểm tra xác thực, quyền v�
 
 ## 4. Xác thực và phiên
 
-Trạm Mèo đăng nhập bằng email và mật khẩu đã băm bcrypt. Quản trị viên cấp tài khoản. Server tạo access token ngắn hạn và refresh token ngẫu nhiên, lưu hash refresh token trong `auth_sessions`. Cả hai token dùng cookie `HttpOnly`, `SameSite=Strict` và thêm `Secure` ở production. Backend kiểm tra origin khi ghi, chữ ký và thời hạn token, issuer, audience, trạng thái tài khoản và phiên. Làm mới phiên xoay token trong transaction. Đăng xuất thu hồi phiên và xóa cookie.
+Trạm Hỗ Trợ đăng nhập bằng email và mật khẩu đã băm bcrypt. Quản trị viên cấp tài khoản. Server tạo access token ngắn hạn và refresh token ngẫu nhiên, lưu hash refresh token trong `auth_sessions`. Cả hai token dùng cookie `HttpOnly`, `SameSite=Strict` và thêm `Secure` ở production. Backend kiểm tra origin khi ghi, chữ ký và thời hạn token, issuer, audience, trạng thái tài khoản và phiên. Làm mới phiên xoay token trong transaction. Đăng xuất thu hồi phiên và xóa cookie.
 
 | Method | Endpoint | Quyền | Nội dung |
 |---|---|---|---|

@@ -1,4 +1,6 @@
 @import 'bootstrap-icons/font/bootstrap-icons.css';
+@import './themes.css';
+@import './portals.css';
 
 @font-face {
   font-family: 'Chivo';
@@ -1420,7 +1422,7 @@ td {
   }
 }
 
-/* Trạm Mèo identity */
+/* Trạm Hỗ Trợ identity */
 .brand {
   flex: none;
   gap: 9px;
@@ -2138,6 +2140,16 @@ app-selection-summary {
 }
 .login-panel.panel {
   inline-size: min(100%, 36rem);
+  margin-inline: auto;
+}
+
+.refresh-icon {
+  flex: 0 0 auto;
+  inline-size: 2rem;
+  block-size: 2rem;
+  min-block-size: 2rem;
+  padding: 0;
+  border-radius: 0.5rem;
 }
 
 .login-scene {
@@ -2146,8 +2158,8 @@ app-selection-summary {
   min-block-size: 100dvh;
   padding: clamp(1rem, 4vw, 4rem);
   background:
-    linear-gradient(120deg, rgb(16 35 62 / 26%), rgb(28 55 88 / 10%)),
-    url('/mascot/login-sky.jpg') center / cover no-repeat;
+    url('/mascot/login-sky.jpg') center / cover no-repeat,
+    linear-gradient(180deg, #466fa3, #c5cadd 65%, #f2e8d0);
 }
 
 .login-composition {
@@ -2170,31 +2182,34 @@ app-root:has(.login-composition),
 .login-art {
   display: grid;
   place-items: center;
-  color: #edf6ff;
-  background: radial-gradient(circle at 34% 30%, #447dac, #173c60 66%, #102841);
+  container-type: size;
+  background: #202123;
 }
-.login-art > .bi {
-  display: grid;
-  place-items: center;
-  inline-size: 1.9em;
-  aspect-ratio: 1;
-  border: 1px solid rgb(231 244 255 / 44%);
-  border-radius: 50%;
-  background: rgb(225 239 255 / 12%);
-  font-size: clamp(3.5rem, 6vw, 6rem);
+.login-art::before {
+  content: '';
+  inline-size: min(100cqw, calc(100cqh * 1376 / 1536));
+  aspect-ratio: 1376 / 1536;
+  background: url('/mascot/login-form-images.png') right center / 200% 100% no-repeat;
+}
+:root[data-theme='dark'] .login-art {
+  background: #f5f5f5;
+}
+:root[data-theme='dark'] .login-art::before {
+  background-position: left center;
+}
+:root[data-theme='dark'] .login-scene {
+  background-color: #242c38;
+  background-image: url('/mascot/login-sky.jpg');
 }
 
 @media (max-width: 670px) {
   .login-composition {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
+    min-block-size: auto;
+    max-inline-size: 28rem;
   }
   .login-art {
     display: none;
-  }
-  .login-composition {
-    min-block-size: auto;
-    max-inline-size: 28rem;
   }
 }
 

@@ -26,7 +26,10 @@ function mapAttachment(row) {
 
 function mapStatusEvent(row) {
   const value = typeof row.newValue === 'string' ? JSON.parse(row.newValue) : row.newValue;
-  return { status: value?.status ?? 'NEW', at: toIso(row.createdAt), note: row.note };
+  return {
+    status: value?.status ?? 'NEW', at: toIso(row.createdAt), note: row.note,
+    ...(Number.isInteger(value?.rating) ? { rating: value.rating } : {}),
+  };
 }
 
 function mapTicket(row, attachments, history) {
@@ -98,6 +101,8 @@ const categoryBranch = predicate => `category_id IN (
   SELECT id FROM branch
 )`;
 
+const vietnamCreatedAt = "CONVERT_TZ(tickets.created_at, '+00:00', '+07:00')";
+
 async function assertActiveCategory(categoryId) {
   const [rows] = await pool.execute(
     'SELECT id FROM categories WHERE id = ? AND is_active = 1',
@@ -162,6 +167,23 @@ async function saveAttachmentRows(conn, ticketId, uploaderId, attachments, remov
 }
 
 export const ticketsMysql = {
+  async folders(account) {
+    const scope = isAdmin(account) ? [] : [account.id, account.id];
+    const [rows] = await pool.execute(
+      `SELECT c.id AS categoryId, c.name AS categoryName, u.id AS unitId, u.name AS unitName,
+              DATE_FORMAT(${vietnamCreatedAt}, '%Y-%m') AS period, COUNT(*) AS total
+       FROM tickets
+       JOIN categories c ON c.id = tickets.category_id
+       JOIN organization_members m ON m.user_id = tickets.requester_id AND m.organization_id = ?
+       LEFT JOIN organization_units u ON u.organization_id = m.organization_id AND u.id = m.unit_id
+       WHERE tickets.archived_at IS NULL ${scope.length ? 'AND (tickets.requester_id = ? OR tickets.assignee_id = ?)' : ''}
+       GROUP BY c.id, c.name, u.id, u.name, period
+       ORDER BY period DESC, c.name, u.name`, [account.organizationId, ...scope],
+    );
+    return rows.map(row => ({
+      ...row, categoryId: Number(row.categoryId), unitId: Number(row.unitId), total: Number(row.total),
+    }));
+  },
   async technicians(categoryId) {
     const [rows] = await pool.execute(activeTechnicians + ` ORDER BY
       EXISTS (SELECT 1 FROM technician_categories exact_match WHERE exact_match.user_id = u.id AND exact_match.category_id = ?) DESC,
@@ -202,6 +224,23 @@ export const ticketsMysql = {
     if (q.categoryId) {
       conditions.push(categoryBranch('id = ?'));
       values.push(q.categoryId);
+    }
+    if (q.catalogCategoryId || q.createdYear || q.createdMonth || q.unitId !== undefined) {
+      if (!isAdmin(account) && !isTechnician(account)) throw new AppError(403, 'FORBIDDEN');
+      conditions.push(`requester_id IN (SELECT user_id FROM organization_members
+        WHERE organization_id = ? ${q.unitId === 0 ? 'AND unit_id IS NULL' : q.unitId ? 'AND unit_id = ?' : ''})`);
+      values.push(account.organizationId);
+      if (q.unitId) values.push(q.unitId);
+      if (q.catalogCategoryId) {
+        conditions.push('category_id = ?');
+        values.push(q.catalogCategoryId);
+      }
+      if (q.createdMonth || q.createdYear) {
+        conditions.push(q.createdMonth
+          ? `DATE_FORMAT(${vietnamCreatedAt}, '%Y-%m') = ?`
+          : `DATE_FORMAT(${vietnamCreatedAt}, '%Y') = ?`);
+        values.push(q.createdMonth ?? q.createdYear);
+      }
     }
     if (q.requesterId) {
       conditions.push('requester_id = ?');
@@ -401,7 +440,7 @@ export const ticketsMysql = {
           actorId,
           'STATUS_CHANGED',
           { status: current.status },
-          { status: input.status },
+          { status: input.status, ...(input.rating === undefined ? {} : { rating: input.rating }) },
           note,
         );
         await queueStatusMail(conn, current, input.status);

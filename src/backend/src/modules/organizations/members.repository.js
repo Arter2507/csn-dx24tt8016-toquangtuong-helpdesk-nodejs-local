@@ -83,6 +83,7 @@ export const members = {
         if (enabled === (member.status !== 'DISABLED')) continue;
         await conn.execute(
           `UPDATE users SET is_active = ?, activation_token_hash = NULL, activation_expires_at = NULL,
+           password_reset_token_hash = NULL, password_reset_expires_at = NULL,
            updated_at = UTC_TIMESTAMP(3) WHERE id = ?`, [enabled, member.id],
         );
         if (!enabled) await revokeSessions(conn, member.id);
@@ -160,9 +161,11 @@ export const members = {
       await conn.execute(
         `UPDATE users SET email = ?, full_name = ?, phone = ?, is_active = ?,
           activation_token_hash = IF(?, NULL, activation_token_hash),
-          activation_expires_at = IF(?, NULL, activation_expires_at), updated_at = UTC_TIMESTAMP(3)
+          activation_expires_at = IF(?, NULL, activation_expires_at),
+          password_reset_token_hash = IF(?, NULL, password_reset_token_hash),
+          password_reset_expires_at = IF(?, NULL, password_reset_expires_at), updated_at = UTC_TIMESTAMP(3)
          WHERE id = ?`,
-        [next.email, next.fullName, next.phone || null, enabled, revokeInvitation, revokeInvitation, id],
+        [next.email, next.fullName, next.phone || null, enabled, revokeInvitation, revokeInvitation, revokeInvitation, revokeInvitation, id],
       );
       await conn.execute(
         'UPDATE organization_members SET employee_code = ?, department = ?, unit_id = ?, position = ?, role = ?, customer_tier = ? WHERE user_id = ? AND organization_id = ?',

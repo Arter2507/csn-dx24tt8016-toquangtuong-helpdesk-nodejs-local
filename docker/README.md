@@ -1,4 +1,4 @@
-# Docker trong dự án Trạm Mèo
+# Docker trong dự án Trạm Hỗ Trợ
 
 ## Cấu hình đang dùng
 
@@ -11,7 +11,7 @@ Chạy các lệnh từ thư mục gốc nhánh `local`.
 | `pnpm dev` | Khởi động Angular, Express và MySQL. Tạo cấu hình cục bộ ở lần chạy đầu. |
 | `pnpm build` | Build chung hai image, gồm Angular build và kiểm tra cú pháp backend. |
 | `pnpm check` | Kiểm tra kiểu và định dạng frontend, lint backend trong container. |
-| `pnpm stop` | Dừng và gỡ container của Trạm Mèo, giữ các volume. Đóng Docker Desktop cục bộ khi không có container khác đang chạy. |
+| `pnpm stop` | Dừng và gỡ container của Trạm Hỗ Trợ, giữ các volume. Đóng Docker Desktop cục bộ khi không có container khác đang chạy. |
 
 Máy cần Docker Engine với **Docker Compose 2.23 trở lên** và Node/pnpm để gọi lệnh. Trên Docker Desktop, các lệnh khởi động và build có thể mở Desktop tự động khi đang chọn context Desktop. Với Docker Engine, khởi động engine theo cách của hệ điều hành.
 
@@ -44,6 +44,7 @@ Khởi động lại `pnpm dev` một lần khi cập nhật chính file Compose
 
 - Lần đầu chạy MySQL, script tạo mật khẩu và khóa JWT ngẫu nhiên vào `docker/.env` nếu file chưa có. File này hợp nhất cấu hình Compose. [Các biến hỗ trợ](.env.example)
 - `MYSQL_SEED_SAMPLE=true` nạp tài khoản, 10 phiếu và 7 nhiệm vụ khi khởi tạo database local trống. Nếu bộ tài khoản mẫu đã có, quá trình seed chỉ bổ sung các bản ghi rà soát còn thiếu. Các giá trị mẫu dùng để thử bộ lọc và lịch. [Tài khoản mẫu](../README.md#tài-khoản-mẫu)
+- FAQ mẫu được nạp khi cơ sở dữ liệu phát triển có tài khoản mẫu, chế độ nạp mẫu đang bật và bảng FAQ chưa từng có bài. Bài do quản trị viên tạo hoặc lưu trữ vẫn được giữ. Tên dự án Compose `tram-meo` là mã kỹ thuật dùng để nhận diện các volume đang có.
 - Named volumes `mysql_data`, `uploads` và `backups` lần lượt giữ database, tệp của API MySQL và bản sao ZIP. `pnpm stop` giữ các volume này.
 - MySQL trong Docker khởi tạo volume riêng. Nếu đang có dữ liệu trên MySQL cài trực tiếp, dùng quy trình chuyển dữ liệu riêng trước khi chuyển sang volume Docker.
 - Các cổng ứng dụng chỉ lắng nghe trên loopback của máy host. Docker setup này dùng cho phát triển cục bộ.
@@ -61,7 +62,7 @@ Có thể chạy `pnpm stop` ở terminal khác trong lúc lệnh dev đang hi�
 
 ### 1. Mục đích
 
-Trạm Mèo gồm Angular frontend, Express API, Prisma và MySQL. Docker có thể đóng gói môi trường chạy để các máy phát triển, máy kiểm thử và máy triển khai dùng cùng phiên bản dịch vụ, giảm khác biệt do cài đặt MySQL hoặc cấu hình máy.
+Trạm Hỗ Trợ gồm Angular frontend, Express API, Prisma và MySQL. Docker có thể đóng gói môi trường chạy để các máy phát triển, máy kiểm thử và máy triển khai dùng cùng phiên bản dịch vụ, giảm khác biệt do cài đặt MySQL hoặc cấu hình máy.
 
 Docker không thay thế mã nguồn, migration, kiểm thử hay sao lưu. Image chứa phần mềm; dữ liệu MySQL, tệp đính kèm và bản sao lưu cần được lưu riêng bằng volume hoặc dịch vụ lưu trữ phù hợp.
 

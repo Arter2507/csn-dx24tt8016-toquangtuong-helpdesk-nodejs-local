@@ -11,10 +11,12 @@ COPY --chown=node:node . .
 RUN chmod -R u+rwX src public && pnpm build
 
 FROM app-build AS development
+LABEL org.opencontainers.image.title="Trạm Hỗ Trợ"
 # Include newly added assets in Angular's watch, even before they enter the build graph.
 ENV NG_BUILD_WATCH_ROOT=true
 EXPOSE 4200
 CMD ["node", "scripts/serve-docker.mjs"]
 
 FROM caddy:2-alpine AS production
+LABEL org.opencontainers.image.title="Trạm Hỗ Trợ"
 COPY --from=app-build /app/dist/frontend/browser/ /srv/

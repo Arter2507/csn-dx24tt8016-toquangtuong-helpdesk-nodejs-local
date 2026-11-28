@@ -1,8 +1,19 @@
 # Trạm Hỗ Trợ
 
-**Tiếp nhận hỗ trợ yêu cầu kỹ thuật** · **v0.3.0**
+**Tiếp nhận hỗ trợ yêu cầu kỹ thuật** · **v1.3.0**
 
 Website quản lý yêu cầu hỗ trợ kỹ thuật — Tô Quang Tường, DX24TT8016, hướng dẫn TS. Nguyễn Nhứt Lam. Repo cộng tác `-local`, nhánh `local`. Giới thiệu đồ án: [README.md](README.md).
+
+## Hai không gian làm việc
+
+- **Trung tâm hỗ trợ** tại `/help-center` có tìm kiếm hướng dẫn, câu hỏi thường gặp, gửi phiếu, theo dõi yêu cầu của tôi, phản hồi và đánh giá khi đóng phiếu.
+- **Cổng quản lý** tại `/management` có tổng quan quản trị, bàn làm việc kỹ thuật, quản lý phiếu, thư mục theo loại → năm → tháng hoặc theo phòng ban, cùng các trang nghiệp vụ đang có.
+- Tài khoản kỹ thuật và quản trị có thể chuyển cổng từ thanh đầu trang. Hai cổng dùng chung phiên đăng nhập, API và MySQL. Người dùng cuối có thể đổi giao diện từ menu tài khoản, mục **Cài đặt → Giao diện**.
+- Chức năng quên mật khẩu dùng cấu hình email của Docker (`SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM` và thông tin đăng nhập SMTP nếu cần). Liên kết dùng một lần và hết hạn sau 30 phút. Mật khẩu mới thu hồi các phiên cũ.
+
+[Sitemap, quyền và kịch bản kiểm thử v1.3.0](documents/markdown/giao-dien-v1.3.0.md)
+
+[Báo cáo tiến độ local ngày 28/11/2026](progress-report/bao-cao-tien-do-local-2026-11-28.md)
 
 ## Cài đặt và khởi động
 
@@ -70,7 +81,7 @@ Cấu hình cổng, dữ liệu và cách xem log nằm trong [hướng dẫn Do
 
 **Cơ cấu tổ chức.** Trong **Sơ đồ cây** hoặc **Sơ đồ liên kết**, Chủ sở hữu mở **Thao tác** trên dòng đơn vị để chọn **Sửa đơn vị** hoặc **Xóa đơn vị**. Xóa mềm áp dụng cho đơn vị đã chuyển hết nhân sự và đơn vị trực thuộc. Menu của dòng nhân sự dùng để sửa hồ sơ hoặc khóa/mở khóa tài khoản theo quyền. Nếu cơ cấu chưa có đơn vị, bấm **Thêm đơn vị** để tạo đơn vị đầu tiên. Trong sơ đồ liên kết, kéo để di chuyển, cuộn hoặc dùng nút để thu phóng và chọn **Vừa khung** để xem toàn bộ.
 
-**Kho hướng dẫn.** Mở **Kho hướng dẫn** từ màn hình đăng nhập hoặc thanh điều hướng. Tìm theo tiêu đề, nội dung hoặc loại phiếu. Bài công khai xuất hiện trong gợi ý khi nhập tiêu đề phiếu. Owner/Admin tạo, sửa và lưu trữ bài. Bài nội bộ mở được với Owner, Admin và Technician. Cài mới có bộ bài hướng dẫn mẫu nếu bật nạp dữ liệu rà soát. Hệ thống chạy migration để tạo bảng trên các database đã có dữ liệu.
+**Kho hướng dẫn.** Mở **Kho hướng dẫn** từ màn hình đăng nhập hoặc thanh điều hướng. Tìm theo tiêu đề, nội dung hoặc loại phiếu. Bài công khai xuất hiện trong gợi ý khi nhập tiêu đề phiếu. Owner/Admin tạo, sửa và lưu trữ bài. Bài nội bộ mở được với Owner, Admin và Technician. Trong môi trường phát triển, khi `MYSQL_SEED_SAMPLE=true`, hệ thống nạp FAQ mẫu cho cơ sở dữ liệu mới hoặc đã có tài khoản mẫu và bảng FAQ còn trống.
 
 Bấm chuông để mở bảng xem nhanh. MySQL lưu thông báo phân công, phản hồi, thay đổi trạng thái và cảnh báo sắp đến hạn SLA. SSE cập nhật chuông, toast và trang Thông báo khi có thay đổi. Có thể bật/tắt toast trong Cài đặt. [Cấu hình Email và Email-to-Ticket](documents/markdown/thong-bao-da-kenh.md)
 
@@ -91,7 +102,7 @@ Bấm chuông để mở bảng xem nhanh. MySQL lưu thông báo phân công, p
 | Danh mục chung | Tập trung danh sách người dùng và loại phiếu. |
 | Phòng ban và quyền theo phòng | Đơn vị trực thuộc và liên kết hồ sơ đã lưu trong MySQL. Hàng đợi, định tuyến và quyền trên phiếu theo phòng thuộc giai đoạn tiếp theo. |
 
-Xem [báo cáo tiến độ 28/11/2026](progress-report/bao-cao-tien-do-28-11-2026.md), [bảng phân công](documents/markdown/tram-meo-tien-do-va-phan-cong.md) và [nhiệm vụ thiết kế lại giao diện](documents/markdown/nhiem-vu-thiet-ke-lai-giao-dien.md).
+Xem [báo cáo tiến độ 28/11/2026](progress-report/bao-cao-tien-do-28-11-2026.md), [bảng phân công](documents/markdown/tram-ho-tro-tien-do-va-phan-cong.md) và [nhiệm vụ thiết kế lại giao diện](documents/markdown/nhiem-vu-thiet-ke-lai-giao-dien.md).
 
 ### Cấp quyền cho nhân sự
 
@@ -136,7 +147,7 @@ Ngày 25/11/2026 đã kiểm tra Docker, dữ liệu rà soát, danh mục và l
 
 ## Tài liệu
 
-- [Tiến độ và phân công](documents/markdown/tram-meo-tien-do-va-phan-cong.md) · [API](documents/markdown/api-contract-demo.md) · [CSDL](documents/markdown/database-demo.md)
+- [Tiến độ và phân công](documents/markdown/tram-ho-tro-tien-do-va-phan-cong.md) · [API](documents/markdown/api-contract-demo.md) · [CSDL](documents/markdown/database-demo.md)
 - [Hướng dẫn kỹ thuật](src/README.md) · [Phase -1 UI](documents/Phase-1-Design-UI/)
 - Quy tắc: [.ai/rules/working-rules.md](.ai/rules/working-rules.md) · [.ai/rules/source-code.md](.ai/rules/source-code.md)
 - Không commit `.env`, `node_modules`, `dist`, `.angular`. Git LFS: `git lfs pull` nếu tài liệu chỉ hiện pointer.

@@ -1,4 +1,4 @@
-# Luồng Thao tác Người dùng (User Flows) — Trạm Mèo
+# Luồng Thao tác Người dùng (User Flows) — Trạm Hỗ Trợ
 
 > Tài liệu mô tả các luồng tương tác đầu–cuối (End-to-End) theo từng vai trò dựa trên mã nguồn `local/src/frontend` và `local/src/backend`.
 

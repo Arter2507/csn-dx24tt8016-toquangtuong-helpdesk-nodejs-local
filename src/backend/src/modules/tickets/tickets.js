@@ -16,6 +16,10 @@ export const priorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 export const ticketListFields = {
   priority: z.enum(priorities).optional(),
   categoryId: z.coerce.number().int().positive().optional(),
+  catalogCategoryId: z.coerce.number().int().positive().safe().optional(),
+  createdYear: z.string().regex(/^\d{4}$/).optional(),
+  createdMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/).optional(),
+  unitId: z.coerce.number().int().nonnegative().safe().optional(),
   createdOn: z.iso.date().optional(),
   requesterId: z.coerce.number().int().positive().optional(),
   assigneeId: z.coerce.number().int().nonnegative().optional()

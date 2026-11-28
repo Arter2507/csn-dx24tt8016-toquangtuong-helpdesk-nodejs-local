@@ -1,5 +1,5 @@
 import { Component, inject, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Translate } from '../../core/i18n/i18n';
 import { Session } from '../../core/auth/session';
 
@@ -8,26 +8,36 @@ import { Session } from '../../core/auth/session';
   imports: [RouterLink, Translate],
   template: `
     <nav class="panel settings-nav" [attr.aria-label]="'settings' | t">
-      <a routerLink="/settings" [attr.aria-current]="active() === 'general' ? 'page' : null">
+      <a [routerLink]="settingsPath" [attr.aria-current]="active() === 'general' ? 'page' : null">
         <i class="bi bi-sliders" aria-hidden="true"></i>{{ 'general_settings' | t }}
       </a>
-      @if (session.allows('OWNER')) {
+      <a
+        [routerLink]="settingsPath"
+        [queryParams]="{ section: 'theme' }"
+        [attr.aria-current]="active() === 'theme' ? 'page' : null"
+      >
+        <i class="bi bi-palette" aria-hidden="true"></i>{{ 'theme_settings' | t }}
+      </a>
+      @if (!personal && session.allows('OWNER')) {
         <a
-          routerLink="/settings"
+          [routerLink]="settingsPath"
           [queryParams]="{ section: 'numbering' }"
           [attr.aria-current]="active() === 'numbering' ? 'page' : null"
         >
           <i class="bi bi-hash" aria-hidden="true"></i>{{ 'ticket_number_rules' | t }}
         </a>
       }
-      @if (session.hasRole('ADMIN')) {
+      @if (!personal && session.hasRole('ADMIN')) {
         <a
-          routerLink="/settings/organizations"
+          routerLink="/management/settings/organizations"
           [attr.aria-current]="active() === 'organization' ? 'page' : null"
         >
           <i class="bi bi-diagram-3" aria-hidden="true"></i>{{ 'organization' | t }}
         </a>
-        <a routerLink="/settings/sla" [attr.aria-current]="active() === 'sla' ? 'page' : null">
+        <a
+          routerLink="/management/settings/sla"
+          [attr.aria-current]="active() === 'sla' ? 'page' : null"
+        >
           <i class="bi bi-clock-history" aria-hidden="true"></i>{{ 'sla_settings' | t }}
         </a>
       }
@@ -35,6 +45,8 @@ import { Session } from '../../core/auth/session';
   `,
 })
 export class SettingsNav {
-  readonly active = input.required<'general' | 'numbering' | 'organization' | 'sla'>();
+  readonly active = input.required<'general' | 'numbering' | 'organization' | 'sla' | 'theme'>();
   readonly session = inject(Session);
+  readonly personal = inject(ActivatedRoute).snapshot.data['portal'] === 'help';
+  readonly settingsPath = this.personal ? '/help-center/settings' : '/management/settings';
 }

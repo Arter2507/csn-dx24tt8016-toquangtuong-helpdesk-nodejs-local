@@ -1,6 +1,6 @@
-# Giao diện Angular của Trạm Mèo
+# Giao diện Angular của Trạm Hỗ Trợ
 
-Chạy `pnpm dev` ở gốc repo để mở frontend cùng Express và MySQL. Mở [Trạm Mèo local](http://127.0.0.1:4200). Đăng nhập theo [tài khoản rà soát](../../README.local.md#tài-khoản-mẫu).
+Chạy `pnpm dev` ở gốc repo để mở frontend cùng Express và MySQL. Mở [Trạm Hỗ Trợ local](http://127.0.0.1:4200). Đăng nhập theo [tài khoản rà soát](../../README.local.md#tài-khoản-mẫu).
 
 - Trang và quyền điều hướng nằm trong `src/app/app.routes.ts`, `src/app/session.ts` và `src/app/shell.ts`.
 - Tiếng Việt và tiếng Anh lưu trong `src/app/messages.json`. Màu sáng và tối dùng token trong `src/styles.css`.

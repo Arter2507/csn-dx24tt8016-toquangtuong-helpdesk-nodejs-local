@@ -101,7 +101,7 @@
   <footer>
     <a
       class="text-button"
-      routerLink="/notifications"
+      [routerLink]="basePath() + '/notifications'"
       [queryParams]="inbox.demoScope() ? { account: inbox.demoScope() } : null"
       (click)="panel.hidePopover()"
       >{{ 'view_all_notifications' | t }} <i class="bi bi-arrow-right" aria-hidden="true"></i

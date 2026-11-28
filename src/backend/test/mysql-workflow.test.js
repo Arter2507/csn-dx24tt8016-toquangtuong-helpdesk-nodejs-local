@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import mysql from 'mysql2/promise';
+import { simpleParser } from 'mailparser';
 
 test('MySQL enforces organization roles, sessions and ticket workflows', {
   skip: process.env.HELPDESK_TEST_MYSQL !== '1',
@@ -53,6 +54,12 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
       await connection.query(await readFile(new URL(folder.name + '/migration.sql', migrations), 'utf8'));
     }
     await connection.query(await readFile(new URL('../sql/helpdesk-sample-data.sql', import.meta.url), 'utf8'));
+    const { seedSampleFaq } = await import('../scripts/seed-faq.js');
+    assert.equal(await seedSampleFaq(connection), 3);
+    assert.equal(await seedSampleFaq(connection), 0);
+    await connection.query('UPDATE knowledge_articles SET archived_at = UTC_TIMESTAMP(3)');
+    assert.equal(await seedSampleFaq(connection), 0);
+    await connection.query('UPDATE knowledge_articles SET archived_at = NULL');
     const origin = 'http://127.0.0.1:4200';
     Object.assign(process.env, {
       DATA_SOURCE: 'mysql', DB_NAME: database, UPLOAD_DIR: uploadDir, CORS_ORIGIN: origin,
@@ -158,6 +165,15 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     await expectStatus(user.request('/settings/ticket-number-rules'), 403);
     await expectStatus(tech.request('/settings/ticket-number-rules/3', 'PUT', {}), 403);
     assert.equal((await data(admin.request('/tickets/3'))).code, 'HD-003');
+    await expectStatus(user.request('/tickets/folders'), 403);
+    await expectStatus(user.request('/tickets?unitId=0'), 403);
+    const folders = await data(admin.request('/tickets/folders'));
+    const datedFolder = folders.find(folder => folder.categoryId === 3);
+    assert.match(datedFolder.period, /^\d{4}-(0[1-9]|1[0-2])$/);
+    const folderList = await data(admin.request('/tickets?catalogCategoryId=3&createdMonth=' + datedFolder.period));
+    assert.equal(folderList.length, folders.filter(row => row.categoryId === 3 && row.period === datedFolder.period).reduce((total, row) => total + row.total, 0));
+    const techFolders = await data(tech.request('/tickets/folders'));
+    assert.equal(techFolders.reduce((total, row) => total + row.total, 0), (await data(tech.request('/tickets'))).length);
     const specialties = await data(admin.request('/users/2/categories'));
     assert.ok(specialties.includes(2));
     await expectStatus(user.request('/users/2/categories'), 403);
@@ -266,10 +282,13 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     const resolved = await data(tech.request(path + '/transitions', 'POST', { version: reopened.version, toStatus: 'RESOLVED', cause: 'Kẹt giấy', note: 'Đã sửa.' }));
     assert.match(resolved.history.at(-1).note, /Kẹt giấy.*\n.*Đã sửa\./);
     assert.equal((await data(user.request(path + '/history'))).at(-1).actorName, 'Kỹ thuật viên mẫu');
-    const close = { version: resolved.version, toStatus: 'CLOSED' };
+    const close = { version: resolved.version, toStatus: 'CLOSED', rating: 5, note: 'Vấn đề đã được giải quyết.' };
     await expectStatus(admin.request(path + '/transitions', 'POST', close), 403);
+    await expectStatus(user.request(path + '/transitions', 'POST', { ...close, rating: 6 }), 422);
     const closed = await data(user.request(path + '/transitions', 'POST', close));
     assert.equal(closed.status, 'CLOSED');
+    assert.equal(closed.history.at(-1).rating, 5);
+    assert.equal(closed.history.at(-1).note, close.note);
     await expectStatus(user.request(path + '/transitions', 'POST', close), 409);
     await data(user.request(path + '/comments', 'POST', { body: 'Xác nhận thêm sau khi đóng.' }), 201);
     await connection.execute('UPDATE tickets SET closed_at = DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 25 HOUR) WHERE id = ?', [created.id]);
@@ -614,6 +633,25 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     await expectStatus(tech.request('/auth/me/password', 'PATCH', { currentPassword: 'local-test-password', newPassword: 'next-test-password' }), 204);
     await expectStatus(tech.request('/auth/me'), 401);
     await login(tech, 'created', 'next-test-password');
+    await context.test('password recovery sends a one-use link and revokes active sessions', async () => {
+      const before = receivedMail.length;
+      const recovery = client();
+      await expectStatus(recovery.request('/auth/forgot-password', 'POST', { email: 'nonexistent@example.test' }), 202);
+      await expectStatus(recovery.request('/auth/forgot-password', 'POST', { email: other.email }), 202);
+      for (let attempt = 0; attempt < 30 && receivedMail.length === before; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      assert.equal(receivedMail.length, before + 1);
+      const mail = await simpleParser(receivedMail.at(-1));
+      const token = /\/reset-password#token=([0-9a-f]{64})/.exec(mail.text)?.[1];
+      assert.ok(token);
+      const reset = { token, password: 'recovered-test-password' };
+      await expectStatus(recovery.request('/auth/reset-password', 'POST', reset), 204);
+      await expectStatus(recovery.request('/auth/reset-password', 'POST', reset), 422);
+      await expectStatus(tech.request('/auth/me'), 401);
+      await expectStatus(tech.request('/auth/refresh', 'POST', {}), 401);
+      await login(tech, 'created', reset.password);
+    });
     await expectStatus(admin.request('/users/' + other.id, 'PATCH', { isActive: false }), 200);
     await expectStatus(tech.request('/auth/me'), 401);
     await expectStatus(tech.request('/auth/refresh', 'POST', {}), 401);

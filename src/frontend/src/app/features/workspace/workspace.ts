@@ -20,7 +20,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Preferences } from '../../core/preferences/preferences';
 import { Session } from '../../core/auth/session';
 import { FormsModule, NgForm } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
 import { auditTime, firstValueFrom, forkJoin, merge, timer } from 'rxjs';
 import { Notifications } from '../notifications/notifications';
 import { TicketActions, canEditTicket } from './ticket-actions';
@@ -71,6 +71,7 @@ const FILE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'appli
 export class Workspace implements OnInit {
   readonly resource = input.required<Resource>();
   readonly mode = input<'list' | 'create' | 'edit' | 'view'>('list');
+  readonly personal = input(false);
   readonly id = input<string>();
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -95,6 +96,7 @@ export class Workspace implements OnInit {
   history: TicketEvent[] = [];
   requesterId = '';
   assigneeId = '';
+  folderScope: Record<string, string> = {};
   todayRows: Row[] = [];
   todayBusy = false;
   todayError = false;
@@ -117,6 +119,7 @@ export class Workspace implements OnInit {
 
   get requesterProfile() {
     if (
+      this.personal() ||
       !this.editing ||
       !this.session.hasRole('TECHNICIAN') ||
       this.editing['assigneeId'] !== this.session.account()?.id
@@ -184,9 +187,10 @@ export class Workspace implements OnInit {
 
   get canWriteInternalNote() {
     return (
-      this.session.hasRole('ADMIN') ||
-      (this.session.hasRole('TECHNICIAN') &&
-        this.session.account()?.id === this.editing?.['assigneeId'])
+      !this.personal() &&
+      (this.session.hasRole('ADMIN') ||
+        (this.session.hasRole('TECHNICIAN') &&
+          this.session.account()?.id === this.editing?.['assigneeId']))
     );
   }
 
@@ -211,6 +215,7 @@ export class Workspace implements OnInit {
   get canDelete() {
     return (
       this.isTicket &&
+      !this.personal() &&
       this.session.allows('ADMIN') &&
       (this.secured || (!this.requesterId && !(Number(this.assigneeId) > 0)))
     );
@@ -257,7 +262,7 @@ export class Workspace implements OnInit {
       row['requesterId'] !== technician.id
     ) {
       if (this.editing?.id === row.id) {
-        void this.router.navigate(['/tickets'], { info: { notice: 'ticket_transferred' } });
+        void this.router.navigate([this.listPath], { info: { notice: 'ticket_transferred' } });
       } else {
         this.rows = this.rows.filter((item) => item.id !== row.id);
         this.notice = 'ticket_transferred';
@@ -287,8 +292,30 @@ export class Workspace implements OnInit {
       return match ? { text: match[1] || line, id: match[2] } : { text: line, id: null };
     });
   }
+  get listPath() {
+    return (this.personal() ? '/help-center/' : '/management/') + this.resource();
+  }
+
   get scope() {
-    return { requesterId: this.requesterId || null, assigneeId: this.assigneeId || null };
+    return {
+      ...this.folderScope,
+      requesterId: this.requesterId || null,
+      assigneeId: this.assigneeId || null,
+    };
+  }
+
+  private routeScope(params: ParamMap) {
+    this.requesterId = this.personal()
+      ? String(this.session.account()?.id ?? this.preferences.account())
+      : (params.get('requesterId') ?? '');
+    this.assigneeId = this.personal() ? '' : (params.get('assigneeId') ?? '');
+    this.folderScope = this.personal()
+      ? {}
+      : Object.fromEntries(
+          ['catalogCategoryId', 'createdMonth', 'createdYear', 'unitId']
+            .filter((key) => params.has(key))
+            .map((key) => [key, params.get(key)!]),
+        );
   }
   get closed() {
     return this.editing?.['status'] === 'CLOSED';
@@ -315,8 +342,7 @@ export class Workspace implements OnInit {
     if (this.mode() === 'list') {
       this.order = this.isTicket ? 'recent' : 'asc';
       this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
-        this.requesterId = params.get('requesterId') ?? '';
-        this.assigneeId = params.get('assigneeId') ?? '';
+        this.routeScope(params);
         this.search = params.get('q') ?? '';
         const filter = params.get('status') ?? '';
         this.filter = this.filters.some((item) => item.value === filter) ? filter : '';
@@ -330,8 +356,7 @@ export class Workspace implements OnInit {
       return;
     }
     if (this.isTicket) {
-      this.requesterId = this.route.snapshot.queryParamMap.get('requesterId') ?? '';
-      this.assigneeId = this.route.snapshot.queryParamMap.get('assigneeId') ?? '';
+      this.routeScope(this.route.snapshot.queryParamMap);
       if (this.mode() !== 'view') void this.loadToday(1);
     }
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
@@ -362,6 +387,10 @@ export class Workspace implements OnInit {
     this.chatExpiredByServer = false;
     try {
       const row = id ? (await firstValueFrom(this.service.find(this.resource(), id))).data : null;
+      if (row && this.personal() && row['requesterId'] !== Number(this.requesterId)) {
+        if (request === this.request && !this.destroy.destroyed) this.error = 'api_NOT_FOUND';
+        return;
+      }
       const fields: Field[] = this.isTicket
         ? await this.ticketFields(row)
         : [
@@ -516,7 +545,10 @@ export class Workspace implements OnInit {
     try {
       const response = await firstValueFrom(this.service.comments(id));
       if (request === this.request && this.editing?.id === id && !this.commentSaving) {
-        if (this.comments === previousComments) this.comments = response.data;
+        if (this.comments === previousComments)
+          this.comments = this.personal()
+            ? response.data.filter((comment) => !comment.internal)
+            : response.data;
         if (response.meta.version >= Number(this.editing['version'])) {
           const { chatExpiresAt, status, resolvedAt, firstResponseAt } = response.meta;
           const version = this.mode() === 'view' ? response.meta.version : this.editing['version'];
@@ -802,7 +834,7 @@ export class Workspace implements OnInit {
       this.route.snapshot.queryParamMap.has('q') ||
       this.route.snapshot.queryParamMap.has('status')
     ) {
-      void this.router.navigate(['/', this.resource()], { queryParams: this.scope });
+      void this.router.navigate([this.listPath], { queryParams: this.scope });
     } else {
       this.applyFilters();
     }
@@ -827,6 +859,7 @@ export class Workspace implements OnInit {
           pageSize: this.pageSize,
           requesterId: this.requesterId,
           assigneeId: this.assigneeId,
+          ...this.folderScope,
           sortBy: order === 'recent' ? 'id' : this.displayField,
           sortOrder: order === 'asc' ? 'asc' : 'desc',
         }),
@@ -936,13 +969,13 @@ export class Workspace implements OnInit {
           : 'user_added';
       if (this.isTicket && this.secured) {
         if (!this.editing) this.notifications.ticketSubmitted(data.id, ticketReference(data));
-        await this.router.navigate(['/tickets', data.id, 'view'], {
+        await this.router.navigate([this.listPath, data.id, 'view'], {
           queryParams: this.scope,
           info: this.editing ? { notice, code: ticketReference(data) } : undefined,
         });
         return;
       }
-      await this.router.navigate(['/', this.resource()], {
+      await this.router.navigate([this.listPath], {
         queryParams: this.scope,
         info: {
           notice,

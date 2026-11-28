@@ -3,9 +3,6 @@
     <h1>{{ 'reports_insights' | t }}</h1>
     <p>{{ 'see_requests_by_category_date_and_status' | t }}</p>
   </div>
-  <button type="button" class="secondary" (click)="load()">
-    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
-  </button>
 </div>
 @if (error()) {
   <div class="notice error" role="alert">
@@ -42,6 +39,15 @@
         </select>
       </label>
       <div class="toolbar-actions">
+        <button
+          type="button"
+          [attr.aria-label]="'refresh_data' | t"
+          [attr.title]="'refresh_data' | t"
+          class="icon-button refresh-icon"
+          (click)="load()"
+        >
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+        </button>
         <button class="primary" type="submit">
           <i class="bi bi-funnel" aria-hidden="true"></i> {{ 'apply' | t }}
         </button>

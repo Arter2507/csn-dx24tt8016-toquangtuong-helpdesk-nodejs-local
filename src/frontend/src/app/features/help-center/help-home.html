@@ -1,0 +1,105 @@
+<div class="help-home">
+  <section class="help-hero">
+    <div>
+      <h1>{{ 'help_home_heading' | t }}</h1>
+      <p>{{ 'help_home_intro' | t }}</p>
+      <form
+        class="help-search"
+        role="search"
+        (submit)="$event.preventDefault(); search(query.value)"
+      >
+        <input
+          #query
+          type="search"
+          maxlength="200"
+          [attr.aria-label]="'knowledge_search' | t"
+          [placeholder]="'help_search_hint' | t"
+        />
+        <button class="primary" type="submit">
+          <i class="bi bi-search" aria-hidden="true"></i> {{ 'search' | t }}
+        </button>
+      </form>
+    </div>
+    <img src="/mascot/it-support-rest.webp" alt="" />
+  </section>
+
+  <div class="help-shortcuts">
+    <a class="panel" routerLink="/help-center/tickets/new">
+      <span class="stat-icon"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
+      <strong>{{ 'new_request' | t }}</strong
+      ><small>{{ 'help_request_hint' | t }}</small>
+    </a>
+    <a class="panel" routerLink="/help-center/tickets">
+      <span class="stat-icon"><i class="bi bi-ticket-perforated" aria-hidden="true"></i></span>
+      <strong>{{ 'my_support_requests' | t }}</strong
+      ><small>{{ 'help_track_hint' | t }}</small>
+    </a>
+    <a class="panel" routerLink="/help-center/faq">
+      <span class="stat-icon"><i class="bi bi-question-circle" aria-hidden="true"></i></span>
+      <strong>{{ 'frequently_asked' | t }}</strong
+      ><small>{{ 'help_faq_hint' | t }}</small>
+    </a>
+  </div>
+
+  <div class="help-columns">
+    @if (session.account()?.organizationId || session.mode() === 'demo') {
+      <section class="panel">
+        <div class="section-heading">
+          <h2>{{ 'recent_requests' | t }}</h2>
+          <a class="text-button" routerLink="/help-center/tickets">{{ 'see_all' | t }}</a>
+        </div>
+        @if (ticketsFailed()) {
+          <p role="alert">{{ 'we_couldnt_load_your_data' | t }}</p>
+          <button type="button" class="secondary" (click)="loadTickets()">
+            {{ 'try_again' | t }}
+          </button>
+        } @else if (tickets(); as rows) {
+          <ul class="role-ticket-list">
+            @for (row of rows; track row.id) {
+              <li>
+                <a [routerLink]="['/help-center/tickets', row.id, 'view']">
+                  <span class="ticket-reference">{{ ticketReference(row) }}</span>
+                  <strong>{{ row['title'] }}</strong>
+                </a>
+                <span class="badge" [attr.data-tone]="status(row['status'])?.tone">{{
+                  status(row['status'])?.label | t
+                }}</span>
+              </li>
+            } @empty {
+              <li>{{ 'you_havent_sent_any_support_requests_yet' | t }}</li>
+            }
+          </ul>
+        } @else {
+          <app-loading />
+        }
+      </section>
+    }
+    <section class="panel">
+      <div class="section-heading">
+        <h2>{{ 'knowledge' | t }}</h2>
+        <a class="text-button" routerLink="/help-center/knowledge">{{ 'see_all' | t }}</a>
+      </div>
+      @if (knowledgeFailed()) {
+        <p role="alert">{{ 'we_couldnt_load_your_data' | t }}</p>
+        <button type="button" class="secondary" (click)="loadArticles()">
+          {{ 'try_again' | t }}
+        </button>
+      } @else if (articles(); as rows) {
+        <ul class="portal-updates">
+          @for (article of rows; track article.id) {
+            <li>
+              <div>
+                <a [routerLink]="['/help-center/knowledge', article.id]">{{ article.title }}</a>
+                <p class="muted">{{ article.excerpt }}</p>
+              </div>
+            </li>
+          } @empty {
+            <li>{{ 'no_matching_results' | t }}</li>
+          }
+        </ul>
+      } @else {
+        <app-loading />
+      }
+    </section>
+  </div>
+</div>

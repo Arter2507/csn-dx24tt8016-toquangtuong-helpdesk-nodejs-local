@@ -1,6 +1,6 @@
 {
-  "name": "tram-meo",
-  "version": "0.3.0",
+  "name": "tram-ho-tro",
+  "version": "1.3.0",
   "private": true,
   "description": "Trạm Hỗ Trợ — môi trường phát triển Docker Compose",
   "packageManager": "pnpm@12.16.1",

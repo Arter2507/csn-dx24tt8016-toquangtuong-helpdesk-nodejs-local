@@ -1,4 +1,4 @@
-# Quy chuẩn Mã nguồn & Vận hành (Code Conventions) — Trạm Mèo
+# Quy chuẩn Mã nguồn & Vận hành (Code Conventions) — Trạm Hỗ Trợ
 
 > **Nguồn đối chiếu:** `local/.ai/rules/source-code.md`, `local/.ai/rules/working-rules.md`, `local/src/backend/eslint.config.js`, `local/src/frontend/.prettierrc`.
 

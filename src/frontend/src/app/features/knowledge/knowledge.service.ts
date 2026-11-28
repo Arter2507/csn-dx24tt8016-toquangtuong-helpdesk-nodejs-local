@@ -49,8 +49,9 @@ export class KnowledgeService {
     return this.http.get<ApiResponse<{ id: number; name: string }[]>>(this.url + '/categories');
   }
 
-  find(id: string) {
-    return this.http.get<ApiResponse<Article>>(this.url + '/' + encodeURIComponent(id));
+  find(id: string, publicOnly = false) {
+    const params = publicOnly ? new HttpParams().set('publicOnly', 'true') : undefined;
+    return this.http.get<ApiResponse<Article>>(this.url + '/' + encodeURIComponent(id), { params });
   }
 
   save(form: ArticleForm, id?: number) {

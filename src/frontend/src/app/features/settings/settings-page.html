@@ -22,6 +22,8 @@
   <div class="settings-content">
     @if (settingsTab() === 'numbering' && session.allows('OWNER')) {
       <app-ticket-number-settings />
+    } @else if (settingsTab() === 'theme') {
+      <app-theme-settings />
     } @else {
       <div class="portal-grid settings-grid">
         <section class="panel portal-card">
@@ -97,7 +99,9 @@
             {{ 'toast_notifications_setting' | t }}
           </label>
           <p class="muted">{{ 'toast_notifications_description' | t }}</p>
-          <a class="text-button" routerLink="/notifications">{{ 'view_all_notifications' | t }}</a>
+          <a class="text-button" [routerLink]="base + '/notifications'">{{
+            'view_all_notifications' | t
+          }}</a>
         </section>
         <section class="panel portal-card">
           <h2>
@@ -121,8 +125,10 @@
             }
           }
           <div class="portal-choices">
-            <a class="text-button" routerLink="/profile">{{ 'profile' | t }}</a>
-            <a class="text-button" routerLink="/notifications">{{ 'notifications' | t }}</a>
+            <a class="text-button" [routerLink]="base + '/profile'">{{ 'profile' | t }}</a>
+            <a class="text-button" [routerLink]="base + '/notifications'">{{
+              'notifications' | t
+            }}</a>
           </div>
         </section>
       </div>

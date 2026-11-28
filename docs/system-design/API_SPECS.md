@@ -1,4 +1,4 @@
-# Đặc tả REST API (`/api/v1`) — Trạm Mèo
+# Đặc tả REST API (`/api/v1`) — Trạm Hỗ Trợ
 
 > **Nguồn đối chiếu:** `local/src/backend/src/app.js` và toàn bộ route files trong `local/src/backend/src/modules/*`.
 
@@ -40,11 +40,14 @@
 | `GET` | `/auth/mode` | Public | — | `200` `{ data: "mysql" \| "demo" }` |
 | `POST` | `/auth/register` | Public | `{ email, fullName, password (>=12) }` | `201` `{ data: { status: "UNASSIGNED" } }` |
 | `POST` | `/auth/activate` | Public | `{ token (64 hex), password (>=12) }` | `204 No Content` |
+| `POST` | `/auth/forgot-password` | Public | `{ email }` | `202` nếu đã bật SMTP, `503` nếu chưa cấu hình. Cùng phản hồi cho email đã và chưa đăng ký. |
+| `POST` | `/auth/reset-password` | Public | `{ token (64 hex), password (>=12) }` | `204` và thu hồi phiên cũ. Liên kết dùng một lần trong 30 phút. |
 | `POST` | `/auth/login` | Public | `{ email, password }` | `200` Account + Set Cookies |
 | `POST` | `/auth/refresh` | Cookie Refresh | — | `200` Account + Rotate Cookies |
 | `POST` | `/auth/logout` | Cookie | — | `204` Revoke session & Clear Cookies |
 | `GET` | `/auth/me` | `requireAccount` | — | `200` Account (gồm `UNASSIGNED`) |
 | `PATCH` | `/auth/me` | `requireAccount` | `{ fullName, email (khớp email hiện tại) }` | `200` Account |
+
 | `PATCH` | `/auth/me/password` | `requireAccount` | `{ currentPassword, newPassword (>=12) }` | `204` & Clear Cookies |
 
 ### 2.2. Tổ chức, Đơn vị & Nhân sự (`/api/v1/organizations`, `/api/v1/users`)
@@ -88,6 +91,9 @@
 | `GET` / `PUT` | `/settings/sla` | `ADMIN` | Đọc / cập nhật chính sách SLA (`enabled`, `week`, `holidays`, `rules`) | `200` |
 
 ### 2.5. Yêu cầu Hỗ trợ (Tickets) (`/api/v1/tickets`)
+
+- `GET /tickets/folders` đếm phiếu theo loại, tháng tạo tại Việt Nam và đơn vị người gửi. Owner, Admin và Technician có thể dùng theo quyền xem phiếu.
+- `GET /tickets` nhận `catalogCategoryId`, `createdYear`, `createdMonth` và `unitId` khi mở thư mục. `unitId=0` lọc người gửi chưa gán đơn vị.
 | Method | Endpoint | Auth / Role | Mô tả & Payload | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/tickets/number-preview` | `ACTIVE` Member | Query `?categoryId=...` → `{ code }` | `200` |
@@ -98,7 +104,7 @@
 | `PATCH` | `/tickets/:id` | Owner/Tech/Admin | Sửa `{ title?, description?, priority?, removeAttachments?, version }` | `200` |
 | `PUT` | `/tickets/:id/assignee` | `ADMIN` | Phân công `{ assigneeId (nullable), version }` | `200` |
 | `PUT` | `/tickets/:id/classification` | `ADMIN` | Đổi loại & KTV `{ categoryId, assigneeId, version }` | `200` |
-| `POST` | `/tickets/:id/transitions` | Owner/Tech/Admin | Chuyển trạng thái `{ toStatus, note?, version }` | `200` |
+| `POST` | `/tickets/:id/transitions` | Nhân sự hoặc người gửi theo bước | Chuyển trạng thái `{ toStatus, note?, version }`. Người gửi có thể thêm `rating` từ 1 đến 5 khi đóng phiếu. | `200` |
 | `GET` | `/tickets/:id/history` | Owner/Tech/Admin | Lịch sử tối đa 100 sự kiện gần nhất | `200` |
 | `POST` | `/tickets/batch` | `ADMIN` | `{ selection: [{ id, version }...], update: { assigneeId } \| { targetId } }` | `200` |
 | `POST` | `/tickets/archive` | `ADMIN` | Xóa mềm `{ ids: number[] }` | `200` |

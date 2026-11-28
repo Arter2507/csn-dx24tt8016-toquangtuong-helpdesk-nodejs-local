@@ -1,11 +1,11 @@
 <section class="panel iam-panel knowledge-page">
   <div class="iam-section-heading">
-    <h1>{{ 'knowledge' | t }}</h1>
+    <h1>{{ crumb() | t }}</h1>
     <div class="iam-actions">
       @if (id()) {
-        <a class="secondary" routerLink="/knowledge">{{ 'back_to_list' | t }}</a>
+        <a class="secondary" [routerLink]="basePath">{{ 'back_to_list' | t }}</a>
       }
-      @if (session.hasRole('ADMIN') && !form()) {
+      @if (!publicOnly() && session.hasRole('ADMIN') && !form()) {
         @if (current(); as article) {
           <button type="button" class="secondary" (click)="edit(article)">{{ 'edit' | t }}</button>
           <button type="button" class="text-button" (click)="confirm.showModal()">
@@ -100,7 +100,7 @@
       @for (article of rows(); track article.id) {
         <li>
           <div>
-            <a [routerLink]="['/knowledge', article.id]">{{ article.title }}</a>
+            <a [routerLink]="[basePath, article.id]">{{ article.title }}</a>
             <p class="muted">
               {{ article.category }}
               @if (article.visibility === 'INTERNAL') {

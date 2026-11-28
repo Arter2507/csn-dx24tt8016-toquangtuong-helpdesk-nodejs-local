@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -9,12 +9,14 @@ import { WorkspaceService } from '../../shared/data/workspace.service';
 import { Row } from '../../shared/data/workspace.types';
 import { TicketNumberSettings } from './ticket-number-settings';
 import { SettingsNav } from './settings-nav';
+import { ThemeSettings } from './theme-settings';
 
 @Component({
-  imports: [FormsModule, RouterLink, Translate, TicketNumberSettings, SettingsNav],
+  imports: [FormsModule, RouterLink, Translate, TicketNumberSettings, SettingsNav, ThemeSettings],
   templateUrl: './settings-page.html',
 })
 export class SettingsPage implements OnInit {
+  readonly personal = input(false);
   private readonly route = inject(ActivatedRoute);
   private readonly workspace = inject(WorkspaceService);
   private readonly destroy = inject(DestroyRef);
@@ -23,13 +25,19 @@ export class SettingsPage implements OnInit {
   readonly session = inject(Session);
   readonly users = signal<Row[] | null>(null);
   readonly error = signal('');
-  readonly settingsTab = signal<'general' | 'numbering'>('general');
+  readonly settingsTab = signal<'general' | 'numbering' | 'theme'>('general');
+
+  get base() {
+    return this.personal() ? '/help-center' : '/management';
+  }
 
   ngOnInit() {
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroy)).subscribe((params) => {
+      const section = params.get('section');
       this.settingsTab.set(
-        params.get('section') === 'numbering' && this.session.allows('OWNER')
-          ? 'numbering'
+        section === 'theme' ||
+          (section === 'numbering' && !this.personal() && this.session.allows('OWNER'))
+          ? section
           : 'general',
       );
     });

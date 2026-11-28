@@ -18,6 +18,21 @@ const transporter = smtpHost && mailFrom ? nodemailer.createTransport({
   disableUrlAccess: true,
 }) : null;
 
+export const passwordResetMailEnabled = Boolean(transporter);
+
+export async function sendPasswordReset(email, token) {
+  const url = new URL('/reset-password', config.auth.origin);
+  url.hash = new URLSearchParams({ token }).toString();
+  const template = (templates[mailLanguage] ?? templates.vi).passwordReset;
+  await transporter.sendMail({
+    from: mailFrom,
+    to: email,
+    subject: template.subject,
+    text: template.body.replace('{url}', url.href),
+    headers: { 'Auto-Submitted': 'auto-generated' },
+  });
+}
+
 export async function queueStatusMail(conn, { id, code, requesterId }, status) {
   if (!transporter) return;
   await conn.execute(
@@ -72,7 +87,7 @@ export async function deliverStatusMail() {
       continue;
     }
     const template = templates[mailLanguage] ?? templates.vi;
-    const url = new URL('/tickets/' + job.ticketId + '/view', config.auth.origin);
+    const url = new URL('/help-center/tickets/' + job.ticketId + '/view', config.auth.origin);
     const fields = { ...job, title: recipient.title, status: template.statuses[job.status] ?? job.status, url };
     const render = text => text.replace(/\{(\w+)\}/g, (_, key) => String(fields[key] ?? ''));
     try {

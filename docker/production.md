@@ -1,4 +1,4 @@
-# Triển khai Trạm Mèo trên máy chủ
+# Triển khai Trạm Hỗ Trợ trên máy chủ
 
 Trạm Hỗ Trợ chạy một bộ Docker Compose gồm Caddy, Express và MySQL 8.4. Caddy phục vụ Angular đã build, giữ đường dẫn SPA khi tải lại trang và chuyển `/api/*` sang Express trong mạng nội bộ. Frontend gọi API cùng origin nên đổi tên miền hoặc cổng triển khai không cần sửa mã nguồn. [Cấu hình SPA và reverse proxy trong Caddy](https://caddyserver.com/docs/caddyfile/patterns)
 

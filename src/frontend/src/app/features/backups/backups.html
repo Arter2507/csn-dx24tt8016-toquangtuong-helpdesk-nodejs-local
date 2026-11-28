@@ -3,8 +3,14 @@
     <h1>{{ 'backups' | t }}</h1>
     <p>{{ 'backup_process_intro' | t }}</p>
   </div>
-  <button type="button" class="secondary" (click)="refresh()">
-    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+  <button
+    type="button"
+    [attr.aria-label]="'refresh_data' | t"
+    [attr.title]="'refresh_data' | t"
+    class="icon-button refresh-icon"
+    (click)="refresh()"
+  >
+    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
   </button>
 </header>
 

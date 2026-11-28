@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Translate } from '../../core/i18n/i18n';
 import { Session } from '../../core/auth/session';
 
@@ -9,7 +9,7 @@ import { Session } from '../../core/auth/session';
   template: `
     <div class="login-scene">
       <div class="login-composition page-content-enter">
-        <div class="login-art" aria-hidden="true"><i class="bi bi-headset"></i></div>
+        <div class="login-art" aria-hidden="true"></div>
         <form class="login-panel" (ngSubmit)="login()" #form="ngForm" aria-labelledby="login-title">
           <div class="login-brand">
             <span class="brand-mark">
@@ -65,8 +65,9 @@ import { Session } from '../../core/auth/session';
             {{ (checkingSession() ? 'checking_sign_in' : busy() ? 'signing_in' : 'sign_in') | t }}
           </button>
           <div class="iam-actions login-link">
+            <a routerLink="/forgot-password" class="text-button">{{ 'forgot_password' | t }}</a>
             <a routerLink="/register" class="text-button">{{ 'register' | t }}</a>
-            <a routerLink="/knowledge" class="text-button">{{ 'knowledge' | t }}</a>
+            <a routerLink="/help-center/knowledge" class="text-button">{{ 'knowledge' | t }}</a>
           </div>
         </form>
       </div>
@@ -76,6 +77,7 @@ import { Session } from '../../core/auth/session';
 export class Login {
   private readonly session = inject(Session);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   readonly busy = signal(false);
   readonly checkingSession = signal(false);
   readonly sessionFailed = signal(false);
@@ -87,6 +89,11 @@ export class Login {
     this.checkSession();
   }
 
+  private destination() {
+    const next = this.route.snapshot.queryParamMap.get('next');
+    return next && /^\/(help-center|management)(?:[/?#]|$)/.test(next) ? next : this.session.home;
+  }
+
   checkSession() {
     if (this.checkingSession()) return;
     this.checkingSession.set(true);
@@ -95,7 +102,7 @@ export class Login {
       .initialize()
       .then(() => {
         if (this.session.mode() === 'demo' || this.session.account())
-          void this.router.navigateByUrl(this.session.home);
+          void this.router.navigateByUrl(this.destination());
       })
       .catch(() => this.sessionFailed.set(true))
       .finally(() => this.checkingSession.set(false));
@@ -108,7 +115,7 @@ export class Login {
     this.session.login(this.email.trim(), this.password).subscribe({
       next: () => {
         this.password = '';
-        void this.router.navigateByUrl(this.session.home);
+        void this.router.navigateByUrl(this.destination());
       },
       error: (error) => {
         this.busy.set(false);

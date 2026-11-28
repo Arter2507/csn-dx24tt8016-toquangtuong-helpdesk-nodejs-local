@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import mysql from 'mysql2/promise';
+import { seedSampleFaq } from './seed-faq.js';
 
 if (process.env.NODE_ENV === 'production') {
   throw new Error('Dữ liệu mẫu chỉ được nhập trong môi trường phát triển.');
@@ -27,6 +28,7 @@ try {
     EXISTS(SELECT id FROM roles) AS hasData`);
   if (hasData) throw new Error('Cần một cơ sở dữ liệu đã migrate và chưa có dữ liệu mẫu.');
   await connection.query(sql);
+  await seedSampleFaq(connection);
   const [rows] = await connection.query(`
     SELECT
       (SELECT COUNT(*) FROM users) AS users,

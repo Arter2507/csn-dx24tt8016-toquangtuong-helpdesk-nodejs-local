@@ -1,4 +1,5 @@
 FROM node:26.13.0-bookworm-slim
+LABEL org.opencontainers.image.title="Trạm Hỗ Trợ API"
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && npm install --global pnpm@12.16.1 \

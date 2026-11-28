@@ -1,4 +1,5 @@
 import { pool } from '../src/database/pool.js';
+import { seedSampleFaq } from './seed-faq.js';
 
 const samples = [
   { code: 'TM-MAU-01', category: 'NETWORK', title: 'VPN không kết nối ngoài văn phòng', description: 'Kết nối VPN hết thời gian chờ trên hai máy.', priority: 'URGENT', status: 'NEW', days: 0 },
@@ -29,8 +30,11 @@ export async function seedReviewData() {
        ORDER BY id FOR UPDATE`,
     );
     const ids = new Map(accounts.map(account => [account.email, account.id]));
+    const standardAccounts = ['admin@example.test', 'tech@example.test', 'user@example.test'];
+    const faqAdded = standardAccounts.every(email => ids.has(email)) ? await seedSampleFaq(conn) : 0;
     if (ids.size !== 4) {
-      await conn.rollback();
+      await conn.commit();
+      if (faqAdded) console.log('Đã nạp ' + faqAdded + ' bài hướng dẫn mẫu.');
       return;
     }
     const admin = ids.get('admin@example.test');
@@ -102,6 +106,7 @@ export async function seedReviewData() {
     }
     await conn.commit();
     console.log('Đã bổ sung ' + added + ' phiếu vào bộ dữ liệu rà soát.');
+    if (faqAdded) console.log('Đã nạp ' + faqAdded + ' bài hướng dẫn mẫu.');
   } catch (error) {
     await conn.rollback();
     throw error;

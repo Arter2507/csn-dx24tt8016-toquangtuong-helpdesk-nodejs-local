@@ -35,8 +35,14 @@
     <span class="badge">{{ 'unread_count' | t: { count: inbox.unread().length } }}</span>
   </div>
   <div class="portal-choices">
-    <button type="button" class="secondary" (click)="inbox.refresh()">
-      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+    <button
+      type="button"
+      [attr.aria-label]="'refresh_data' | t"
+      [attr.title]="'refresh_data' | t"
+      class="icon-button refresh-icon"
+      (click)="inbox.refresh()"
+    >
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
     </button>
     <button
       type="button"

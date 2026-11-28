@@ -1,4 +1,4 @@
-# Trạm Hỗ Trợ v0.3.0
+# Trạm Hỗ Trợ v1.3.0
 
 > Tiếp nhận hỗ trợ yêu cầu kỹ thuật
 

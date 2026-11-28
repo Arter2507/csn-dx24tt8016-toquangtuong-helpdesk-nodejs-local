@@ -82,7 +82,7 @@ function stop() {
   const other = resultText(docker(['ps', '-q']));
   if (other === null) throw new Error('Không kiểm tra được các container còn hoạt động.');
   if (other) {
-    console.log('Đã dừng Trạm Mèo. Docker Desktop đang phục vụ container khác.');
+    console.log('Đã dừng Trạm Hỗ Trợ. Docker Desktop đang phục vụ container khác.');
     return;
   }
   run(['desktop', 'stop', '--timeout', '60']);

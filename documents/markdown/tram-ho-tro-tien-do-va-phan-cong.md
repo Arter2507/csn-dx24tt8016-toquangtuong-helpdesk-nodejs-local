@@ -1,4 +1,4 @@
-# Trạm Mèo — chức năng, tiến độ và phân công
+# Trạm Hỗ Trợ — chức năng, tiến độ và phân công
 
 Cập nhật **26/11/2026** · Nhánh cộng tác `local` · Bản **v0.2.0**
 
@@ -16,7 +16,7 @@ Cập nhật **26/11/2026** · Nhánh cộng tác `local` · Bản **v0.2.0**
 | Báo cáo | Lọc ngày tạo / loại / trạng thái, biểu đồ, bảng, CSV. |
 | Hồ sơ, cài đặt, thông báo | Sửa hồ sơ qua MySQL, theme sáng/tối/theo thiết bị, giảm chuyển động, ngôn ngữ, tùy chọn toast. Nút chuông và trang thông báo dùng chung trạng thái đã đọc. |
 | Sao lưu | Tạo bản ZIP thủ công hoặc theo lịch khi mở web. Có tiến độ, lịch sử, tải bản sao và khôi phục từ lịch sử. |
-| Giao diện | Phase -1, Trạm Mèo, VI/EN, sáng/tối, loading, chuyển trang, sidebar. |
+| Giao diện | Phase -1, Trạm Hỗ Trợ, VI/EN, sáng/tối, loading, chuyển trang, sidebar. |
 | Công cụ và CSDL | Docker Compose cho Angular, Express và MySQL. Có lệnh pnpm dev, build, check và stop; migration tự động khi khởi động MySQL. |
 
 Local và cấu hình production đều dùng MySQL. Bộ local có 10 phiếu nhiều ngày và 7 nhiệm vụ. Trang hồ sơ theo tab, thông báo, tệp và sao lưu đọc dữ liệu thực từ API. Chế độ bộ nhớ phục vụ bộ kiểm thử nhanh.

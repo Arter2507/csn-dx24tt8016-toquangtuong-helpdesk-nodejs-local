@@ -1,4 +1,4 @@
-# Kiến trúc Hệ thống (System Architecture) — Trạm Mèo
+# Kiến trúc Hệ thống (System Architecture) — Trạm Hỗ Trợ
 
 > **Nguồn đối chiếu:** `local/src/backend/src/app.js`, `local/src/backend/src/server.js`, `local/src/frontend/src/app/app.config.ts`, `local/docker/compose.prod.yaml`, `local/docker/Caddyfile`.
 
@@ -8,13 +8,19 @@
 
 Hệ thống áp dụng kiến trúc **Client–Server tách biệt** (Angular SPA + Express REST API) giao tiếp qua cùng origin (Proxy trong Dev, Caddy Reverse Proxy trong Production) để đảm bảo cookie `SameSite=Strict` hoạt động an toàn.
 
+Angular có hai cổng điều hướng từ v1.3.0. Help Center (`/help-center`) phục vụ tra cứu công khai và yêu cầu của người gửi. Management Portal (`/management`) phục vụ điều phối và xử lý nghiệp vụ theo quyền. Hai cổng dùng chung phiên, API, MySQL và các biểu mẫu phiếu. [Sitemap và luồng người dùng](../../documents/markdown/giao-dien-v1.3.0.md)
+
 ```mermaid
 flowchart TB
     subgraph Client ["Tầng Trình bày (Frontend - Angular 22 SPA)"]
+        HC["/help-center · Tra cứu và yêu cầu cá nhân"]
+        MP["/management · Quản lý và xử lý kỹ thuật"]
         UI["Standalone Components & Templates"]
         State["Signals / WorkspaceService / Session"]
         Router["Router + requireSession Guard"]
         Http["HttpClient + renewSession & networkProgress Interceptors"]
+        HC --> UI
+        MP --> UI
         UI --> State --> Router
         UI --> Http
     end

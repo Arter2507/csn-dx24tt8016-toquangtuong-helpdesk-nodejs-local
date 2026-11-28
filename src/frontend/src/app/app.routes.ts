@@ -1,5 +1,6 @@
-import { Routes } from '@angular/router';
-import { requireSession } from './core/auth/session';
+import { inject } from '@angular/core';
+import { CanActivateFn, RedirectFunction, Router, Routes } from '@angular/router';
+import { requireSession, Session } from './core/auth/session';
 
 const loadWorkspace = () =>
   import('./features/workspace/workspace').then((module) => module.Workspace);
@@ -10,7 +11,7 @@ const loadMembers = () =>
 const loadOnboarding = () =>
   import('./features/auth/onboarding').then((module) => module.Onboarding);
 
-const protectedRoutes: Routes = [
+const managementPages: Routes = [
   {
     path: '',
     pathMatch: 'full',
@@ -24,10 +25,10 @@ const protectedRoutes: Routes = [
     data: { role: 'technician', access: 'TECHNICIAN', crumb: 'technician' },
   },
   {
-    path: 'dashboard/user',
+    path: 'tickets/folders',
     loadComponent: () =>
-      import('./features/overview/role-dashboard').then((module) => module.RoleDashboard),
-    data: { role: 'user', access: 'USER', crumb: 'requester_workspace' },
+      import('./features/workspace/ticket-folders').then((module) => module.TicketFolders),
+    data: { crumb: 'ticket_folders' },
   },
   {
     path: 'tickets/:id/view',
@@ -125,19 +126,83 @@ const protectedRoutes: Routes = [
       import('./features/settings/settings-page').then((module) => module.SettingsPage),
     data: { crumb: 'settings' },
   },
-  {
-    path: '**',
-    loadComponent: () => import('./features/overview/pages').then((module) => module.BlankPage),
-    data: { title: 'page_not_found', message: 'check_the_address_or_go_back_to_the_overview' },
-  },
+  ...knowledgePages(false),
 ];
 
-export const routes: Routes = [
-  ...['knowledge', 'knowledge/:id'].map((path) => ({
+function knowledgePages(helpCenter: boolean): Routes {
+  return ['knowledge', 'knowledge/:id', ...(helpCenter ? ['faq'] : [])].map((path) => ({
     path,
     loadComponent: () =>
       import('./features/knowledge/knowledge-page').then((module) => module.KnowledgePage),
-    data: { crumb: 'knowledge' },
+    data: { crumb: path === 'faq' ? 'frequently_asked' : 'knowledge', publicOnly: helpCenter },
+  }));
+}
+
+const staff = ['OWNER', 'ADMIN', 'TECHNICIAN'];
+
+const helpPages: Routes = [
+  {
+    path: '',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/help-center/help-home').then((module) => module.HelpHome),
+    data: { crumb: 'help_center' },
+  },
+  ...knowledgePages(true),
+];
+
+const helpAccountPages: Routes = managementPages
+  .filter(
+    (route) =>
+      route.data?.['resource'] === 'tickets' ||
+      ['notifications', 'profile', 'settings'].includes(route.path ?? ''),
+  )
+  .map((route) => ({ ...route, data: { ...route.data, personal: true } }));
+
+const legacyPortal: CanActivateFn = async (_, state) => {
+  const session = inject(Session);
+  const router = inject(Router);
+  try {
+    await session.initialize();
+  } catch {
+    return router.parseUrl('/login');
+  }
+  return router.parseUrl(
+    (staff.some((role) => session.allows(role)) ? '/management' : '/help-center') + state.url,
+  );
+};
+
+function legacyRedirect(base: string): RedirectFunction {
+  return ({ url, queryParams, fragment }) =>
+    inject(Router).createUrlTree([base, ...url.map((segment) => segment.path)], {
+      queryParams,
+      fragment: fragment ?? undefined,
+    });
+}
+
+const managementRoutes: Routes = managementPages.map((route) => ({
+  ...route,
+  path: route.path ? 'management/' + route.path : 'management',
+  canActivate: [requireSession],
+  data: { access: staff, ...route.data, portal: 'management' },
+}));
+
+const helpRoutes: Routes = [...helpPages, ...helpAccountPages].map((route) => ({
+  ...route,
+  path: route.path ? 'help-center/' + route.path : 'help-center',
+  canActivate: route.data?.['personal'] ? [requireSession] : undefined,
+  data: { ...route.data, portal: 'help' },
+}));
+
+export const routes: Routes = [
+  ...['forgot-password', 'reset-password'].map((path) => ({
+    path,
+    loadComponent: () =>
+      import('./features/auth/password-recovery').then((module) => module.PasswordRecovery),
+    data: {
+      resetting: path === 'reset-password',
+      crumb: path === 'reset-password' ? 'reset_password' : 'forgot_password',
+    },
   })),
   {
     path: 'register',
@@ -160,5 +225,29 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login').then((module) => module.Login),
     data: { crumb: 'sign_in' },
   },
-  ...protectedRoutes.map((route) => ({ ...route, canActivate: [requireSession] })),
+  ...helpRoutes,
+  ...managementRoutes,
+  { path: '', pathMatch: 'full', redirectTo: 'help-center' },
+  { path: 'dashboard/user', redirectTo: 'help-center' },
+  ...['knowledge', 'knowledge/:id'].map((path) => ({
+    path,
+    pathMatch: 'full' as const,
+    redirectTo: legacyRedirect('/help-center'),
+  })),
+  ...managementPages
+    .filter((route) => route.path && !route.path.startsWith('knowledge'))
+    .map((route) =>
+      helpAccountPages.some((page) => page.path === route.path)
+        ? { ...route, canActivate: [legacyPortal] }
+        : {
+            path: route.path,
+            pathMatch: 'full' as const,
+            redirectTo: legacyRedirect('/management'),
+          },
+    ),
+  {
+    path: '**',
+    loadComponent: () => import('./features/overview/pages').then((module) => module.BlankPage),
+    data: { title: 'page_not_found', message: 'check_the_address_or_go_back_to_the_overview' },
+  },
 ];

@@ -53,9 +53,11 @@ knowledgeRoutes.get('/categories', async (req, res) => {
   send(res, rows.map(row => ({ id: Number(row.id), name: row.name })));
 });
 
-knowledgeRoutes.get('/:id', validate(idSchema, 'params'), async (req, res) => {
+knowledgeRoutes.get('/:id', validate(idSchema, 'params'),
+  validate(z.object({ publicOnly: z.enum(['true']).optional() }), 'query'), async (req, res) => {
   const [[row]] = await pool.execute(select + ', a.body' + source + ' WHERE a.id = ? AND a.archived_at IS NULL', [req.validated.params.id]);
-  if (!row || (row.visibility === 'INTERNAL' && !scoped(await currentAccount(req)))) throw missing();
+  if (!row || (row.visibility === 'INTERNAL' &&
+    (req.validated.query.publicOnly || !scoped(await currentAccount(req))))) throw missing();
   send(res, dto(row));
 });
 

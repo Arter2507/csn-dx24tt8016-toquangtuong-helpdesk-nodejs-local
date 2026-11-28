@@ -49,6 +49,43 @@ export const authRepository = {
     );
     return result.affectedRows === 1;
   },
+  async requestPasswordReset(email, tokenHash) {
+    const [result] = await pool.execute(
+      `UPDATE users SET password_reset_token_hash = ?,
+          password_reset_expires_at = UTC_TIMESTAMP(3) + INTERVAL 30 MINUTE
+       WHERE email = ? AND is_active = 1 AND password_hash IS NOT NULL
+          AND (password_reset_expires_at IS NULL OR password_reset_expires_at <= UTC_TIMESTAMP(3) + INTERVAL 29 MINUTE)`,
+      [tokenHash, email],
+    );
+    return result.affectedRows === 1;
+  },
+  async resetPassword(tokenHash, passwordHash) {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [[user]] = await conn.execute(
+        `SELECT id FROM users
+         WHERE password_reset_token_hash = ? AND password_reset_expires_at > UTC_TIMESTAMP(3)
+           AND is_active = 1 AND password_hash IS NOT NULL FOR UPDATE`,
+        [tokenHash],
+      );
+      if (user) {
+        await conn.execute(
+          `UPDATE users SET password_hash = ?, password_reset_token_hash = NULL,
+              password_reset_expires_at = NULL, updated_at = UTC_TIMESTAMP(3) WHERE id = ?`,
+          [passwordHash, user.id],
+        );
+        await revokeUserSessions(conn, user.id);
+      }
+      await conn.commit();
+      return Boolean(user);
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
+  },
   session(id, userId) {
     return account(`u.id = ? AND EXISTS (
       SELECT 1 FROM auth_sessions s WHERE s.id = ? AND s.user_id = u.id
@@ -106,14 +143,13 @@ export const authRepository = {
     try {
       await conn.beginTransaction();
       const [result] = await conn.execute(
-        'UPDATE users SET password_hash = ?, updated_at = UTC_TIMESTAMP(3) WHERE id = ? AND is_active = 1 AND password_hash = ?',
+        `UPDATE users SET password_hash = ?, password_reset_token_hash = NULL,
+            password_reset_expires_at = NULL, updated_at = UTC_TIMESTAMP(3)
+         WHERE id = ? AND is_active = 1 AND password_hash = ?`,
         [newHash, id, currentHash],
       );
       if (result.affectedRows) {
-        await conn.execute(
-          'UPDATE auth_sessions SET revoked_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3) WHERE user_id = ? AND revoked_at IS NULL',
-          [id],
-        );
+        await revokeUserSessions(conn, id);
       }
       await conn.commit();
       return Boolean(result.affectedRows);
@@ -125,3 +161,10 @@ export const authRepository = {
     }
   },
 };
+
+function revokeUserSessions(conn, id) {
+  return conn.execute(
+    'UPDATE auth_sessions SET revoked_at = UTC_TIMESTAMP(3), updated_at = UTC_TIMESTAMP(3) WHERE user_id = ? AND revoked_at IS NULL',
+    [id],
+  );
+}

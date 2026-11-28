@@ -4,8 +4,7 @@
       {{
         mode() === 'list'
           ? isTicket
-            ? ((session.account()?.role === 'USER' ? 'my_support_requests' : 'support_requests')
-              | t)
+            ? ((personal() ? 'my_support_requests' : 'support_requests') | t)
             : ('users' | t)
           : mode() === 'create'
             ? isTicket
@@ -22,7 +21,7 @@
       <p>
         {{
           isTicket
-            ? ('track_and_handle_technical_support_requests' | t)
+            ? ((personal() ? 'help_track_hint' : 'track_and_handle_technical_support_requests') | t)
             : ('manage_accounts_roles_and_access' | t)
         }}
       </p>
@@ -35,14 +34,15 @@
     @if (!secured) {
       <span class="badge" data-tone="neutral">{{ 'demo_data' | t }}</span>
     }
+    @if (mode() === 'list' && isTicket && !personal()) {
+      <a class="secondary" routerLink="/management/tickets/folders"
+        ><i class="bi bi-folder2" aria-hidden="true"></i>{{ 'ticket_folders' | t }}</a
+      >
+    }
     @if (mode() !== 'list') {
-      <a class="text-button" [routerLink]="['/', resource()]" [queryParams]="scope"
+      <a class="text-button" [routerLink]="[listPath]" [queryParams]="scope"
         ><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ 'back_to_list' | t }}</a
       >
-    } @else {
-      <button type="button" class="secondary" [disabled]="busy" (click)="load(page)">
-        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
-      </button>
     }
   </div>
 </div>
@@ -53,13 +53,17 @@
       @if (mode() === 'view' && canEdit(editing)) {
         <a
           class="text-button"
-          [routerLink]="['/tickets', editing.id, 'edit']"
+          [routerLink]="[listPath, editing.id, 'edit']"
           [queryParams]="scope"
           >{{ 'edit_request' | t }}</a
         >
       }
     </div>
-    <app-ticket-actions [ticket]="editing" (changed)="changeTicket($event)" />
+    <app-ticket-actions
+      [ticket]="editing"
+      [requesterOnly]="personal()"
+      (changed)="changeTicket($event)"
+    />
     @if (ownTicket) {
       <p class="muted">
         {{
@@ -74,7 +78,7 @@
     }
   </section>
 }
-@if (isTicket && mode() === 'list') {
+@if (isTicket && mode() === 'list' && !personal()) {
   <app-quick-ticket [names]="accountNames" [scope]="scope" (changed)="changeTicket($event)" />
 }
 @if (notice) {
@@ -84,7 +88,7 @@
     @if (noticeTicket) {
       <a
         class="notice-link"
-        [routerLink]="['/tickets', noticeTicket, requesterId ? 'view' : 'edit']"
+        [routerLink]="[listPath, noticeTicket, requesterId ? 'view' : 'edit']"
         [queryParams]="scope"
         >{{ 'view_progress' | t }}</a
       >
@@ -105,7 +109,7 @@
 
 @if (mode() === 'list') {
   <section class="panel">
-    @if (isTicket && (requesterId || assigneeId)) {
+    @if (!personal() && isTicket && (requesterId || assigneeId)) {
       <p class="notice">
         {{
           requesterId
@@ -116,7 +120,18 @@
               : ('assigned_scope'
                 | t: { name: (accountNames.get(+assigneeId) ?? '#' + assigneeId | t) })
         }}
-        <a class="notice-link" routerLink="/tickets">{{ 'see_all_requests' | t }}</a>
+        <a class="notice-link" [routerLink]="listPath">{{ 'see_all_requests' | t }}</a>
+      </p>
+    }
+    @if (
+      folderScope['catalogCategoryId'] ||
+      folderScope['createdYear'] ||
+      folderScope['createdMonth'] ||
+      folderScope['unitId']
+    ) {
+      <p class="notice">
+        {{ 'ticket_folder_scope' | t }}
+        <a class="notice-link" [routerLink]="listPath">{{ 'see_all_requests' | t }}</a>
       </p>
     }
     <div class="table-command-strip">
@@ -157,7 +172,7 @@
               <ul>
                 @for (row of rows.slice(0, 5); track row.id) {
                   <li>
-                    <a [routerLink]="['/tickets', row.id, itemMode(row)]" [queryParams]="scope">
+                    <a [routerLink]="[listPath, row.id, itemMode(row)]" [queryParams]="scope">
                       <span>{{ ticketReference(row) }} · {{ row['title'] }}</span>
                       <small class="muted">{{ categoryName(+(row['categoryId'] ?? 0)) }}</small>
                     </a>
@@ -230,6 +245,16 @@
         </label>
         <div class="toolbar-actions">
           <button
+            type="button"
+            [attr.aria-label]="'refresh_data' | t"
+            [attr.title]="'refresh_data' | t"
+            class="icon-button refresh-icon"
+            [disabled]="busy"
+            (click)="load(page)"
+          >
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+          </button>
+          <button
             class="text-button"
             type="button"
             [disabled]="busy || batchBusy()"
@@ -242,7 +267,7 @@
       @if (!selection.ids().size) {
         <a
           class="primary"
-          [routerLink]="['/', resource(), 'new']"
+          [routerLink]="[listPath, 'new']"
           [queryParams]="isTicket && requesterId ? { requesterId } : null"
           ><i class="bi bi-plus-lg" aria-hidden="true"></i
           >{{ isTicket ? ('new_request' | t) : ('add_user' | t) }}</a
@@ -353,7 +378,11 @@
                     </td>
                   }
                   <td>
-                    @if (isTicket) {
+                    @if (personal()) {
+                      <a class="ticket-code" [routerLink]="[listPath, row.id, 'view']">{{
+                        ticketReference(row)
+                      }}</a>
+                    } @else if (isTicket) {
                       <button
                         class="text-button table-quick-view ticket-code"
                         type="button"
@@ -366,7 +395,9 @@
                     }
                   </td>
                   <td class="title-cell">
-                    @if (isTicket) {
+                    @if (personal()) {
+                      <a [routerLink]="[listPath, row.id, 'view']">{{ row[displayField] }}</a>
+                    } @else if (isTicket) {
                       <button
                         class="text-button table-quick-view"
                         type="button"
@@ -421,7 +452,11 @@
                         isTicket ? (row[displayField]?.toString() ?? '') : (i18n.personKey(row) | t)
                       "
                     >
-                      @if (isTicket) {
+                      @if (personal()) {
+                        <a class="row-menu-item" [routerLink]="[listPath, row.id, 'view']"
+                          ><i class="bi bi-eye" aria-hidden="true"></i>{{ 'view_action' | t }}</a
+                        >
+                      } @else if (isTicket) {
                         <button
                           class="row-menu-item"
                           type="button"
@@ -433,7 +468,7 @@
                       @if (!isTicket || canEdit(row)) {
                         <a
                           class="row-menu-item"
-                          [routerLink]="['/', resource(), row.id, itemMode(row)]"
+                          [routerLink]="[listPath, row.id, itemMode(row)]"
                           [queryParams]="scope"
                         >
                           <i
@@ -538,7 +573,7 @@
   @if (editing?.mergedInto; as target) {
     <p class="notice">
       {{ 'merged_into' | t }}
-      <a class="notice-link" [routerLink]="['/tickets', target.id, 'view']">{{
+      <a class="notice-link" [routerLink]="[listPath, target.id, 'view']">{{
         formatTicketCode(target.code)
       }}</a>
     </p>
@@ -549,9 +584,7 @@
       <ul>
         @for (source of editing?.mergedTickets; track source.id) {
           <li>
-            <a [routerLink]="['/tickets', source.id, 'view']">{{
-              formatTicketCode(source.code)
-            }}</a>
+            <a [routerLink]="[listPath, source.id, 'view']">{{ formatTicketCode(source.code) }}</a>
           </li>
         }
       </ul>
@@ -794,14 +827,11 @@
       }
       <div class="form-actions">
         @if (secured && mode() === 'view' && editing && !closed && !editing.mergedInto) {
-          <a
-            class="primary"
-            [routerLink]="['/tickets', editing.id, 'edit']"
-            [queryParams]="scope"
-            >{{ 'edit' | t }}</a
-          >
+          <a class="primary" [routerLink]="[listPath, editing.id, 'edit']" [queryParams]="scope">{{
+            'edit' | t
+          }}</a>
         }
-        <a class="secondary" [routerLink]="['/', resource()]" [queryParams]="scope">{{
+        <a class="secondary" [routerLink]="[listPath]" [queryParams]="scope">{{
           readOnly ? ('go_back' | t) : ('cancel' | t)
         }}</a>
         @if (!readOnly) {
@@ -993,10 +1023,17 @@
     <section class="panel today-tickets" aria-labelledby="today-title">
       <div class="section-heading">
         <h2 id="today-title">{{ 'requests_created_today' | t }}</h2>
-        <button type="button" class="secondary" [disabled]="todayBusy" (click)="loadToday(1)">
-          {{ 'refresh_data' | t }}
+        <button
+          type="button"
+          [attr.aria-label]="'refresh_data' | t"
+          [attr.title]="'refresh_data' | t"
+          class="icon-button refresh-icon"
+          [disabled]="todayBusy"
+          (click)="loadToday(1)"
+        >
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
         </button>
-        <a class="text-button" routerLink="/tickets" [queryParams]="scope">{{
+        <a class="text-button" [routerLink]="listPath" [queryParams]="scope">{{
           'see_the_list' | t
         }}</a>
       </div>
@@ -1031,7 +1068,7 @@
                   <td>
                     <a
                       class="badge"
-                      [routerLink]="['/tickets', row.id, requesterId ? 'view' : 'edit']"
+                      [routerLink]="[listPath, row.id, requesterId ? 'view' : 'edit']"
                       [queryParams]="scope"
                       >{{ ticketReference(row) }}</a
                     >

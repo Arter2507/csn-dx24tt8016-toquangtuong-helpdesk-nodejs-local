@@ -1,4 +1,4 @@
-# Công nghệ & Hướng dẫn Cài đặt — Trạm Mèo
+# Công nghệ & Hướng dẫn Cài đặt — Trạm Hỗ Trợ
 
 > **Nguồn đối chiếu:** `local/package.json`, `local/src/backend/package.json`, `local/src/frontend/package.json`, `local/docker/compose.yaml`, `local/docker/compose.prod.yaml`.
 

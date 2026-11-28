@@ -10,6 +10,7 @@ import { config } from '../../configs/env.js';
 import { authRepository } from './auth.repository.js';
 import { activationHash, invalidActivation } from '../organizations/activation.js';
 import { forbidden } from '../organizations/permissions.js';
+import { passwordResetMailEnabled, sendPasswordReset } from '../notifications/outgoing-mail.js';
 export { requireAdmin } from '../organizations/permissions.js';
 
 const accessCookie = 'tram_meo_access';
@@ -116,6 +117,32 @@ function checkRate(req, res, operation, limit) {
 }
 
 const emailInput = z.email().max(254).transform(value => value.toLowerCase());
+
+authRoutes.post('/forgot-password', validate(z.object({ email: emailInput }).strict(), 'body'), async (req, res) => {
+  checkRate(req, res, 'forgot-password', 5);
+  if (!passwordResetMailEnabled) throw new AppError(503, 'PASSWORD_RECOVERY_UNAVAILABLE');
+  const { email } = req.validated.body;
+  const token = refreshToken();
+  if (await authRepository.requestPasswordReset(email, digest(token))) {
+    void sendPasswordReset(email, token).catch(error => {
+      console.warn('Không gửi được email khôi phục mật khẩu', error.code ?? 'MAIL_ERROR');
+    });
+  }
+  res.status(202).json({ success: true, data: null, meta: null });
+});
+
+authRoutes.post('/reset-password', validate(z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/),
+  password: newPassword,
+}).strict(), 'body'), async (req, res) => {
+  checkRate(req, res, 'reset-password', 10);
+  const { token, password } = req.validated.body;
+  if (!await authRepository.resetPassword(digest(token), await hash(password, 12))) {
+    throw new AppError(422, 'PASSWORD_RESET_INVALID');
+  }
+  clearCookies(res);
+  res.status(204).end();
+});
 
 authRoutes.post('/register', validate(z.object({
   email: emailInput, fullName: z.string().trim().min(1).max(150), password: newPassword,

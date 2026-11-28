@@ -1,6 +1,10 @@
 {
   "vi": {
-    "subject": "[Trạm Mèo] {code} · {status}",
+    "passwordReset": {
+      "subject": "[Trạm Hỗ Trợ] Đặt lại mật khẩu",
+      "body": "Đặt lại mật khẩu tại:\n{url}\n\nLiên kết dùng một lần trong vòng 30 phút. Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này."
+    },
+    "subject": "[Trạm Hỗ Trợ] {code} · {status}",
     "body": "Yêu cầu {code} đã chuyển sang trạng thái {status}.\n\n{title}\n\nXem yêu cầu: {url}\n",
     "statuses": {
       "NEW": "Mới tiếp nhận",
@@ -11,7 +15,11 @@
     }
   },
   "en": {
-    "subject": "[Trạm Mèo] {code} · {status}",
+    "passwordReset": {
+      "subject": "[Trạm Hỗ Trợ] Reset your password",
+      "body": "Reset your password at:\n{url}\n\nThis single-use link expires in 30 minutes. If you did not request a password reset, you can ignore this email."
+    },
+    "subject": "[Trạm Hỗ Trợ] {code} · {status}",
     "body": "Request {code} is now {status}.\n\n{title}\n\nView request: {url}\n",
     "statuses": {
       "NEW": "New",
