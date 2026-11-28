@@ -45,6 +45,7 @@ export class ProfilePage {
   readonly imageRevision = signal(0);
   readonly draft = {
     fullName: '',
+    username: '',
     phone: '',
     department: '',
     jobTitle: '',
@@ -69,6 +70,7 @@ export class ProfilePage {
     this.profile.set(profile);
     Object.assign(this.draft, {
       fullName: profile.fullName,
+      username: profile.username ?? '',
       phone: profile.phone,
       department: '',
       jobTitle: '',
@@ -143,7 +145,7 @@ export class ProfilePage {
         next: ({ data }) => {
           this.apply(data);
           this.session.account.update((account) =>
-            account ? { ...account, fullName: data.fullName } : account,
+            account ? { ...account, fullName: data.fullName, username: data.username } : account,
           );
           this.feedback.set('profile_saved');
         },

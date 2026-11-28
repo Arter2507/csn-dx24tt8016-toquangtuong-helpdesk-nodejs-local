@@ -4,7 +4,8 @@
       {{
         mode() === 'list'
           ? isTicket
-            ? ('support_requests' | t)
+            ? ((session.account()?.role === 'USER' ? 'my_support_requests' : 'support_requests')
+              | t)
             : ('users' | t)
           : mode() === 'create'
             ? isTicket
@@ -29,7 +30,7 @@
   </div>
   <div class="heading-actions">
     @if (editing && isTicket) {
-      <span class="badge">{{ ticketReference(editing) }}</span>
+      <strong class="ticket-code">{{ ticketReference(editing) }}</strong>
     }
     @if (!secured) {
       <span class="badge" data-tone="neutral">{{ 'demo_data' | t }}</span>
@@ -38,6 +39,10 @@
       <a class="text-button" [routerLink]="['/', resource()]" [queryParams]="scope"
         ><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ 'back_to_list' | t }}</a
       >
+    } @else {
+      <button type="button" class="secondary" [disabled]="busy" (click)="load(page)">
+        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+      </button>
     }
   </div>
 </div>
@@ -55,6 +60,18 @@
       }
     </div>
     <app-ticket-actions [ticket]="editing" (changed)="changeTicket($event)" />
+    @if (ownTicket) {
+      <p class="muted">
+        {{
+          (canEdit(editing)
+            ? 'ticket_edit_window'
+            : editing['status'] === 'CLOSED'
+              ? 'this_request_is_closed'
+              : 'api_TICKET_EDIT_EXPIRED'
+          ) | t
+        }}
+      </p>
+    }
   </section>
 }
 @if (isTicket && mode() === 'list') {
@@ -338,7 +355,7 @@
                   <td>
                     @if (isTicket) {
                       <button
-                        class="badge table-quick-view"
+                        class="text-button table-quick-view ticket-code"
                         type="button"
                         (click)="quickTicket()?.open(row.id)"
                       >
@@ -558,7 +575,7 @@
         <div class="wide">
           <div class="ticket-number-preview" aria-live="polite">
             <strong>{{ 'ticket_number_field' | t }}</strong>
-            <span class="badge">{{ ticketNumber }}</span>
+            <strong class="ticket-code">{{ ticketNumber }}</strong>
           </div>
           @if (ticketNumberError) {
             <small class="field-error">{{ ticketNumberError | t }}</small>
@@ -920,7 +937,7 @@
           <li class="muted">{{ 'no_comments' | t }}</li>
         }
       </ul>
-      @if (!chatLocked) {
+      @if (!chatLocked && canWriteChat) {
         <form class="field" (ngSubmit)="sendComment()">
           <label for="ticket-comment">{{
             (internalNote ? 'internal_note' : 'public_reply') | t
@@ -967,7 +984,7 @@
             }
           </div>
         </form>
-      } @else {
+      } @else if (chatLocked) {
         <p class="notice" role="status">{{ 'api_CHAT_EXPIRED' | t }}</p>
       }
     </section>
@@ -976,6 +993,9 @@
     <section class="panel today-tickets" aria-labelledby="today-title">
       <div class="section-heading">
         <h2 id="today-title">{{ 'requests_created_today' | t }}</h2>
+        <button type="button" class="secondary" [disabled]="todayBusy" (click)="loadToday(1)">
+          {{ 'refresh_data' | t }}
+        </button>
         <a class="text-button" routerLink="/tickets" [queryParams]="scope">{{
           'see_the_list' | t
         }}</a>

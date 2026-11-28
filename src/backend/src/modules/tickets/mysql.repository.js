@@ -2,8 +2,8 @@ import { pool } from '../../database/pool.js';
 import { AppError } from '../../shared/errors.js';
 import { estimatePriority } from './priority.js';
 import { prepareAttachments } from './attachments.js';
-import { authorizeUpdate, isAdmin, isTechnician } from './ticket-access.js';
-import { discardNotifications, notify, publishNotifications } from '../notifications/inbox.js';
+import { assertContentEditable, authorizeUpdate, isAdmin, isTechnician } from './ticket-access.js';
+import { discardNotifications, notify, publishNotifications, publishTickets } from '../notifications/inbox.js';
 import { queueStatusMail } from '../notifications/outgoing-mail.js';
 import { allocateMysqlCode } from './numbering.js';
 import { canUpdateStatus } from './ticket-status.js';
@@ -246,7 +246,14 @@ export const ticketsMysql = {
     const row = rows[0];
     if (!row) return null;
     const canSeeMerge = !account || isAdmin(account) || Number(row.requesterId) === account.id;
-    if (!canSeeMerge && (row.archivedAt || !isTechnician(account) || Number(row.assigneeId) !== account.id)) return null;
+    if (!canSeeMerge) {
+      if (row.archivedAt || !isTechnician(account)) return null;
+      if (Number(row.assigneeId) !== account.id) {
+        if (row.status !== 'NEW' || row.assigneeId != null) return null;
+        const [[eligible]] = await pool.execute(activeTechnicians + ' AND u.id = ?', [row.categoryId, account.id]);
+        if (!eligible) return null;
+      }
+    }
     const [ticket] = await mapTickets(rows);
     if (!canSeeMerge) return ticket;
     const [links] = await pool.execute(
@@ -293,20 +300,38 @@ export const ticketsMysql = {
       if (mailFingerprint) await conn.execute('UPDATE inbound_ticket_mail SET ticket_id = ? WHERE fingerprint = ?', [ticketId, mailFingerprint]);
       await insertEvent(conn, ticketId, input.requesterId, 'CREATED', null, { status: 'NEW' });
       await saveAttachmentRows(conn, ticketId, input.requesterId, attachments);
+      const [admins] = await conn.execute(
+        `SELECT u.id FROM users u JOIN organization_members m ON m.user_id = u.id
+         JOIN organization_members sender ON sender.organization_id = m.organization_id
+         WHERE sender.user_id = ? AND m.role IN ('OWNER', 'ADMIN')
+           AND u.is_active = 1 AND u.password_hash IS NOT NULL`, [input.requesterId],
+      );
+      const [technicians] = await conn.execute(activeTechnicians +
+        ' AND m.organization_id = (SELECT organization_id FROM organization_members WHERE user_id = ?)',
+      [input.categoryId, input.requesterId]);
+      const recipients = new Set([...admins, ...technicians].map(person => Number(person.id)));
+      recipients.delete(input.requesterId);
+      for (const userId of recipients) {
+        await notify(conn, { userId, ticketId, type: 'TICKET_CREATED', title: input.title, status: 'NEW' });
+      }
       await conn.commit();
+      publishNotifications(conn);
+      publishTickets();
       for (const file of files) file.committed = true;
       return this.find(ticketId);
     } catch (error) {
       await conn.rollback();
       throw error;
     } finally {
+      discardNotifications(conn);
       conn.release();
     }
   },
 
-  async update(id, patch, files = [], account) {
+  async update(id, patch, files = [], account, contentEdit = true) {
     const current = await this.find(id, account);
     if (!current || current.archivedAt) return null;
+    if (contentEdit) assertContentEditable(account, current);
 
     const { title, description, categoryId, assigneeId, priority, status } = current;
     const input = { title, description, categoryId, assigneeId, priority, status, ...patch };
@@ -427,8 +452,9 @@ export const ticketsMysql = {
       await saveAttachmentRows(conn, id, actorId, attachments.filter(file => files.some(upload => upload.filename === file.id)), removeAttachments);
       await conn.commit();
       publishNotifications(conn);
+      publishTickets();
       for (const file of files) file.committed = true;
-      return this.find(id, account);
+      return (await this.find(id, account)) ?? { ...current, ...changes, version: version + 1 };
     } catch (error) {
       await conn.rollback();
       throw error;
@@ -484,6 +510,7 @@ export const ticketsMysql = {
       }
       await conn.commit();
       publishNotifications(conn);
+      publishTickets();
       return { count: 'targetId' in update ? rows.length - 1 : rows.length };
     } catch (error) {
       await conn.rollback();
@@ -509,6 +536,7 @@ export const ticketsMysql = {
          WHERE id IN (${placeholders}) AND archived_at IS NULL`, selected,
       );
       await conn.commit();
+      if (result.affectedRows) publishTickets();
       return result.affectedRows;
     } catch (error) {
       await conn.rollback();

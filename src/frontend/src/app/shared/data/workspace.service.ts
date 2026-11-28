@@ -65,14 +65,14 @@ export class WorkspaceService {
   ticketAction(
     id: number,
     version: number,
-    action: 'transitions' | 'assignee',
+    action: 'transitions' | 'assignee' | 'priority',
     changes: Record<string, Value>,
   ) {
     const url = `/api/v1/tickets/${id}/${action}`;
     const body = { version, ...changes };
-    return action === 'assignee'
-      ? this.http.put<ApiResponse<Row & TicketDetails>>(url, body)
-      : this.http.post<ApiResponse<Row & TicketDetails>>(url, body);
+    return action === 'transitions'
+      ? this.http.post<ApiResponse<Row & TicketDetails>>(url, body)
+      : this.http.put<ApiResponse<Row & TicketDetails>>(url, body);
   }
 
   ticketHistory(id: number) {
@@ -100,9 +100,9 @@ export class WorkspaceService {
     return this.http.post<ApiResponse<{ count: number }>>('/api/v1/tickets/archive', { ids });
   }
 
-  assignableTechnicians(categoryId: number) {
+  assignableTechnicians(categoryId: number, ticketId?: number) {
     return this.http.get<ApiResponse<{ id: number; fullName: string }[]>>(
-      '/api/v1/tickets/technicians',
+      ticketId ? '/api/v1/tickets/' + ticketId + '/assignee' : '/api/v1/tickets/technicians',
       {
         params: { categoryId },
       },

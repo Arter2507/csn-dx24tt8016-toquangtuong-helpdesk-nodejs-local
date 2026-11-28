@@ -70,6 +70,16 @@ export class QuickTicket {
   }
 
   update(row: Row & TicketDetails) {
+    const account = this.session.account();
+    if (
+      account?.role === 'TECHNICIAN' &&
+      row['assigneeId'] !== account.id &&
+      row['requesterId'] !== account.id
+    ) {
+      this.dialog().nativeElement.close();
+      this.changed.emit(row);
+      return;
+    }
     this.ticket.set(row);
     this.changed.emit(row);
     this.loadHistory(row.id, this.request);

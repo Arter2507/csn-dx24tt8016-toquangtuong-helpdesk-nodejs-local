@@ -3,7 +3,7 @@ import { pool } from '../../database/pool.js';
 import { AppError } from '../../shared/errors.js';
 import { insertEvent, ticketsMysql } from './mysql.repository.js';
 import { canHandle, isAdmin, isTechnician } from './ticket-access.js';
-import { discardNotifications, notify, publishNotifications } from '../notifications/inbox.js';
+import { discardNotifications, notify, publishNotifications, publishTickets } from '../notifications/inbox.js';
 import { queueStatusMail } from '../notifications/outgoing-mail.js';
 import { chatExpiresAt } from './chat-session.js';
 
@@ -42,7 +42,9 @@ export const ticketComments = {
     }).strict().safeParse(req.body);
     if (!input.success) throw new AppError(422, 'VALIDATION_ERROR', 'Nội dung trao đổi không hợp lệ');
     const { body, internal } = input.data;
-    if (internal && !canHandle(req.account, ticket)) throw new AppError(403, 'FORBIDDEN');
+    if (!canHandle(req.account, ticket) && (internal || ticket.requesterId !== req.account.id)) {
+      throw new AppError(403, 'FORBIDDEN');
+    }
     const conn = await pool.getConnection();
     try {
       await conn.beginTransaction();
@@ -88,6 +90,7 @@ export const ticketComments = {
       const [rows] = await conn.execute(commentSelect + ' WHERE c.id = ?', [result.insertId]);
       await conn.commit();
       publishNotifications(conn);
+      if (resumed) publishTickets();
       const data = mapComment(rows[0]);
       if (firstResponse) data.firstResponseAt = data.createdAt;
       if (resumed) data.ticketUpdate = { status, version: ticket.version + 1, at: data.createdAt };

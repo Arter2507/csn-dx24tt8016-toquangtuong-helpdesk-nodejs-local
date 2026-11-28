@@ -24,7 +24,7 @@
   @if (ticket(); as row) {
     <div>
       <div class="iam-actions">
-        <span class="badge">{{ reference(row) }}</span>
+        <strong class="ticket-code">{{ reference(row) }}</strong>
         <h3>{{ row['title'] }}</h3>
       </div>
       <dl class="iam-fields iam-metadata">

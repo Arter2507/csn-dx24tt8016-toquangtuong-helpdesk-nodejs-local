@@ -14,6 +14,9 @@
     </p>
   </div>
   <div class="heading-actions">
+    <button class="secondary" type="button" (click)="refresh()">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+    </button>
     <a class="primary" routerLink="/tickets/new" [queryParams]="{ requesterId: account() }"
       ><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'new_request' | t }}</a
     >

@@ -27,6 +27,10 @@ export function discardNotifications(conn) {
   pending.delete(conn);
 }
 
+export function publishTickets() {
+  changes.emit('tickets');
+}
+
 const streams = new Map();
 export const notificationRoutes = Router();
 notificationRoutes.get('/stream', (req, res) => {
@@ -43,6 +47,9 @@ notificationRoutes.get('/stream', (req, res) => {
   res.write('retry: 3000\nevent: inbox\ndata: refresh\n\n');
 
   let checking = false;
+  const sendTickets = () => {
+    if (!res.writableEnded) res.write('event: tickets\ndata: refresh\n\n');
+  };
   const send = async () => {
     if (checking || res.writableEnded) return;
     checking = true;
@@ -61,8 +68,10 @@ notificationRoutes.get('/stream', (req, res) => {
   };
   const heartbeat = setInterval(send, 25000);
   changes.on(key, send);
+  changes.on('tickets', sendTickets);
   res.on('close', () => {
     changes.off(key, send);
+    changes.off('tickets', sendTickets);
     clearInterval(heartbeat);
     const count = streams.get(key) - 1;
     if (count) streams.set(key, count);

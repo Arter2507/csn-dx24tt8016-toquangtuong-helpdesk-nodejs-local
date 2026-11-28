@@ -99,6 +99,20 @@
               >{{ 'profile_email_policy' | t }}</small
             ></label
           >
+          @if (session.mode() === 'mysql') {
+            <label class="field">
+              {{ 'username' | t }}
+              <input
+                name="username"
+                [(ngModel)]="draft.username"
+                minlength="3"
+                maxlength="32"
+                pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{2,31}"
+                autocapitalize="none"
+              />
+              <small class="muted">{{ 'username_help' | t }}</small>
+            </label>
+          }
           <label class="field"
             >{{ 'profile_phone' | t
             }}<input type="tel" name="phone" [(ngModel)]="draft.phone" maxlength="30"

@@ -6,11 +6,13 @@ import { validate } from '../../middlewares/validate.js';
 import { AppError } from '../../shared/errors.js';
 import { users } from '../users/users.js';
 import { fileType } from '../tickets/attachments.js';
+import { usernameInput } from '../auth/username.js';
 
 export const demoProfiles = new Map();
 const text = max => z.string().trim().max(max);
 const details = z.object({
   fullName: text(150).min(1),
+  username: z.union([z.literal(''), usernameInput]).optional(),
   phone: text(30),
   department: text(100),
   jobTitle: text(100),
@@ -74,13 +76,16 @@ profileRoutes.get('/', async (req, res) => {
 });
 profileRoutes.patch('/', validate(details, 'body'), async (req, res) => {
   const current = await find(req);
-  const { fullName, phone, ...fields } = req.validated.body;
+  const { fullName, phone, username, ...fields } = req.validated.body;
   const id = current.account.id;
   if (req.account) {
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
       await connection.execute('UPDATE users SET full_name = ?, phone = ?, updated_at = UTC_TIMESTAMP(3) WHERE id = ? AND is_active = 1', [fullName, phone || null, id]);
+      if (username !== undefined) {
+        await connection.execute('UPDATE users SET username = ? WHERE id = ? AND is_active = 1', [username || null, id]);
+      }
       await connection.execute(
         'INSERT INTO user_profiles (user_id, details) VALUES (?, ?) ON DUPLICATE KEY UPDATE details = ?',
         [id, JSON.stringify(fields), JSON.stringify(fields)],
@@ -88,6 +93,7 @@ profileRoutes.patch('/', validate(details, 'body'), async (req, res) => {
       await connection.commit();
     } catch (error) {
       await connection.rollback();
+      if (error.code === 'ER_DUP_ENTRY') throw new AppError(409, 'USERNAME_TAKEN');
       throw error;
     } finally { connection.release(); }
   } else {
@@ -95,7 +101,7 @@ profileRoutes.patch('/', validate(details, 'body'), async (req, res) => {
     demoProfiles.set(id, { ...current.profile, details: fields });
   }
   res.json({ success: true, data: response({
-    account: { ...current.account, fullName, phone },
+    account: { ...current.account, fullName, phone, ...(req.account && username !== undefined ? { username: username || null } : {}) },
     profile: { ...current.profile, details: fields },
   }), meta: null });
 });

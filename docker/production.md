@@ -1,6 +1,6 @@
 # Triển khai Trạm Mèo trên máy chủ
 
-Trạm Mèo chạy một bộ Docker Compose gồm Caddy, Express và MySQL 8.4. Caddy phục vụ Angular đã build, giữ đường dẫn SPA khi tải lại trang và chuyển `/api/*` sang Express trong mạng nội bộ. Frontend gọi API cùng origin nên đổi tên miền hoặc cổng triển khai không cần sửa mã nguồn. [Cấu hình SPA và reverse proxy trong Caddy](https://caddyserver.com/docs/caddyfile/patterns)
+Trạm Hỗ Trợ chạy một bộ Docker Compose gồm Caddy, Express và MySQL 8.4. Caddy phục vụ Angular đã build, giữ đường dẫn SPA khi tải lại trang và chuyển `/api/*` sang Express trong mạng nội bộ. Frontend gọi API cùng origin nên đổi tên miền hoặc cổng triển khai không cần sửa mã nguồn. [Cấu hình SPA và reverse proxy trong Caddy](https://caddyserver.com/docs/caddyfile/patterns)
 
 ## Khởi động
 
@@ -42,4 +42,4 @@ Liên kết kích hoạt dùng tên miền hiện tại và có hạn 24 giờ. 
 
 ## Nghiệm thu trên máy chủ đích
 
-Kiểm tra DNS và chứng chỉ công khai, tải lại một URL chi tiết, đăng nhập từng vai trò, thử truy cập phiếu/tệp ngoài phạm vi, upload và tải lại sau khi restart. Xác nhận tạo và khôi phục bản sao trên CSDL kiểm thử rồi mới đưa tài khoản thật vào. [Kế hoạch IAM và phạm vi quyền theo phòng ban](../documents/markdown/ke-hoach-iam-rbac.md)
+Kiểm tra DNS và chứng chỉ công khai, tải lại một URL chi tiết, đăng nhập từng vai trò, thử truy cập phiếu/tệp ngoài phạm vi, upload và tải lại sau khi restart. Xác nhận tạo và khôi phục bản sao trên CSDL kiểm thử rồi mới đưa tài khoản thật vào. [Kế hoạch IAM và phạm vi quyền theo phòng ban](https://github.com/Arter2507/csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local/blob/local/documents/markdown/ke-hoach-iam-rbac.md)

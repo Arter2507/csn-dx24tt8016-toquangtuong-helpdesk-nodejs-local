@@ -3,7 +3,7 @@
   @let registering = mode() === 'register';
   <div class="login-brand">
     <span class="brand-mark">
-      <img src="mascot/it-support-mark.webp" alt="" width="40" height="40" />
+      <i class="bi bi-headset" aria-hidden="true"></i>
     </span>
     <strong>{{ 'tr_m_m_o' | t }}</strong>
   </div>
@@ -75,7 +75,27 @@
           />
           <small id="initial-password-help" class="muted">{{ 'initial_password_help' | t }}</small>
         </div>
-        <button class="primary" type="submit" [disabled]="form.invalid || busy()">
+        @if (registering) {
+          <label class="field">
+            {{ 'repeat_password' | t }}
+            <input
+              type="password"
+              name="confirmPassword"
+              autocomplete="new-password"
+              required
+              maxlength="72"
+              [(ngModel)]="confirmPassword"
+            />
+          </label>
+          @if (confirmPassword && password !== confirmPassword) {
+            <small class="field-error" role="status">{{ 'password_mismatch' | t }}</small>
+          }
+        }
+        <button
+          class="primary"
+          type="submit"
+          [disabled]="form.invalid || busy() || (registering && password !== confirmPassword)"
+        >
           {{ mode() | t }}
         </button>
       </form>

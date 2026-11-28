@@ -36,6 +36,9 @@ INSERT INTO users (id, email, password_hash, full_name, phone, is_active, create
   (4, 'lan.nguyen@example.test', @password_hash, 'Nguyễn Thị Lan', '0901000004', 1, @now, @now),
   (5, 'minh.tran@example.test', @password_hash, 'Trần Văn Minh', '0901000005', 1, @now, @now);
 
+UPDATE users SET username = CASE id WHEN 1 THEN 'user' WHEN 2 THEN 'technical' WHEN 3 THEN 'admin' END
+WHERE id IN (1, 2, 3);
+
 INSERT INTO user_roles (user_id, role_id, created_at) VALUES
   (1, 1, @now),
   (2, 1, @now),

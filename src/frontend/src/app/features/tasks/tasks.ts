@@ -16,9 +16,11 @@ import { finalize } from 'rxjs';
 import { Translate, I18n, errorKey } from '../../core/i18n/i18n';
 import { ApiResponse } from '../../core/http/api-response';
 import { calendarDay, calendarMonth } from '../../shared/date/calendar-date';
+import { Session } from '../../core/auth/session';
+import { DispatchBoard } from './dispatch-board';
 
 type Status = 'TODO' | 'DOING' | 'DONE';
-type View = 'board' | 'calendar' | 'table';
+type View = 'board' | 'calendar' | 'table' | 'dispatch';
 interface TaskData {
   title: string;
   description: string;
@@ -43,12 +45,16 @@ const empty = (): TaskData => ({
   assigneeId: null,
   dueDate: null,
 });
-@Component({ imports: [DatePipe, FormsModule, Translate], templateUrl: './tasks.html' })
+@Component({
+  imports: [DatePipe, FormsModule, Translate, DispatchBoard],
+  templateUrl: './tasks.html',
+})
 export class TasksPage {
   private readonly http = inject(HttpClient);
   private readonly destroy = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly session = inject(Session);
   private readonly editor = viewChild<ElementRef<HTMLDialogElement>>('editor');
   readonly i18n = inject(I18n);
   readonly tasks = signal<Task[]>([]);
@@ -60,7 +66,11 @@ export class TasksPage {
   readonly view = signal<View>(
     this.route.snapshot.queryParamMap.get('view') === 'calendar' ? 'calendar' : 'board',
   );
-  readonly views: View[] = ['board', 'calendar', 'table'];
+  readonly views = computed<View[]>(() =>
+    this.session.mode() === 'mysql' && this.session.hasRole('ADMIN')
+      ? ['board', 'dispatch', 'calendar', 'table']
+      : ['board', 'calendar', 'table'],
+  );
   readonly states: Status[] = ['TODO', 'DOING', 'DONE'];
   readonly columns = computed(() =>
     this.states.map((status) => ({
@@ -99,6 +109,8 @@ export class TasksPage {
   }
 
   load() {
+    this.loading.set(true);
+    this.error.set('');
     this.http
       .get<ApiResponse<{ tasks: Task[]; members: Member[] }>>(url)
       .pipe(

@@ -1,7 +1,7 @@
 import { AppError } from '../../shared/errors.js';
 import { pool } from '../../database/pool.js';
 
-const accountColumns = 'u.id, u.email, u.full_name AS fullName, u.is_active AS isActive';
+const accountColumns = 'u.id, u.email, u.username, u.full_name AS fullName, u.is_active AS isActive';
 
 async function account(where, values) {
   const [rows] = await pool.execute(
@@ -12,17 +12,18 @@ async function account(where, values) {
     values,
   );
   if (!rows.length) return null;
-  const { id, email, fullName, role, organizationId, organizationName } = rows[0];
+  const { id, email, username, fullName, role, organizationId, organizationName } = rows[0];
   return {
-    id: Number(id), email, fullName, role, organizationId, organizationName, isActive: true,
+    id: Number(id), email, username, fullName, role, organizationId, organizationName, isActive: true,
     status: organizationId ? 'ACTIVE' : 'UNASSIGNED',
     roleCodes: role ? [...new Set([role, 'USER'])] : [],
   };
 }
 
 export const authRepository = {
-  async credentials(email) {
-    const [rows] = await pool.execute('SELECT id, password_hash AS passwordHash FROM users WHERE email = ? AND is_active = 1 AND password_hash IS NOT NULL', [email]);
+  async credentials(identifier) {
+    const column = identifier.includes('@') ? 'email' : 'username';
+    const [rows] = await pool.execute(`SELECT id, password_hash AS passwordHash FROM users WHERE ${column} = ? AND is_active = 1 AND password_hash IS NOT NULL`, [identifier]);
     return rows[0];
   },
   account(id) {

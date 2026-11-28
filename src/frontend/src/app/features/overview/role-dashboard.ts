@@ -6,7 +6,8 @@ import { HttpClient } from '@angular/common/http';
 import { Component, computed, DestroyRef, inject, input, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { auditTime, forkJoin } from 'rxjs';
+import { Notifications } from '../notifications/notifications';
 import {
   ticketPriorities,
   ticketReference,
@@ -39,6 +40,7 @@ const newest = (a: Row, b: Row) =>
   templateUrl: './role-dashboard.html',
 })
 export class RoleDashboard implements OnInit {
+  private readonly notifications = inject(Notifications);
   readonly ticketReference = ticketReference;
   readonly role = input.required<'technician' | 'user'>();
   readonly i18n = inject(I18n);
@@ -166,6 +168,14 @@ export class RoleDashboard implements OnInit {
   }
 
   ngOnInit() {
+    this.load();
+    if (this.technician()) this.loadWeekTasks();
+    this.notifications.ticketChanges
+      .pipe(auditTime(200), takeUntilDestroyed(this.destroy))
+      .subscribe(() => this.load());
+  }
+
+  refresh() {
     this.load();
     if (this.technician()) this.loadWeekTasks();
   }

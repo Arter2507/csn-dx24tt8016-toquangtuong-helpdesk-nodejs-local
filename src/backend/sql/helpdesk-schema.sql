@@ -48,6 +48,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 CREATE TABLE users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   email VARCHAR(254) NOT NULL,
+  username VARCHAR(32) NULL,
   password_hash VARCHAR(255) NULL,
   activation_token_hash CHAR(64) NULL,
   activation_expires_at DATETIME(3) NULL,
@@ -58,6 +59,7 @@ CREATE TABLE users (
   updated_at DATETIME(3) NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
+  UNIQUE KEY uq_users_username (username),
   UNIQUE KEY uq_users_activation_token_hash (activation_token_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -400,6 +402,9 @@ INSERT INTO users (id, email, password_hash, full_name, phone, is_active, create
   (1, 'user@example.test', @password_hash, 'Người gửi mẫu', NULL, TRUE, @now, @now),
   (2, 'tech@example.test', @password_hash, 'Kỹ thuật viên mẫu', NULL, TRUE, @now, @now),
   (3, 'admin@example.test', @password_hash, 'Quản trị mẫu', NULL, TRUE, @now, @now);
+
+UPDATE users SET username = CASE id WHEN 1 THEN 'user' WHEN 2 THEN 'technical' WHEN 3 THEN 'admin' END
+WHERE id IN (1, 2, 3);
 
 INSERT INTO user_roles (user_id, role_id, created_at) VALUES
   (1, 1, @now),

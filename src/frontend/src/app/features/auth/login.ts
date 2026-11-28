@@ -9,11 +9,11 @@ import { Session } from '../../core/auth/session';
   template: `
     <div class="login-scene">
       <div class="login-composition page-content-enter">
-        <div class="login-art" aria-hidden="true"></div>
+        <div class="login-art" aria-hidden="true"><i class="bi bi-headset"></i></div>
         <form class="login-panel" (ngSubmit)="login()" #form="ngForm" aria-labelledby="login-title">
           <div class="login-brand">
             <span class="brand-mark">
-              <img src="mascot/it-support-mark.webp" alt="" width="40" height="40" />
+              <i class="bi bi-headset" aria-hidden="true"></i>
             </span>
             <strong>{{ 'tr_m_m_o' | t }}</strong>
           </div>
@@ -32,14 +32,14 @@ import { Session } from '../../core/auth/session';
             <p class="notice error" role="alert">{{ error() | t }}</p>
           }
           <div class="field">
-            <label for="login-email">{{ 'email' | t }}</label>
+            <label for="login-email">{{ 'login_identifier' | t }}</label>
             <input
               id="login-email"
               name="email"
-              type="email"
+              autocapitalize="none"
+              spellcheck="false"
               autocomplete="username"
               required
-              email
               [(ngModel)]="email"
             />
           </div>

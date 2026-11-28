@@ -3,6 +3,7 @@ import { compare, hash } from 'bcryptjs';
 import { jwtVerify, SignJWT } from 'jose';
 import { Router } from 'express';
 import { z } from 'zod';
+import { usernameInput } from './username.js';
 import { validate } from '../../middlewares/validate.js';
 import { AppError } from '../../shared/errors.js';
 import { config } from '../../configs/env.js';
@@ -137,10 +138,14 @@ authRoutes.post('/activate', validate(z.object({
   res.status(204).end();
 });
 
-authRoutes.post('/login', validate(z.object({ email: emailInput, password }).strict(), 'body'), async (req, res) => {
+const loginInput = z.union([
+  z.object({ identifier: z.union([emailInput, usernameInput]), password }).strict(),
+  z.object({ email: emailInput, password }).strict(),
+]);
+authRoutes.post('/login', validate(loginInput, 'body'), async (req, res) => {
   const attempt = checkRate(req, res, 'login', 30);
-  const { email, password: supplied } = req.validated.body;
-  const credentials = await authRepository.credentials(email.toLowerCase());
+  const { identifier, email, password: supplied } = req.validated.body;
+  const credentials = await authRepository.credentials(identifier ?? email);
   const matches = await compare(supplied, credentials?.passwordHash ?? '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
   const account = matches && credentials ? await authRepository.account(credentials.id) : null;
   if (!account) throw new AppError(401, 'INVALID_CREDENTIALS', 'Email hoặc mật khẩu chưa đúng');

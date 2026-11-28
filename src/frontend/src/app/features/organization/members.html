@@ -17,6 +17,14 @@
     </div>
     <div class="iam-actions">
       @if (mode() === 'list') {
+        <button
+          type="button"
+          class="secondary"
+          [disabled]="busy()"
+          (click)="load(page()?.page ?? 1)"
+        >
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+        </button>
         <a class="secondary" routerLink="/settings/organizations">{{ 'organization' | t }}</a>
       } @else {
         <a class="secondary" routerLink="/users">{{ 'members' | t }}</a>

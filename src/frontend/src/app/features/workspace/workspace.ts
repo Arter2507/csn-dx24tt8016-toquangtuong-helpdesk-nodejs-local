@@ -21,7 +21,8 @@ import { Preferences } from '../../core/preferences/preferences';
 import { Session } from '../../core/auth/session';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { firstValueFrom, forkJoin, timer } from 'rxjs';
+import { auditTime, firstValueFrom, forkJoin, merge, timer } from 'rxjs';
+import { Notifications } from '../notifications/notifications';
 import { TicketActions, canEditTicket } from './ticket-actions';
 import { QuickTicket } from './quick-ticket';
 import { KnowledgeLinks } from '../knowledge/knowledge-links';
@@ -149,6 +150,7 @@ export class Workspace implements OnInit {
   readonly quickTicket = viewChild(QuickTicket);
   readonly batchBusy = computed(() => this.bulk()?.busy() ?? false);
   readonly session = inject(Session);
+  private readonly notifications = inject(Notifications);
   private readonly preferences = inject(Preferences);
   senderId: number | null = null;
   ticketNumber = '#0000';
@@ -195,13 +197,7 @@ export class Workspace implements OnInit {
       this.editing?.id === (this.session.account()?.id ?? 3)
     )
       return true;
-    if (!this.secured || !this.isTicket || !this.editing || this.session.hasRole('ADMIN'))
-      return false;
-    if (field.key !== 'priority') return false;
-    return (
-      !this.session.hasRole('TECHNICIAN') ||
-      this.session.account()?.id !== this.editing['assigneeId']
-    );
+    return this.secured && this.isTicket && !!this.editing && field.key === 'priority';
   }
 
   itemMode(row: Row) {
@@ -237,6 +233,13 @@ export class Workspace implements OnInit {
   canEdit(row: Row & TicketDetails) {
     return canEditTicket(row, this.session);
   }
+  get ownTicket() {
+    return this.secured && this.editing?.['requesterId'] === this.session.account()?.id;
+  }
+
+  get canWriteChat() {
+    return this.ownTicket || this.canWriteInternalNote;
+  }
   get chatLocked() {
     const expiry = String(this.editing?.['chatExpiresAt'] ?? '');
     return (
@@ -247,6 +250,21 @@ export class Workspace implements OnInit {
   }
 
   changeTicket(row: Row & TicketDetails) {
+    const technician = this.session.account();
+    if (
+      technician?.role === 'TECHNICIAN' &&
+      row['assigneeId'] !== technician.id &&
+      row['requesterId'] !== technician.id
+    ) {
+      if (this.editing?.id === row.id) {
+        void this.router.navigate(['/tickets'], { info: { notice: 'ticket_transferred' } });
+      } else {
+        this.rows = this.rows.filter((item) => item.id !== row.id);
+        this.notice = 'ticket_transferred';
+        void this.load(this.page, true);
+      }
+      return;
+    }
     if (this.editing?.id === row.id) {
       this.editing = row;
       this.history = row.history ?? [];
@@ -287,6 +305,7 @@ export class Workspace implements OnInit {
         if (!this.secured || !this.editing || !this.isTicket || document.hidden) return;
         this.chatNow = Date.now();
         void this.loadComments(this.editing.id);
+        this.view.markForCheck();
       });
     const result = this.router.lastSuccessfulNavigation()?.extras.info as
       { notice?: string; ticketId?: number; code?: string } | undefined;
@@ -303,6 +322,11 @@ export class Workspace implements OnInit {
         this.filter = this.filters.some((item) => item.value === filter) ? filter : '';
         this.applyFilters();
       });
+      if (this.isTicket && this.secured) {
+        merge(this.notifications.ticketChanges, timer(30000, 30000))
+          .pipe(auditTime(150), takeUntilDestroyed(this.destroy))
+          .subscribe(() => void this.load(this.page, true));
+      }
       return;
     }
     if (this.isTicket) {
@@ -528,6 +552,7 @@ export class Workspace implements OnInit {
       !id ||
       this.commentSaving ||
       this.chatLocked ||
+      !this.canWriteChat ||
       !this.comment.trim() ||
       this.comment.length > 5000
     )
@@ -783,10 +808,10 @@ export class Workspace implements OnInit {
     }
   }
 
-  async load(page: number) {
-    this.selection.clear();
+  async load(page: number, background = false) {
+    if (!background) this.selection.clear();
     const request = ++this.request;
-    this.busy = true;
+    if (!background) this.busy = true;
     this.error = '';
     const { search, filter, priority, categoryId, order } = this.applied;
     try {
@@ -909,6 +934,14 @@ export class Workspace implements OnInit {
         : this.editing
           ? 'user_updated'
           : 'user_added';
+      if (this.isTicket && this.secured) {
+        if (!this.editing) this.notifications.ticketSubmitted(data.id, ticketReference(data));
+        await this.router.navigate(['/tickets', data.id, 'view'], {
+          queryParams: this.scope,
+          info: this.editing ? { notice, code: ticketReference(data) } : undefined,
+        });
+        return;
+      }
       await this.router.navigate(['/', this.resource()], {
         queryParams: this.scope,
         info: {

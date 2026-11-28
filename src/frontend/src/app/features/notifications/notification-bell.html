@@ -66,6 +66,7 @@
             </div>
             @if (item.ticketId) {
               <a
+                class="notification-open"
                 [routerLink]="['/tickets', item.ticketId, item.assigned ? 'edit' : 'view']"
                 [queryParams]="inbox.ticketQuery(item)"
                 (click)="inbox.markRead([item.id]); panel.hidePopover()"
@@ -129,6 +130,7 @@
         <span class="muted">{{ label(toast) | t }}</span>
         @if (toast.ticketId) {
           <a
+            class="notification-open"
             [routerLink]="['/tickets', toast.ticketId, toast.assigned ? 'edit' : 'view']"
             [queryParams]="inbox.ticketQuery(toast)"
             (click)="inbox.markRead([toast.id.toString()]); inbox.dismissToast(toast.id)"

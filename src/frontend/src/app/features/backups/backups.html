@@ -3,6 +3,9 @@
     <h1>{{ 'backups' | t }}</h1>
     <p>{{ 'backup_process_intro' | t }}</p>
   </div>
+  <button type="button" class="secondary" (click)="refresh()">
+    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+  </button>
 </header>
 
 @if (actionError() || systemError()) {

@@ -1,6 +1,6 @@
-# Website quản lý yêu cầu hỗ trợ kỹ thuật
+# Trạm Hỗ Trợ v0.3.0
 
-> Đồ án thực tập cơ sở ngành.
+> Tiếp nhận hỗ trợ yêu cầu kỹ thuật
 
 ## 1. Thông tin đồ án
 
@@ -16,7 +16,7 @@
 | Email sinh viên | 170124299@rdi.tvu.vn |
 | Email liên hệ | toquangtuong250703.it@gmail.com |
 | Số điện thoại | 0917895327 |
-| Repository | Nhánh cộng tác `local` |
+| Repository | [Repo đồ án](https://github.com/Arter2507/csn-dx24tt8016-toquangtuong-helpdesk-nodejs) và [repo cộng tác](https://github.com/Arter2507/csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local/tree/local) |
 | Trạng thái | Luồng nghiệp vụ MySQL chạy local, đã chuẩn bị cấu hình máy chủ |
 
 ## 2. Giới thiệu
@@ -27,13 +27,12 @@ Website hỗ trợ phân loại yêu cầu hỗ trợ, quản lý mức độ ư
 
 ## 3. Chức năng hiện hành
 
-- Cho phép người dùng gửi yêu cầu hỗ trợ kỹ thuật.
-- Phân loại yêu cầu theo phần mềm, phần cứng, mạng hoặc tài khoản.
-- Quản lý mức độ ưu tiên và phân công người phụ trách.
-- Xử lý phiếu qua tiếp nhận, đang xử lý, chờ phản hồi, chờ xác nhận và đã đóng.
-- Tìm kiếm, phân tích và thống kê theo loại, trạng thái và thời gian.
+- Gửi phiếu, đính kèm tệp và theo dõi trạng thái. Người gửi có 10 phút để sửa phiếu thuộc phạm vi của mình.
+- Điều phối theo chuyên môn và mức ưu tiên. Chuyên viên có thể chuyển phiếu, trao đổi và ghi kết quả. Người gửi xác nhận đóng hoặc yêu cầu xử lý lại.
+- Nhận thông báo và cập nhật danh sách phiếu theo thời gian thực. Theo dõi thời hạn hỗ trợ trên bảng điều phối.
+- Tra cứu Kho hướng dẫn, quản lý cơ cấu tổ chức, danh mục, nhiệm vụ nhóm, báo cáo và sao lưu.
 
-Ứng dụng có đăng nhập ba không gian, hồ sơ, nhiệm vụ nhóm, lịch tháng/lịch tuần, thông báo và sao lưu. Mở rộng phân quyền theo phòng ban trong [kế hoạch IAM/RBAC](documents/markdown/ke-hoach-iam-rbac.md).
+Ứng dụng hỗ trợ đăng nhập bằng email hoặc tên đăng nhập và phân quyền theo vai trò. Phạm vi mở rộng theo phòng ban được lưu trong repo cộng tác. [Kế hoạch IAM/RBAC](https://github.com/Arter2507/csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local/blob/local/documents/markdown/ke-hoach-iam-rbac.md)
 
 ## 4. Công nghệ
 
@@ -62,7 +61,17 @@ Các thư mục con trong `thesis/` sẽ được tổ chức theo quy định: 
 
 ## 6. Cài đặt và chạy chương trình
 
-Chạy `pnpm dev` từ gốc repo có Docker Compose, Node và pnpm. Mở [Trạm Mèo local](http://127.0.0.1:4200). [Hướng dẫn local và dữ liệu rà soát](README.local.md) · [Triển khai production](docker/production.md)
+Chạy `pnpm dev` từ thư mục gốc khi đã cài Docker Compose, Node và pnpm. [Mở ứng dụng local](http://127.0.0.1:4200/) · [Hướng dẫn cài đặt](src/README.md) · [Cấu hình máy chủ](docker/production.md)
+
+### Tài khoản mẫu
+
+| Tên đăng nhập | Email | Vai trò |
+| --- | --- | --- |
+| `admin` | `admin@example.test` | Chủ sở hữu |
+| `technical` | `tech@example.test` | Chuyên viên kỹ thuật |
+| `user` | `user@example.test` | Người gửi |
+
+Mật khẩu mẫu là `password` khi chạy local với dữ liệu mẫu.
 
 ## 7. Tiến độ và kết quả
 ### Tuần 1: 04/11/2026 – 10/11/2026
@@ -75,8 +84,10 @@ Chạy `pnpm dev` từ gốc repo có Docker Compose, Node và pnpm. Mở [Trạ
 **Theo dõi tiến độ**
 
 - Báo cáo tiến độ hằng tuần được lưu tại thư mục `progress-report/`.
-- Xem [kết quả và phạm vi kiểm thử ngày 26/11/2026](progress-report/bao-cao-tien-do-local-2026-11-26.md).
+- [Báo cáo ngày 28/11/2026](progress-report/bao-cao-tien-do-28-11-2026.md)
+- [Báo cáo ngày 23/11/2026](https://github.com/Arter2507/csn-dx24tt8016-toquangtuong-helpdesk-nodejs/blob/master/progress-report/bao-cao-tien-do-23-11-2026.md)
+- [Báo cáo khởi tạo](progress-report/bao-cao-tien-do-11-10-2026.md)
 
 ## 8. Tài liệu tham khảo
 
-Tài liệu tham khảo và các nguồn được sử dụng sẽ được cập nhật trong quá trình thực hiện; các tệp liên quan dự kiến lưu tại `thesis/refs/`.
+Tài liệu tham khảo được cập nhật cùng đồ án. Các tệp tham khảo lưu tại `thesis/refs/` khi có.

@@ -1,4 +1,4 @@
-# Hướng dẫn kỹ thuật Trạm Mèo
+# Hướng dẫn kỹ thuật Trạm Hỗ Trợ
 
 Angular và Express dùng Docker Compose làm môi trường phát triển chung. Chạy lệnh từ thư mục gốc repo thay vì từ một gói con. [Cấu hình Docker](../docker/README.md)
 
@@ -21,6 +21,6 @@ docker compose --env-file docker/.env -f docker/compose.yaml run --rm --no-deps 
 docker compose --env-file docker/.env -f docker/compose.yaml run --rm --no-deps frontend pnpm test --watch=false
 ```
 
-Bộ kiểm thử nhanh API dùng fixture trong bộ nhớ. Ca tích hợp MySQL tạo schema thử riêng với tài khoản có quyền tạo và xóa schema thử. [Tùy chọn kiểm thử MySQL](../README.local.md#kiểm-thử) · [Playwright](../output/playwright/README.md)
+Bộ kiểm thử nhanh API dùng fixture trong bộ nhớ. Ca tích hợp MySQL tạo schema thử riêng với tài khoản có quyền tạo và xóa schema thử. [Tùy chọn kiểm thử MySQL](https://github.com/Arter2507/csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local/blob/local/README.local.md#kiểm-thử) · [Playwright](https://github.com/Arter2507/csn-dx24tt8016-toquangtuong-helpdesk-nodejs-local/blob/local/output/playwright/README.md)
 
 [Bản đồ frontend](frontend/readme.map) · [Bản đồ backend](backend/readme.map)

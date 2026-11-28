@@ -5,6 +5,7 @@ import { Session } from '../../core/auth/session';
 import { Translate, errorKey } from '../../core/i18n/i18n';
 import { WorkspaceService } from '../../shared/data/workspace.service';
 import { Row, TicketDetails } from '../../shared/data/workspace.types';
+import { ticketPriorities } from '../../shared/data/workspace-labels';
 
 export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
   const account = session.account();
@@ -12,9 +13,8 @@ export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
     ticket['status'] !== 'CLOSED' &&
     !ticket.mergedInto &&
     (session.mode() === 'demo' ||
-      session.hasRole('ADMIN') ||
-      account?.id === ticket['requesterId'] ||
-      account?.id === ticket['assigneeId'])
+      (account?.id === ticket['requesterId'] &&
+        Date.now() < Date.parse(String(ticket['createdAt'])) + 600_000))
   );
 }
 
@@ -25,7 +25,12 @@ export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
     <div class="iam-actions">
       @if (canAssign()) {
         <button class="secondary" type="button" (click)="openAssign()">
-          {{ 'ticket_assign' | t }}
+          {{ (canTriage() ? 'ticket_assign' : 'ticket_transfer') | t }}
+        </button>
+      }
+      @if (canTriage()) {
+        <button type="button" class="secondary" (click)="openPriority()">
+          {{ 'ticket_update_priority' | t }}
         </button>
       }
       @for (action of available(); track action.label) {
@@ -45,7 +50,9 @@ export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
           <label class="field"
             >{{ 'technician_2' | t }}
             <select name="assigneeId" [(ngModel)]="assigneeId" [disabled]="busy()">
-              <option [ngValue]="null">{{ 'unassigned' | t }}</option>
+              @if (canTriage() && ticket()['status'] === 'NEW') {
+                <option [ngValue]="null">{{ 'unassigned' | t }}</option>
+              }
               @for (person of technicians(); track person.id) {
                 <option [ngValue]="person.id">{{ person.fullName }}</option>
               }
@@ -56,7 +63,11 @@ export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
               'ticket_suggested_technician' | t: { name: recommended.fullName }
             }}</small>
           }
-          <button class="primary" type="submit" [disabled]="busy()">
+          <button
+            class="primary"
+            type="submit"
+            [disabled]="busy() || assigneeId === ticket()['assigneeId']"
+          >
             {{ 'save_changes' | t }}
           </button>
         }
@@ -64,10 +75,42 @@ export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
           {{ 'cancel' | t }}
         </button>
       </form>
+    } @else if (panel() === 'priority') {
+      <form class="ticket-action-form iam-actions" (ngSubmit)="save('priority', { priority })">
+        <label class="field">
+          {{ 'priority' | t }}
+          <select name="priority" [(ngModel)]="priority">
+            @for (item of priorities; track item.value) {
+              <option [value]="item.value">{{ item.label | t }}</option>
+            }
+          </select>
+        </label>
+        <button
+          class="primary"
+          type="submit"
+          [disabled]="busy() || priority === ticket()['priority']"
+        >
+          {{ 'save_changes' | t }}
+        </button>
+        <button class="text-button" type="button" (click)="panel.set(null)">
+          {{ 'cancel' | t }}
+        </button>
+      </form>
     } @else if (panel() === 'note') {
       <form class="ticket-action-form field" (ngSubmit)="submitNote()">
+        @if (selected?.target === 'RESOLVED') {
+          <label class="field">
+            {{ 'ticket_cause' | t }}
+            <textarea name="cause" [(ngModel)]="cause" maxlength="800" required></textarea>
+          </label>
+        }
         <label for="ticket-action-note">{{
-          (selected?.target === 'RESOLVED' ? 'ticket_solution' : 'request_more_information') | t
+          (selected?.target === 'RESOLVED'
+            ? 'ticket_solution'
+            : selected?.target === 'IN_PROGRESS'
+              ? 'ticket_reopen_reason'
+              : 'request_more_information'
+          ) | t
         }}</label>
         <textarea
           id="ticket-action-note"
@@ -77,7 +120,13 @@ export function canEditTicket(ticket: Row & TicketDetails, session: Session) {
           required
         ></textarea>
         <div class="iam-actions">
-          <button class="primary" type="submit" [disabled]="busy() || !note.trim()">
+          <button
+            class="primary"
+            type="submit"
+            [disabled]="
+              busy() || !note.trim() || (selected?.target === 'RESOLVED' && !cause.trim())
+            "
+          >
             {{ selected?.label | t }}
           </button>
           <button class="text-button" type="button" [disabled]="busy()" (click)="panel.set(null)">
@@ -99,17 +148,28 @@ export class TicketActions {
   readonly busy = signal(false);
   readonly loadingOptions = signal(false);
   readonly error = signal('');
-  readonly panel = signal<'assign' | 'note' | null>(null);
+  readonly panel = signal<'assign' | 'priority' | 'note' | null>(null);
   readonly technicians = signal<{ id: number; fullName: string }[]>([]);
   readonly suggested = signal('');
   assigneeId: number | null = null;
   note = '';
+  cause = '';
+  priority = '';
+  readonly priorities = ticketPriorities;
   selected: { target: string; label: string } | null = null;
-  readonly canAssign = computed(
+  readonly canTriage = computed(
     () =>
       this.session.hasRole('ADMIN') &&
       !this.ticket().mergedInto &&
       this.ticket()['status'] !== 'CLOSED',
+  );
+  readonly canAssign = computed(
+    () =>
+      this.canTriage() ||
+      (this.session.hasRole('TECHNICIAN') &&
+        this.session.account()?.id === this.ticket()['assigneeId'] &&
+        !this.ticket().mergedInto &&
+        !['RESOLVED', 'CLOSED'].includes(String(this.ticket()['status']))),
   );
 
   constructor() {
@@ -164,7 +224,7 @@ export class TicketActions {
     const current = this.ticket()['assigneeId'];
     this.assigneeId = typeof current === 'number' ? current : null;
     this.service
-      .assignableTechnicians(Number(this.ticket()['categoryId']))
+      .assignableTechnicians(Number(this.ticket()['categoryId']), this.ticket().id)
       .pipe(finalize(() => this.loadingOptions.set(false)))
       .subscribe({
         next: ({ data }) => {
@@ -180,23 +240,43 @@ export class TicketActions {
 
   selectAction(action: { target: string; label: string }) {
     this.error.set('');
-    if (action.target === 'RESOLVED' || action.target === 'PENDING_CUSTOMER') {
+    if (
+      action.target === 'RESOLVED' ||
+      action.target === 'PENDING_CUSTOMER' ||
+      action.label === 'ticket_reopen'
+    ) {
       this.selected = action;
       this.note = '';
+      this.cause = '';
       this.panel.set('note');
     } else this.save('transitions', { toStatus: action.target });
   }
 
   submitNote() {
-    if (this.selected && this.note.trim())
-      this.save('transitions', { toStatus: this.selected.target, note: this.note.trim() });
+    if (!this.selected || !this.note.trim()) return;
+    const toStatus = this.selected.target;
+    if (toStatus === 'RESOLVED' && !this.cause.trim()) return;
+    this.save('transitions', {
+      toStatus,
+      note: this.note.trim(),
+      ...(toStatus === 'RESOLVED' ? { cause: this.cause.trim() } : {}),
+    });
+  }
+
+  openPriority() {
+    this.error.set('');
+    this.priority = String(this.ticket()['priority']);
+    this.panel.set('priority');
   }
 
   assign() {
     this.save('assignee', { assigneeId: this.assigneeId });
   }
 
-  private save(action: 'assignee' | 'transitions', data: Record<string, string | number | null>) {
+  save(
+    action: 'assignee' | 'transitions' | 'priority',
+    data: Record<string, string | number | null>,
+  ) {
     if (this.busy()) return;
     this.busy.set(true);
     this.error.set('');

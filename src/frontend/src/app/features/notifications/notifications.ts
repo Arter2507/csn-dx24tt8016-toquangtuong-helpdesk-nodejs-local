@@ -22,6 +22,8 @@ const readKey = 'tram-meo.seen-notifications';
 const inboxUrl = '/api/v1/notifications';
 
 export function notificationLabel(item: NotificationRecord) {
+  if (item.type === 'TICKET_CREATED') return 'notification_ticket_created';
+  if (item.type === 'TICKET_SUBMITTED') return 'ticket_submitted';
   if (item.type === 'COMMENT_ADDED') return 'notification_comment';
   if (item.type === 'SLA_RESPONSE_DUE') return 'notification_sla_response';
   if (item.type === 'SLA_RESOLUTION_DUE') return 'notification_sla_resolution';
@@ -38,6 +40,8 @@ export class Notifications {
   private readonly preferences = inject(Preferences);
   private readonly session = inject(Session);
   private readonly refreshRequests = new Subject<void>();
+  private readonly ticketEvents = new Subject<void>();
+  readonly ticketChanges = this.ticketEvents.asObservable();
   private readonly records = signal<NotificationRecord[]>([]);
   private readonly demoRead = signal(
     new Set((localStorage.getItem(readKey) ?? '').split(',').filter(Boolean)),
@@ -96,6 +100,7 @@ export class Notifications {
         if (demo || stream || Date.now() < reconnectAfter || !('EventSource' in window)) return;
         stream = new EventSource(inboxUrl + '/stream');
         stream.addEventListener('inbox', () => streamChanges.next());
+        stream.addEventListener('tickets', () => this.ticketEvents.next());
         stream.onerror = () => {
           reconnectAfter = Date.now() + 3000;
           stream?.close();
@@ -167,6 +172,19 @@ export class Notifications {
     this.refreshRequests.next();
   }
 
+  ticketSubmitted(ticketId: number, title: string) {
+    this.ticketEvents.next();
+    this.showToast({
+      id: 'submitted:' + ticketId,
+      ticketId,
+      type: 'TICKET_SUBMITTED',
+      title,
+      status: 'NEW',
+      readAt: null,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
   ticketQuery(item: NotificationRecord) {
     if (this.session.mode() !== 'demo') return null;
     return item.assigned ? { assigneeId: this.demoAccount() } : { requesterId: this.demoAccount() };
@@ -177,6 +195,7 @@ export class Notifications {
   }
 
   markRead(ids: string[]) {
+    ids = ids.filter((id) => !id.startsWith('submitted:'));
     const source = this.activeSource();
     if (!ids.length || !source || this.saving()) return;
     this.readFailed.set(false);

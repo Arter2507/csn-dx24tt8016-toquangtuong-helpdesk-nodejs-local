@@ -43,7 +43,7 @@ Khởi động lại `pnpm dev` một lần khi cập nhật chính file Compose
 ### Dữ liệu và cấu hình
 
 - Lần đầu chạy MySQL, script tạo mật khẩu và khóa JWT ngẫu nhiên vào `docker/.env` nếu file chưa có. File này hợp nhất cấu hình Compose. [Các biến hỗ trợ](.env.example)
-- `MYSQL_SEED_SAMPLE=true` nạp tài khoản, 10 phiếu và 7 nhiệm vụ khi khởi tạo database local trống. Nếu bộ tài khoản mẫu đã có, quá trình seed chỉ bổ sung các bản ghi rà soát còn thiếu. Các giá trị mẫu dùng để thử bộ lọc và lịch. [Tài khoản mẫu](../README.local.md#tài-khoản-mẫu)
+- `MYSQL_SEED_SAMPLE=true` nạp tài khoản, 10 phiếu và 7 nhiệm vụ khi khởi tạo database local trống. Nếu bộ tài khoản mẫu đã có, quá trình seed chỉ bổ sung các bản ghi rà soát còn thiếu. Các giá trị mẫu dùng để thử bộ lọc và lịch. [Tài khoản mẫu](../README.md#tài-khoản-mẫu)
 - Named volumes `mysql_data`, `uploads` và `backups` lần lượt giữ database, tệp của API MySQL và bản sao ZIP. `pnpm stop` giữ các volume này.
 - MySQL trong Docker khởi tạo volume riêng. Nếu đang có dữ liệu trên MySQL cài trực tiếp, dùng quy trình chuyển dữ liệu riêng trước khi chuyển sang volume Docker.
 - Các cổng ứng dụng chỉ lắng nghe trên loopback của máy host. Docker setup này dùng cho phát triển cục bộ.

@@ -1,6 +1,6 @@
-# Trạm Mèo
+# Trạm Hỗ Trợ
 
-**Có sự cố, có Mèo.** · **v0.2.0**
+**Tiếp nhận hỗ trợ yêu cầu kỹ thuật** · **v0.3.0**
 
 Website quản lý yêu cầu hỗ trợ kỹ thuật — Tô Quang Tường, DX24TT8016, hướng dẫn TS. Nguyễn Nhứt Lam. Repo cộng tác `-local`, nhánh `local`. Giới thiệu đồ án: [README.md](README.md).
 
@@ -22,13 +22,15 @@ Giữ terminal `pnpm dev` mở khi làm việc. Sau khi lưu HTML, CSS hoặc Ty
 
 ### Tài khoản mẫu
 
-| Email | Vai trò |
-| --- | --- |
-| `user@example.test` | USER |
-| `tech@example.test` | USER + TECHNICIAN |
-| `admin@example.test` | OWNER |
+| Email | Tên đăng nhập | Vai trò |
+| --- | --- | --- |
+| `user@example.test` | `user` | USER |
+| `tech@example.test` | `technical` | USER + TECHNICIAN |
+| `admin@example.test` | `admin` | OWNER |
 
 Mật khẩu của tài khoản mẫu là `password`, dùng cho dữ liệu phát triển cục bộ.
+
+Có thể đăng nhập bằng email hoặc tên đăng nhập. Tài khoản mới đặt tên đăng nhập trong **Hồ sơ** sau khi đăng nhập.
 
 ## Lệnh pnpm ở thư mục gốc
 
@@ -37,7 +39,7 @@ Mật khẩu của tài khoản mẫu là `password`, dùng cho dữ liệu phá
 | `pnpm dev` | Chạy API, Angular và MySQL trong Docker. |
 | `pnpm build` | Build chung image backend và frontend. |
 | `pnpm check` | Typecheck và lint hai gói trong Docker. |
-| `pnpm stop` | Dừng Trạm Mèo, giữ volume và đóng Docker Desktop nếu không còn container khác đang chạy. |
+| `pnpm stop` | Dừng Trạm Hỗ Trợ, giữ volume và đóng Docker Desktop nếu không còn container khác đang chạy. |
 
 Cấu hình cổng, dữ liệu và cách xem log nằm trong [hướng dẫn Docker](docker/README.md). Có thể chạy `pnpm stop` từ terminal khác khi đang xem log dev.
 
@@ -51,6 +53,9 @@ Cấu hình cổng, dữ liệu và cách xem log nằm trong [hướng dẫn Do
 
 ### Mã phiếu và quy trình xử lý
 
+- Gửi phiếu xong, trang mở chi tiết phiếu và hiện thông báo thành công. Người gửi có 10 phút để sửa tiêu đề, mô tả và tệp của phiếu mình tạo. Quản trị viên điều chỉnh mức ưu tiên hoặc phân công qua các thao tác riêng. Chuyên viên đang phụ trách có thể chuyển phiếu đang xử lý cho chuyên viên phù hợp.
+- Chủ sở hữu và quản trị viên mở **Nhiệm vụ nhóm → Bảng điều phối phiếu** để xem phiếu theo giai đoạn và mở cửa sổ xem nhanh để phân công. Phiếu mới thông báo cho quản trị viên và chuyên viên phù hợp danh mục. Danh sách phiếu và bảng điều phối cập nhật khi nhận được tín hiệu thay đổi từ máy chủ.
+
 - Chủ sở hữu vào **Cài đặt → Quy tắc đánh số phiếu**, bấm **Sửa** trên dòng **Mạng**. Nhập tiền tố `PYCM`, giá trị phần số `1`, số ký tự `5` và để trống hậu tố. Sau khi bấm **Lưu thay đổi**, nếu mã chưa được sử dụng, phiếu mới đầu tiên nhận `PYCM00001` và phiếu kế tiếp nhận `PYCM00002`.
 - Form tạo phiếu hiện `#0000` trước khi chọn loại. Sau khi chọn, form hiện số tiếp theo theo quy tắc hiện hành. Các loại chưa đặt quy tắc dùng dãy chung bắt đầu từ `#0001`. Hệ thống chốt mã khi gửi phiếu, vì vậy số xem trước có thể đổi nếu có phiếu khác được tạo trước. Có thể tìm phiếu bằng mã đã cấp, có hoặc không có dấu `#`.
 - Trên MySQL, quản trị viên hoặc chuyên viên phụ trách có thể chuyển phiếu đang xử lý sang **Chờ người gửi phản hồi** và ghi rõ thông tin còn thiếu. Khi người gửi trả lời trong phiếu, trạng thái tự trở về **Đang xử lý**. Ghi chú nội bộ chỉ quản trị viên và chuyên viên phụ trách xem được.
@@ -59,7 +64,7 @@ Cấu hình cổng, dữ liệu và cách xem log nằm trong [hướng dẫn Do
 - Quy tắc đánh số và bộ đếm lưu trong MySQL. Bản sao ZIP chứa mã phiếu và quy tắc đánh số.
 - Chủ sở hữu và Quản trị viên tích phiếu để mở các thao tác ngay trên bảng. Một dòng cho phép sửa hoặc xem theo quyền và xóa mềm. Nhiều dòng cho phép đổi người phụ trách, gộp hoặc xóa mềm qua menu thao tác. Đổi người phụ trách và gộp yêu cầu cùng loại. Khi gộp, chọn phiếu chính chưa đóng trong nhóm cùng người gửi. Phiếu chính liên kết tới các phiếu gốc để xem lại.
 
-## Tiến độ đến 27/11/2026
+## Tiến độ đến 28/11/2026
 
 **Danh mục dịch vụ và SLA.** Admin và Owner tạo danh mục cha–con, chỉnh lịch làm việc và đặt hạn theo mức ưu tiên hoặc nhóm VIP. Trong **Cài đặt → Thời hạn hỗ trợ (SLA)**, bật áp dụng sau khi kiểm tra lịch. Phiếu mới hiện hạn phản hồi và xử lý. [Hướng dẫn và kế hoạch SLA](documents/markdown/ke-hoach-danh-muc-dich-vu-sla.md)
 
@@ -77,7 +82,7 @@ Bấm chuông để mở bảng xem nhanh. MySQL lưu thông báo phân công, p
 | API categories / users / tickets đọc MySQL khi `DATA_SOURCE=mysql` | Xong khung CRUD |
 | Tổ chức và nhân sự | Cơ cấu bốn vai trò, bảng cây đơn vị, sơ đồ liên kết, hồ sơ nhân sự, đổi vai trò, khóa và mở khóa từng tài khoản hoặc hàng loạt. |
 | Đăng nhập và phiên MySQL | Tự đăng ký, chờ cấp quyền, liên kết tài khoản theo email hoặc đặt mật khẩu bằng liên kết kích hoạt dùng một lần. |
-| Bộ nhận diện Trạm Mèo | Logo trên tổng quan, favicon 32/48/64 px, minh họa nét bút ở trang đăng nhập và mascot ở trang chờ cấp quyền. |
+| Bộ nhận diện Trạm Hỗ Trợ | Biểu tượng tai nghe trong giao diện, logo mèo làm biểu tượng tab và ảnh bầu trời làm nền đăng nhập. |
 | Xử lý yêu cầu MySQL | Tìm trực tiếp theo mã một phần và loại, lọc ngay, phân trang, phân công, trao đổi, xóa mềm và gộp phiếu. |
 | Tệp và thông báo MySQL | Tệp lưu trong `UPLOAD_DIR` của backend. Thông báo và trạng thái đã đọc lưu theo tài khoản. |
 | Sao lưu | Chủ sở hữu tạo ZIP, tải xuống và khôi phục từ lịch sử. |
@@ -86,7 +91,7 @@ Bấm chuông để mở bảng xem nhanh. MySQL lưu thông báo phân công, p
 | Danh mục chung | Tập trung danh sách người dùng và loại phiếu. |
 | Phòng ban và quyền theo phòng | Đơn vị trực thuộc và liên kết hồ sơ đã lưu trong MySQL. Hàng đợi, định tuyến và quyền trên phiếu theo phòng thuộc giai đoạn tiếp theo. |
 
-Xem [báo cáo tiến độ hiện hành](progress-report/bao-cao-tien-do-local-2026-11-27.md), [bảng phân công](documents/markdown/tram-meo-tien-do-va-phan-cong.md) và [nhiệm vụ thiết kế lại giao diện](documents/markdown/nhiem-vu-thiet-ke-lai-giao-dien.md).
+Xem [báo cáo tiến độ 28/11/2026](progress-report/bao-cao-tien-do-28-11-2026.md), [bảng phân công](documents/markdown/tram-meo-tien-do-va-phan-cong.md) và [nhiệm vụ thiết kế lại giao diện](documents/markdown/nhiem-vu-thiet-ke-lai-giao-dien.md).
 
 ### Cấp quyền cho nhân sự
 
@@ -111,13 +116,15 @@ Với MySQL, Docker nạp ticket mẫu khi khởi tạo database trống theo c�
 
 - Vào **Sao lưu** bằng tài khoản Chủ sở hữu để tạo bản sao thủ công, theo dõi tiến độ và tải ZIP từ lịch sử. Bản ZIP có `data.json` và nội dung tệp đính kèm. Khi chạy Docker, bản sao nằm trong volume `backups`. `BACKUP_DIR` trong container là `/data/backups`. Cấu hình dùng thư mục riêng cho demo và từng cấu hình MySQL. Bản sao chứa dữ liệu nghiệp vụ, gồm cả mục đã lưu trữ. Chọn **Khôi phục** ở một bản ZIP trong lịch sử và xác nhận. Máy chủ tạo bản dự phòng trước khi thay dữ liệu. MySQL giữ thông tin đăng nhập, email và quyền hiện tại, đồng thời yêu cầu các tài khoản được tham chiếu vẫn tồn tại.
 - Bật **Sao lưu tự động** và lưu lịch 30 phút, 1 giờ, 3 giờ, 6 giờ hoặc 24 giờ. Nếu đến hạn, hệ thống khởi chạy khi Chủ sở hữu mở web trong phiên đăng nhập. Trang kiểm tra lịch ngay khi mở và mỗi 30 giây. Sau khi khởi chạy, backend thực hiện công việc và lưu kết quả dù người dùng chuyển trang hoặc đóng tab.
-- Tên và vai trò người gửi lấy từ phiên đăng nhập. Backend ước lượng mức ưu tiên từ tiêu đề và mô tả lúc tạo yêu cầu. Quản trị viên và chuyên viên phụ trách có thể sửa trên yêu cầu chưa đóng. Chỉnh cụm từ tại [priority-rules.json](src/backend/src/modules/tickets/priority-rules.json).
+- Tên và vai trò người gửi lấy từ phiên đăng nhập. Backend ước lượng mức ưu tiên từ tiêu đề và mô tả lúc tạo yêu cầu. Quản trị viên có thể chỉnh mức ưu tiên từ thanh thao tác của phiếu. Chỉnh cụm từ tại [priority-rules.json](src/backend/src/modules/tickets/priority-rules.json).
 
 ### Kiểm thử
 
 Xem [lệnh kiểm thử trong Docker](src/README.md#kiểm-thử-thông-qua-docker). Ca tích hợp MySQL tùy chọn cần `HELPDESK_TEST_MYSQL=1` và các biến `DB_*` dành riêng cho kiểm thử. Ca này tạo và dọn schema thử, nên tài khoản kiểm thử cần quyền tạo và xóa schema thử.
 
-Ngày 27/11/2026 đã kiểm tra Angular và Express, quy trình phiếu trên MySQL, quyền của Kho hướng dẫn, khóa chat 24 giờ, khôi phục nội dung bài viết và địa chỉ truy cập trong Docker. [Kết quả kiểm tra hiện hành](progress-report/bao-cao-tien-do-local-2026-11-27.md#kiểm-chứng)
+Ngày 28/11/2026 đã chạy ba ca tích hợp MySQL và kiểm tra thông báo, cập nhật danh sách và điều phối trên ba phiên Edge. [Kết quả ngày 28/11](progress-report/bao-cao-tien-do-28-11-2026.md#3-kiểm-chứng)
+
+Ngày 27/11/2026 đã kiểm tra Angular và Express, quy trình phiếu trên MySQL, quyền của Kho hướng dẫn, khóa chat 24 giờ, khôi phục nội dung bài viết và địa chỉ truy cập trong Docker. [Kết quả ngày 27/11](progress-report/bao-cao-tien-do-local-2026-11-27.md#kiểm-chứng)
 
 Ngày 26/11/2026 đã kiểm tra hai địa chỉ đăng nhập local, khởi tạo MySQL trống và nâng cấp dữ liệu có sẵn. Edge xác nhận tìm trực tiếp, bộ lọc, cỡ trang, bảng nhân sự và ba chế độ xem tổ chức. MySQL xác nhận phân quyền và thao tác phân công, gộp nhiều phiếu. [Kết quả ngày 26/11](progress-report/bao-cao-tien-do-local-2026-11-26.md#kiểm-chứng)
 

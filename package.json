@@ -1,8 +1,8 @@
 {
   "name": "tram-meo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Trạm Mèo — môi trường phát triển Docker Compose",
+  "description": "Trạm Hỗ Trợ — môi trường phát triển Docker Compose",
   "packageManager": "pnpm@12.16.1",
   "scripts": {
     "dev": "node setup/docker.mjs dev",

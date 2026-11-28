@@ -21,6 +21,10 @@
       <a class="text-button" routerLink="/categories/ticket-types"
         ><i class="bi bi-arrow-left" aria-hidden="true"></i> {{ 'back_to_list' | t }}</a
       >
+    } @else {
+      <button type="button" class="secondary" (click)="load()">
+        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+      </button>
     }
   </div>
 </div>

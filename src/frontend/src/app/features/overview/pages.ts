@@ -4,7 +4,8 @@ import { Component, computed, DestroyRef, inject, input, signal } from '@angular
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { auditTime, forkJoin } from 'rxjs';
+import { Notifications } from '../notifications/notifications';
 import { Category } from '../categories/interfaces/category';
 import { CategoryService } from '../categories/services/category.service';
 import { WorkspaceService } from '../../shared/data/workspace.service';
@@ -132,6 +133,7 @@ class StatusChart {
   templateUrl: './dashboard.html',
 })
 export class Dashboard {
+  private readonly notifications = inject(Notifications);
   readonly ticketReference = ticketReference;
   private readonly workspace = inject(WorkspaceService);
   private readonly destroy = inject(DestroyRef);
@@ -166,6 +168,9 @@ export class Dashboard {
 
   constructor() {
     this.load();
+    this.notifications.ticketChanges
+      .pipe(auditTime(200), takeUntilDestroyed(this.destroy))
+      .subscribe(() => this.load());
   }
 
   load() {

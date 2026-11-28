@@ -12,7 +12,7 @@ import mysql from 'mysql2/promise';
 
 test('MySQL enforces organization roles, sessions and ticket workflows', {
   skip: process.env.HELPDESK_TEST_MYSQL !== '1',
-  timeout: 60_000,
+  timeout: 120_000,
 }, async (context) => {
   const database = 'tram_meo_test_' + randomBytes(8).toString('hex');
   const uploadDir = await mkdtemp(join(tmpdir(), 'tram-meo-test-'));
@@ -127,6 +127,10 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     await expectStatus(client().request('/auth/refresh', 'POST', {}, { Cookie: oldCookies }), 401);
     assert.deepEqual((await login(tech, 'tech')).roleCodes, ['TECHNICIAN', 'USER']);
     assert.equal((await login(admin, 'admin')).role, 'OWNER');
+    const byUsername = client();
+    assert.equal((await data(byUsername.request('/auth/login', 'POST', {
+      identifier: 'TECHNICAL', password: 'password',
+    }))).role, 'TECHNICIAN');
     const knowledgeInput = { title: 'Hướng dẫn Wi-Fi', body: 'Kiểm tra bộ phát tại phòng họp.', categoryId: 3, visibility: 'PUBLIC' };
     const guide = await data(admin.request('/knowledge', 'POST', knowledgeInput), 201);
     const internalGuide = await data(admin.request('/knowledge', 'POST', {
@@ -168,21 +172,42 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     const form = new FormData();
     form.append('ticket', JSON.stringify({ title: 'Lỗi in', description: 'Máy chủ sập toàn hệ thống', categoryId: 2, requesterId: 4, priority: 'LOW' }));
     form.append('attachments', new Blob([pdf], { type: 'application/pdf' }), 'minh-chung.pdf');
+    const creationStream = await expectStatus(admin.request('/notifications/stream'), 200);
+    const creationFrames = creationStream.body.getReader();
+    await creationFrames.read();
     const created = await data(user.request('/tickets', 'POST', form), 201);
+    try {
+      const abort = AbortSignal.timeout(3500);
+      const frame = await Promise.race([
+        creationFrames.read(),
+        once(abort, 'abort').then(() => { throw new Error('Missing ticket invalidation after creation'); }),
+      ]);
+      assert.match(Buffer.from(frame.value).toString(), /event: tickets/);
+    } finally {
+      await creationFrames.cancel();
+    }
     assert.equal(created.code, '0001');
     assert.equal(created.requesterId, 1);
     assert.equal(created.priority, 'URGENT');
     const attachment = created.attachments[0];
     assert.equal(attachment.name, 'minh-chung.pdf');
     assert.deepEqual(await readFile(join(uploadDir, attachment.id)), pdf);
-    await expectStatus(tech.request('/tickets/' + created.id + '/attachments/' + attachment.id), 404);
     const path = '/tickets/' + created.id;
+    assert.ok((await data(admin.request('/notifications'))).some(item => item.ticketId === created.id && item.type === 'TICKET_CREATED'));
+    assert.ok((await data(tech.request('/notifications'))).some(item => item.ticketId === created.id && item.type === 'TICKET_CREATED'));
+    assert.equal((await data(tech.request(path))).id, created.id);
+    await expectStatus(tech.request(path + '/comments', 'POST', { body: 'Chưa được giao.' }), 403);
     await expectStatus(user.request(path, 'PATCH', { version: created.version, assigneeId: 2 }), 422);
     await expectStatus(user.request(path + '/assignee', 'PUT', { version: created.version, assigneeId: 2 }), 403);
     await expectStatus(admin.request(path + '/assignee', 'PUT', { version: created.version, assigneeId: 5 }), 422);
     const edited = await data(user.request(path, 'PATCH', { title: 'Máy in báo lỗi', version: created.version }));
     assert.equal(edited.title, 'Máy in báo lỗi');
     assert.equal((await data(user.request(path + '/history'))).at(-1).type, 'CONTENT_CHANGED');
+    await expectStatus(admin.request(path, 'PATCH', { title: 'Không đổi hộ', version: edited.version }), 403);
+    await expectStatus(tech.request(path, 'PATCH', { title: 'Không đổi hộ', version: edited.version }), 403);
+    await connection.execute('UPDATE tickets SET created_at = UTC_TIMESTAMP(3) - INTERVAL 11 MINUTE WHERE id = ?', [created.id]);
+    const expired = await expectStatus(user.request(path, 'PATCH', { title: 'Đã hết giờ', version: edited.version }), 403);
+    assert.equal((await expired.json()).error.code, 'TICKET_EDIT_EXPIRED');
     const stream = await expectStatus(tech.request('/notifications/stream', 'GET', undefined, { Accept: 'text/event-stream' }), 200);
     assert.match(stream.headers.get('content-type'), /text\/event-stream/);
     const frames = stream.body.getReader();
@@ -194,15 +219,16 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
         frames.read(),
         once(deadline, 'abort').then(() => { throw new Error('Missing notification after assignment'); }),
       ]);
-      assert.match(Buffer.from(change.value).toString(), /event: inbox/);
+      assert.match(Buffer.from(change.value).toString(), /event: (inbox|tickets)/);
       assert.ok((await data(tech.request('/notifications'))).some(item => item.ticketId === created.id && item.type === 'ASSIGNEE_CHANGED'));
     } finally {
       await frames.cancel();
     }
     const attachmentResponse = await expectStatus(tech.request(path + '/attachments/' + attachment.id), 200);
     assert.deepEqual(Buffer.from(await attachmentResponse.arrayBuffer()), pdf);
-    await expectStatus(user.request(path, 'PATCH', { version: assigned.version, priority: 'LOW' }), 403);
-    const priorityEdit = await data(tech.request(path, 'PATCH', { version: assigned.version, priority: 'HIGH' }));
+    await expectStatus(user.request(path, 'PATCH', { version: assigned.version, priority: 'LOW' }), 422);
+    await expectStatus(tech.request(path + '/priority', 'PUT', { version: assigned.version, priority: 'HIGH' }), 403);
+    const priorityEdit = await data(admin.request(path + '/priority', 'PUT', { version: assigned.version, priority: 'HIGH' }));
     assert.equal(priorityEdit.priority, 'HIGH');
     const progress = await data(tech.request(path + '/transitions', 'POST', { version: priorityEdit.version, toStatus: 'IN_PROGRESS' }));
     const { deliverStatusMail } = await import('../src/modules/notifications/outgoing-mail.js');
@@ -228,15 +254,17 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     assert.equal(response.ticketUpdate.status, 'IN_PROGRESS');
     const resumed = await data(tech.request(path));
     assert.equal(resumed.version, pending.version + 1);
-    await expectStatus(tech.request(path + '/transitions', 'POST', { version: pending.version, toStatus: 'RESOLVED', note: 'Cũ' }), 409);
-    const firstResolution = await data(tech.request(path + '/transitions', 'POST', { version: resumed.version, toStatus: 'RESOLVED', note: 'Đã sửa lần đầu.' }));
+    await expectStatus(tech.request(path + '/transitions', 'POST', { version: pending.version, toStatus: 'RESOLVED', cause: 'Lỗi in', note: 'Cũ' }), 409);
+    await expectStatus(tech.request(path + '/transitions', 'POST', { version: resumed.version, toStatus: 'RESOLVED', note: 'Thiếu nguyên nhân' }), 422);
+    const firstResolution = await data(tech.request(path + '/transitions', 'POST', { version: resumed.version, toStatus: 'RESOLVED', cause: 'Lỗi in', note: 'Đã sửa lần đầu.' }));
     assert.ok(Date.parse(firstResolution.chatExpiresAt) > Date.now());
-    const reopened = await data(user.request(path + '/transitions', 'POST', { version: firstResolution.version, toStatus: 'IN_PROGRESS' }));
+    await expectStatus(user.request(path + '/transitions', 'POST', { version: firstResolution.version, toStatus: 'IN_PROGRESS' }), 422);
+    const reopened = await data(user.request(path + '/transitions', 'POST', { version: firstResolution.version, toStatus: 'IN_PROGRESS', note: 'Máy vẫn báo lỗi.' }));
     assert.equal(reopened.chatExpiresAt, null);
     const [[timestamps]] = await connection.execute('SELECT resolved_at FROM tickets WHERE id = ?', [created.id]);
     assert.equal(timestamps.resolved_at, null);
-    const resolved = await data(tech.request(path + '/transitions', 'POST', { version: reopened.version, toStatus: 'RESOLVED', note: 'Đã sửa.' }));
-    assert.equal(resolved.history.at(-1).note, 'Đã sửa.');
+    const resolved = await data(tech.request(path + '/transitions', 'POST', { version: reopened.version, toStatus: 'RESOLVED', cause: 'Kẹt giấy', note: 'Đã sửa.' }));
+    assert.match(resolved.history.at(-1).note, /Kẹt giấy.*\n.*Đã sửa\./);
     assert.equal((await data(user.request(path + '/history'))).at(-1).actorName, 'Kỹ thuật viên mẫu');
     const close = { version: resolved.version, toStatus: 'CLOSED' };
     await expectStatus(admin.request(path + '/transitions', 'POST', close), 403);
@@ -344,6 +372,14 @@ test('MySQL enforces organization roles, sessions and ticket workflows', {
     assert.equal((await data(user.request(servicePath))).firstResponseAt, null);
     const reply = await data(tech.request(servicePath + '/comments', 'POST', { body: 'Đã nhận yêu cầu.' }), 201);
     assert.equal((await data(user.request(servicePath))).firstResponseAt, reply.createdAt);
+    const previous = await data(tech.request(servicePath));
+    const technicians = await data(tech.request(servicePath + '/assignee'));
+    assert.ok(technicians.some(item => item.id === 5));
+    await expectStatus(user.request(servicePath + '/assignee', 'PUT', { version: previous.version, assigneeId: 5 }), 403);
+    const transferred = await data(tech.request(servicePath + '/assignee', 'PUT', { version: previous.version, assigneeId: 5 }));
+    assert.equal(transferred.assigneeId, 5);
+    await expectStatus(tech.request(servicePath), 404);
+    await data(admin.request(servicePath + '/assignee', 'PUT', { version: transferred.version, assigneeId: 2 }));
     await data(admin.request(slaPath, 'PUT', { ...policy, enabled: false }));
 
     const jobs = () => data(admin.request('/backups'));

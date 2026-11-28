@@ -35,6 +35,9 @@
     <span class="badge">{{ 'unread_count' | t: { count: inbox.unread().length } }}</span>
   </div>
   <div class="portal-choices">
+    <button type="button" class="secondary" (click)="inbox.refresh()">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+    </button>
     <button
       type="button"
       class="secondary"
@@ -72,6 +75,7 @@
           <div>
             @if (item.ticketId) {
               <a
+                class="notification-open"
                 [routerLink]="['/tickets', item.ticketId, item.assigned ? 'edit' : 'view']"
                 [queryParams]="inbox.ticketQuery(item)"
                 (click)="inbox.markRead([item.id])"

@@ -23,9 +23,14 @@ export class Onboarding {
   fullName = '';
   email = '';
   password = '';
+  confirmPassword = '';
 
   submit() {
     if (this.busy()) return;
+    if (this.mode() === 'register' && this.password !== this.confirmPassword) {
+      this.error.set('password_mismatch');
+      return;
+    }
     this.busy.set(true);
     this.error.set('');
     const activation = this.mode() === 'activate';
@@ -42,6 +47,7 @@ export class Onboarding {
       .subscribe({
         next: () => {
           this.password = '';
+          this.confirmPassword = '';
           this.completed.set(true);
         },
         error: (error) => this.error.set(errorKey(error, 'sign_in_unavailable')),

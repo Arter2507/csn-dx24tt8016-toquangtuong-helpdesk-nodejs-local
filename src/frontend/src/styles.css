@@ -33,7 +33,7 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: only light;
   --ds-bg: #f4f7fb;
   --ds-surface: #fff;
   --ds-surface-soft: #eaf0f6;
@@ -68,7 +68,7 @@
   --ds-shadow-primary: 0 6px 16px rgb(59 101 146 / 0.2);
 }
 :root[data-theme='dark'] {
-  color-scheme: dark;
+  color-scheme: only dark;
   --ds-scroll-thumb: #8499ad;
   --ds-select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%23a8cbef' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.6'/%3E%3C/svg%3E");
   --ds-bg: #2b2f34;
@@ -1446,6 +1446,10 @@ td {
   object-fit: contain;
   filter: drop-shadow(0 2px 2px rgb(24 50 78 / 0.22));
 }
+.brand-mark > .bi {
+  color: var(--ds-primary);
+  font-size: 1.4rem;
+}
 .brand-wordmark {
   display: grid;
   gap: 3px;
@@ -2132,6 +2136,9 @@ app-selection-summary {
   inline-size: 100%;
   padding: clamp(1.5rem, 3vw, 2.5rem);
 }
+.login-panel.panel {
+  inline-size: min(100%, 36rem);
+}
 
 .login-scene {
   display: grid;
@@ -2139,8 +2146,8 @@ app-selection-summary {
   min-block-size: 100dvh;
   padding: clamp(1rem, 4vw, 4rem);
   background:
-    linear-gradient(120deg, rgb(16 35 62 / 70%), rgb(28 55 88 / 45%)),
-    url('/mascot/it-support-workbench.webp') center / cover no-repeat;
+    linear-gradient(120deg, rgb(16 35 62 / 26%), rgb(28 55 88 / 10%)),
+    url('/mascot/login-sky.jpg') center / cover no-repeat;
 }
 
 .login-composition {
@@ -2161,20 +2168,20 @@ app-root:has(.login-composition),
 }
 
 .login-art {
-  position: relative;
-  background: var(--ds-primary-soft);
-  container-type: size;
-  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: #edf6ff;
+  background: radial-gradient(circle at 34% 30%, #447dac, #173c60 66%, #102841);
 }
-.login-art::before {
-  content: '';
-  position: absolute;
-  inset-block-start: 50%;
-  inset-inline-start: 50%;
-  transform: translate(-50%, -50%);
-  inline-size: max(100cqw, calc(100cqh * 482 / 700));
-  aspect-ratio: 482 / 700;
-  background: #fcf7ef url('/mascot/it-support-sketch.png') 1.39% 14.44% / 368.05% auto no-repeat;
+.login-art > .bi {
+  display: grid;
+  place-items: center;
+  inline-size: 1.9em;
+  aspect-ratio: 1;
+  border: 1px solid rgb(231 244 255 / 44%);
+  border-radius: 50%;
+  background: rgb(225 239 255 / 12%);
+  font-size: clamp(3.5rem, 6vw, 6rem);
 }
 
 @media (max-width: 670px) {
@@ -2970,6 +2977,28 @@ app-root:has(.login-composition),
 .notification-toast .muted {
   font-size: 0.75rem;
 }
+
+:is(.notification-preview-list li, .portal-updates li, .notification-toast):has(
+  .notification-open
+) {
+  position: relative;
+}
+.notification-open::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+:is(.notification-preview-list li, .portal-updates li, .notification-toast):has(.notification-open)
+  button {
+  position: relative;
+  z-index: 1;
+}
+
+.ticket-code {
+  color: var(--ds-primary);
+  font-weight: 750;
+  white-space: nowrap;
+}
 .notification-account {
   max-width: 20rem;
   margin-block-end: 0.75rem;
@@ -3159,6 +3188,29 @@ app-root:has(.login-composition),
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
+}
+.task-column[data-status='TODO'] {
+  background: color-mix(in srgb, var(--ds-surface), #f5a9c5 21%);
+  border-color: color-mix(in srgb, var(--ds-border), #d37c9d 48%);
+}
+.task-column[data-status='DOING'] {
+  background: color-mix(in srgb, var(--ds-surface), #92c1f9 24%);
+  border-color: color-mix(in srgb, var(--ds-border), #6c9bd4 48%);
+}
+.task-column[data-status='DONE'] {
+  background: color-mix(in srgb, var(--ds-surface), #92d2ac 24%);
+  border-color: color-mix(in srgb, var(--ds-border), #77b391 48%);
+}
+.dispatch-board {
+  grid-template-columns: repeat(4, minmax(13rem, 1fr));
+  overflow-x: auto;
+  padding-block-end: 0.5rem;
+}
+.dispatch-card {
+  display: grid;
+  gap: 0.3rem;
+  inline-size: 100%;
+  text-align: start;
 }
 .task-column.drag-over {
   outline: 2px dashed var(--ds-primary);

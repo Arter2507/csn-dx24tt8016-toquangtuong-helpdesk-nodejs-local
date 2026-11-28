@@ -8,6 +8,9 @@
           <p class="muted">{{ 'organization_help' | t }}</p>
         </div>
         <div class="iam-actions">
+          <button type="button" class="secondary" [disabled]="busy()" (click)="load()">
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+          </button>
           @if (session.hasRole('OWNER') ? organization() : null; as org) {
             <button
               class="secondary"

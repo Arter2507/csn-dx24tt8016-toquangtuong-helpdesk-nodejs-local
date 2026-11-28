@@ -19,6 +19,7 @@ export interface Account {
   id: number;
   fullName: string;
   email: string;
+  username?: string | null;
   roleCodes: string[];
   isActive: boolean;
   role: 'OWNER' | 'ADMIN' | 'TECHNICIAN' | 'USER' | null;
@@ -78,9 +79,9 @@ export class Session {
     }));
   }
 
-  login(email: string, password: string) {
+  login(identifier: string, password: string) {
     return this.http
-      .post<ApiResponse<Account>>('/api/v1/auth/login', { email, password })
+      .post<ApiResponse<Account>>('/api/v1/auth/login', { identifier, password })
       .pipe(tap(({ data }) => this.account.set(data)));
   }
 

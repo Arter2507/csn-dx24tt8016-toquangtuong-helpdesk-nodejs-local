@@ -4,6 +4,9 @@
     <p>{{ 'admin_track_incoming_requests_assignments_and_progress' | t }}</p>
   </div>
   <div class="heading-actions">
+    <button type="button" class="secondary" (click)="load()">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>{{ 'refresh_data' | t }}
+    </button>
     <a class="primary" routerLink="/tickets/new"
       ><i class="bi bi-plus-lg" aria-hidden="true"></i> {{ 'new_request' | t }}</a
     >
@@ -22,7 +25,7 @@
           <h2>{{ 'hello' | t }}</h2>
           <p>{{ 'admin_welcome_description' | t }}</p>
         </div>
-        <img src="mascot/it-support-mark.webp" width="320" height="320" alt="" />
+        <span class="brand-mark"><i class="bi bi-headset" aria-hidden="true"></i></span>
       </section>
       <helpdesk-stat-cards [tickets]="rows" />
     </div>
@@ -99,7 +102,7 @@
               @for (row of recent(); track row.id) {
                 <tr>
                   <td>
-                    <a class="badge" [routerLink]="['/tickets', row.id, 'edit']">{{
+                    <a class="ticket-code" [routerLink]="['/tickets', row.id, 'view']">{{
                       ticketReference(row)
                     }}</a>
                   </td>

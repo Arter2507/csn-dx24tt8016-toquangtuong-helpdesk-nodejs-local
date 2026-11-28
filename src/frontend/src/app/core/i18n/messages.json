@@ -1,4 +1,76 @@
 {
+  "login_identifier": {
+    "vi": "Email hoặc tên đăng nhập",
+    "en": "Email or username"
+  },
+  "username": {
+    "vi": "Tên đăng nhập",
+    "en": "Username"
+  },
+  "username_help": {
+    "vi": "Từ 3 đến 32 ký tự. Dùng chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang.",
+    "en": "Use 3–32 letters, numbers, dots, underscores, or hyphens."
+  },
+  "api_USERNAME_TAKEN": {
+    "vi": "Tên đăng nhập này đã được sử dụng.",
+    "en": "This username is already in use."
+  },
+  "repeat_password": {
+    "vi": "Nhập lại mật khẩu",
+    "en": "Confirm password"
+  },
+  "password_mismatch": {
+    "vi": "Hai mật khẩu chưa khớp.",
+    "en": "The passwords do not match."
+  },
+  "refresh_data": {
+    "vi": "Tải lại dữ liệu",
+    "en": "Refresh data"
+  },
+  "ticket_edit_window": {
+    "vi": "Bạn có thể sửa nội dung trong 10 phút kể từ lúc tạo phiếu.",
+    "en": "You can edit the content for 10 minutes after submitting the ticket."
+  },
+  "api_TICKET_EDIT_EXPIRED": {
+    "vi": "Đã hết 10 phút chỉnh sửa phiếu. Bạn có thể bổ sung thông tin qua phần trao đổi.",
+    "en": "The 10-minute edit window has ended. You can add information in the conversation."
+  },
+  "ticket_submitted": {
+    "vi": "Đã tạo phiếu thành công",
+    "en": "Ticket submitted"
+  },
+  "notification_ticket_created": {
+    "vi": "Có phiếu hỗ trợ mới",
+    "en": "New support ticket"
+  },
+  "ticket_transfer": {
+    "vi": "Chuyển người phụ trách",
+    "en": "Transfer ticket"
+  },
+  "ticket_transferred": {
+    "vi": "Đã chuyển phiếu cho người phụ trách mới.",
+    "en": "The ticket has been transferred."
+  },
+  "ticket_update_priority": {
+    "vi": "Điều chỉnh mức ưu tiên",
+    "en": "Change priority"
+  },
+  "ticket_cause": {
+    "vi": "Nguyên nhân",
+    "en": "Cause"
+  },
+  "ticket_reopen_reason": {
+    "vi": "Lý do yêu cầu xử lý lại",
+    "en": "Reason for reopening"
+  },
+  "tasks_dispatch": {
+    "vi": "Bảng điều phối phiếu",
+    "en": "Ticket dispatch"
+  },
+  "dispatch_assigned": {
+    "vi": "Đã phân công",
+    "en": "Assigned"
+  },
   "knowledge": {
     "vi": "Kho hướng dẫn",
     "en": "Knowledge base"
@@ -760,8 +832,8 @@
     "en": "Create an account"
   },
   "register_help": {
-    "vi": "Tạo tài khoản Trạm Mèo để quản trị viên có thể thêm bạn vào tổ chức.",
-    "en": "Create a Trạm Mèo account so an administrator can add you to the organization."
+    "vi": "Tạo tài khoản Trạm Hỗ Trợ để quản trị viên có thể thêm bạn vào tổ chức.",
+    "en": "Create a Trạm Hỗ Trợ account so an administrator can add you to the organization."
   },
   "registration_complete": {
     "vi": "Đã tạo tài khoản. Hãy đăng nhập để xem trạng thái truy cập.",
@@ -1480,12 +1552,12 @@
     "en": "Skip to content"
   },
   "tr_m_m_o": {
-    "vi": "Trạm Mèo",
-    "en": "Trạm Mèo"
+    "vi": "Trạm Hỗ Trợ",
+    "en": "Trạm Hỗ Trợ"
   },
   "tech_trouble_m_o_can_help": {
-    "vi": "Có sự cố, có Mèo.",
-    "en": "Tech trouble? Mèo can help."
+    "vi": "Tiếp nhận hỗ trợ yêu cầu kỹ thuật",
+    "en": "Technical support request desk"
   },
   "quick_request_search": {
     "vi": "Tìm nhanh yêu cầu",
@@ -1768,32 +1840,32 @@
     "en": "No requests were created today."
   },
   "overview_tr_m_m_o": {
-    "vi": "Tổng quan · Trạm Mèo",
-    "en": "Overview · Trạm Mèo"
+    "vi": "Tổng quan · Trạm Hỗ Trợ",
+    "en": "Overview · Trạm Hỗ Trợ"
   },
   "technician_tr_m_m_o": {
-    "vi": "Chuyên viên kỹ thuật · Trạm Mèo",
-    "en": "Technician · Trạm Mèo"
+    "vi": "Chuyên viên kỹ thuật · Trạm Hỗ Trợ",
+    "en": "Technician · Trạm Hỗ Trợ"
   },
   "requester_workspace": {
     "vi": "Không gian người dùng",
     "en": "My requests"
   },
   "requester_workspace_tr_m_m_o": {
-    "vi": "Không gian người dùng · Trạm Mèo",
-    "en": "Requester workspace · Trạm Mèo"
+    "vi": "Không gian người dùng · Trạm Hỗ Trợ",
+    "en": "Requester workspace · Trạm Hỗ Trợ"
   },
   "request_details_tr_m_m_o": {
-    "vi": "Chi tiết yêu cầu · Trạm Mèo",
-    "en": "Request details · Trạm Mèo"
+    "vi": "Chi tiết yêu cầu · Trạm Hỗ Trợ",
+    "en": "Request details · Trạm Hỗ Trợ"
   },
   "categories_tr_m_m_o": {
-    "vi": "Danh mục · Trạm Mèo",
-    "en": "Categories · Trạm Mèo"
+    "vi": "Danh mục · Trạm Hỗ Trợ",
+    "en": "Categories · Trạm Hỗ Trợ"
   },
   "reports_insights_tr_m_m_o": {
-    "vi": "Báo cáo & thống kê · Trạm Mèo",
-    "en": "Reports & insights · Trạm Mèo"
+    "vi": "Báo cáo & thống kê · Trạm Hỗ Trợ",
+    "en": "Reports & insights · Trạm Hỗ Trợ"
   },
   "backups": {
     "vi": "Sao lưu dữ liệu",
@@ -2104,8 +2176,8 @@
     "en": "This feature is currently available in the demo only."
   },
   "browser_title": {
-    "vi": "{page} · Trạm Mèo",
-    "en": "{page} · Trạm Mèo"
+    "vi": "{page} · Trạm Hỗ Trợ",
+    "en": "{page} · Trạm Hỗ Trợ"
   },
   "language": {
     "vi": "Ngôn ngữ",
@@ -2124,8 +2196,8 @@
     "en": "View and update the details you use to get support."
   },
   "settings_intro": {
-    "vi": "Chọn cách Trạm Mèo hiển thị trên trình duyệt này.",
-    "en": "Choose how Trạm Mèo looks and feels in this browser."
+    "vi": "Chọn cách Trạm Hỗ Trợ hiển thị trên trình duyệt này.",
+    "en": "Choose how Trạm Hỗ Trợ looks and feels in this browser."
   },
   "notifications_intro": {
     "vi": "Xem cập nhật mới nhất về yêu cầu bạn gửi hoặc được giao.",
@@ -2368,8 +2440,8 @@
     "en": "Sign out"
   },
   "sign_in_help": {
-    "vi": "Dùng tài khoản Trạm Mèo của bạn để tiếp tục.",
-    "en": "Use your Trạm Mèo account to continue."
+    "vi": "Dùng tài khoản Trạm Hỗ Trợ của bạn để tiếp tục.",
+    "en": "Use your Trạm Hỗ Trợ account to continue."
   },
   "sign_in_unavailable": {
     "vi": "Chưa kết nối được máy chủ đăng nhập.",
@@ -2504,8 +2576,8 @@
     "en": "The ZIP includes workspace data, history, and attachments. Passwords and sign-in sessions are excluded."
   },
   "backup_schedule_help": {
-    "vi": "Lịch chạy khi bạn đăng nhập và đang mở Trạm Mèo. Khi đến hạn trong lúc vắng mặt, bản sao sẽ được tạo ở lần mở tiếp theo.",
-    "en": "The schedule runs while you are signed in with Trạm Mèo open. A missed backup runs the next time you open the site."
+    "vi": "Lịch chạy khi bạn đăng nhập và đang mở Trạm Hỗ Trợ. Khi đến hạn trong lúc vắng mặt, bản sao sẽ được tạo ở lần mở tiếp theo.",
+    "en": "The schedule runs while you are signed in with Trạm Hỗ Trợ open. A missed backup runs the next time you open the site."
   },
   "backup_enable_auto": {
     "vi": "Bật sao lưu tự động",
