@@ -2129,14 +2129,29 @@ app-selection-summary {
   gap: 14px;
   align-content: center;
   justify-self: center;
-  inline-size: min(100%, 36rem);
-  padding: clamp(1.5rem, 5vw, 4rem);
+  inline-size: 100%;
+  padding: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.login-scene {
+  display: grid;
+  place-items: center;
+  min-block-size: 100dvh;
+  padding: clamp(1rem, 4vw, 4rem);
+  background:
+    linear-gradient(120deg, rgb(16 35 62 / 70%), rgb(28 55 88 / 45%)),
+    url('/mascot/it-support-workbench.webp') center / cover no-repeat;
 }
 
 .login-composition {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  min-block-size: 100dvh;
+  inline-size: min(100%, 54rem);
+  min-block-size: 32rem;
+  border: 1px solid var(--ds-border);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgb(7 23 43 / 28%);
   background: var(--ds-surface);
 }
 
@@ -2168,7 +2183,11 @@ app-root:has(.login-composition),
     grid-template-rows: auto 1fr;
   }
   .login-art {
-    block-size: min(28dvh, 12rem);
+    display: none;
+  }
+  .login-composition {
+    min-block-size: auto;
+    max-inline-size: 28rem;
   }
 }
 
@@ -2984,7 +3003,7 @@ app-root:has(.login-composition),
   app-root {
     padding-inline: clamp(1rem, 1.35vw, 2.75rem);
   }
-  .layout:not(.collapsed) {
+  .layout:not(.collapsed):not(.auth-layout) {
     grid-template-columns: clamp(196px, 12vw, 280px) minmax(0, 1fr);
   }
 }

@@ -7,67 +7,69 @@ import { Session } from '../../core/auth/session';
 @Component({
   imports: [FormsModule, Translate, RouterLink],
   template: `
-    <div class="login-composition page-content-enter">
-      <div class="login-art" aria-hidden="true"></div>
-      <form class="login-panel" (ngSubmit)="login()" #form="ngForm" aria-labelledby="login-title">
-        <div class="login-brand">
-          <span class="brand-mark">
-            <img src="mascot/it-support-mark.webp" alt="" width="40" height="40" />
-          </span>
-          <strong>{{ 'tr_m_m_o' | t }}</strong>
-        </div>
-        <div class="login-heading">
-          <h1 id="login-title">{{ 'sign_in' | t }}</h1>
-          <p class="muted">{{ 'sign_in_help' | t }}</p>
-        </div>
-        @if (sessionFailed()) {
-          <div class="notice error login-connection" role="alert">
-            <span>{{ 'sign_in_unavailable' | t }}</span>
-            <button class="text-button" type="button" (click)="checkSession()">
-              {{ 'try_again' | t }}
-            </button>
+    <div class="login-scene">
+      <div class="login-composition page-content-enter">
+        <div class="login-art" aria-hidden="true"></div>
+        <form class="login-panel" (ngSubmit)="login()" #form="ngForm" aria-labelledby="login-title">
+          <div class="login-brand">
+            <span class="brand-mark">
+              <img src="mascot/it-support-mark.webp" alt="" width="40" height="40" />
+            </span>
+            <strong>{{ 'tr_m_m_o' | t }}</strong>
           </div>
-        } @else if (error()) {
-          <p class="notice error" role="alert">{{ error() | t }}</p>
-        }
-        <div class="field">
-          <label for="login-email">{{ 'email' | t }}</label>
-          <input
-            id="login-email"
-            name="email"
-            type="email"
-            autocomplete="username"
-            required
-            email
-            [(ngModel)]="email"
-          />
-        </div>
-        <div class="field">
-          <label for="login-password">{{ 'password' | t }}</label>
-          <input
-            id="login-password"
-            name="password"
-            type="password"
-            autocomplete="current-password"
-            required
-            [(ngModel)]="password"
-          />
-        </div>
-        <button
-          class="primary"
-          [disabled]="busy() || checkingSession() || sessionFailed() || form.invalid"
-          type="submit"
-        >
-          @if (checkingSession() || busy()) {
-            <span class="activity-spinner" aria-hidden="true"></span>
+          <div class="login-heading">
+            <h1 id="login-title">{{ 'sign_in' | t }}</h1>
+            <p class="muted">{{ 'sign_in_help' | t }}</p>
+          </div>
+          @if (sessionFailed()) {
+            <div class="notice error login-connection" role="alert">
+              <span>{{ 'sign_in_unavailable' | t }}</span>
+              <button class="text-button" type="button" (click)="checkSession()">
+                {{ 'try_again' | t }}
+              </button>
+            </div>
+          } @else if (error()) {
+            <p class="notice error" role="alert">{{ error() | t }}</p>
           }
-          {{ (checkingSession() ? 'checking_sign_in' : busy() ? 'signing_in' : 'sign_in') | t }}
-        </button>
-        <div class="iam-actions login-link">
-          <a routerLink="/register" class="text-button">{{ 'register' | t }}</a>
-          <a routerLink="/knowledge" class="text-button">{{ 'knowledge' | t }}</a>
-        </div>
-      </form>
+          <div class="field">
+            <label for="login-email">{{ 'email' | t }}</label>
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              autocomplete="username"
+              required
+              email
+              [(ngModel)]="email"
+            />
+          </div>
+          <div class="field">
+            <label for="login-password">{{ 'password' | t }}</label>
+            <input
+              id="login-password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              [(ngModel)]="password"
+            />
+          </div>
+          <button
+            class="primary"
+            [disabled]="busy() || checkingSession() || sessionFailed() || form.invalid"
+            type="submit"
+          >
+            @if (checkingSession() || busy()) {
+              <span class="activity-spinner" aria-hidden="true"></span>
+            }
+            {{ (checkingSession() ? 'checking_sign_in' : busy() ? 'signing_in' : 'sign_in') | t }}
+          </button>
+          <div class="iam-actions login-link">
+            <a routerLink="/register" class="text-button">{{ 'register' | t }}</a>
+            <a routerLink="/knowledge" class="text-button">{{ 'knowledge' | t }}</a>
+          </div>
+        </form>
+      </div>
     </div>
   `,
 })
