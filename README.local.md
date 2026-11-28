@@ -6,14 +6,16 @@ Website quản lý yêu cầu hỗ trợ kỹ thuật — Tô Quang Tường, DX
 
 ## Hai không gian làm việc
 
-- **Trung tâm hỗ trợ** tại `/help-center` có tìm kiếm hướng dẫn, câu hỏi thường gặp, gửi phiếu, theo dõi yêu cầu của tôi, phản hồi và đánh giá khi đóng phiếu.
-- **Cổng quản lý** tại `/management` có tổng quan quản trị, bàn làm việc kỹ thuật, quản lý phiếu, thư mục theo loại → năm → tháng hoặc theo phòng ban, cùng các trang nghiệp vụ đang có.
-- Tài khoản kỹ thuật và quản trị có thể chuyển cổng từ thanh đầu trang. Hai cổng dùng chung phiên đăng nhập, API và MySQL. Người dùng cuối có thể đổi giao diện từ menu tài khoản, mục **Cài đặt → Giao diện**.
+- **Trung tâm hỗ trợ** mở trực tiếp tại `/`. Khách có thể tìm hướng dẫn và mở câu trả lời FAQ. Sau khi đăng nhập, mục **Yêu cầu hỗ trợ của tôi** hiển thị phiếu cá nhân dưới dạng thẻ, có tìm kiếm, lọc trạng thái và theo dõi tiến độ.
+- **Cổng quản lý** tại `/admin-management` có tổng quan quản trị, bàn làm việc kỹ thuật, bảng quản lý phiếu và thư mục theo loại → năm → tháng hoặc theo phòng ban.
+- Tài khoản kỹ thuật và quản trị có thể chuyển cổng từ thanh đầu trang. Hai cổng dùng chung phiên đăng nhập, API và MySQL. Help Center có nút **Cài đặt** cho cả khách và thành viên. Hồ sơ và thông báo cá nhân có trong menu tài khoản sau khi đăng nhập.
 - Chức năng quên mật khẩu dùng cấu hình email của Docker (`SMTP_HOST`, `SMTP_PORT`, `MAIL_FROM` và thông tin đăng nhập SMTP nếu cần). Liên kết dùng một lần và hết hạn sau 30 phút. Mật khẩu mới thu hồi các phiên cũ.
 
 [Sitemap, quyền và kịch bản kiểm thử v1.3.0](documents/markdown/giao-dien-v1.3.0.md)
 
 [Báo cáo tiến độ local ngày 28/11/2026](progress-report/bao-cao-tien-do-local-2026-11-28.md)
+
+[Cập nhật Help Center ngày 29/11/2026](progress-report/bao-cao-tien-do-local-2026-11-29.md)
 
 ## Cài đặt và khởi động
 

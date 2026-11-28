@@ -15,9 +15,10 @@ import { Session } from '../../core/auth/session';
 import { Translate, errorKey } from '../../core/i18n/i18n';
 import { Article, ArticleForm, KnowledgeService } from './knowledge.service';
 import { Loading } from '../../shared/ui/loading';
+import { HelpArticles } from '../help-center/help-articles';
 
 @Component({
-  imports: [FormsModule, RouterLink, Translate, Loading],
+  imports: [FormsModule, RouterLink, Translate, Loading, HelpArticles],
   templateUrl: './knowledge-page.html',
 })
 export class KnowledgePage implements OnInit {
@@ -42,7 +43,7 @@ export class KnowledgePage implements OnInit {
   categoryId: number | null = null;
 
   get basePath() {
-    return this.publicOnly() ? '/help-center/knowledge' : '/management/knowledge';
+    return this.publicOnly() ? '/help-center/knowledge' : '/admin-management/knowledge';
   }
 
   async ngOnInit() {

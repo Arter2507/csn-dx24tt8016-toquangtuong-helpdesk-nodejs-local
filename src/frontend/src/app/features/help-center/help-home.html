@@ -20,14 +20,13 @@
         </button>
       </form>
     </div>
-    <img src="/mascot/it-support-rest.webp" alt="" />
   </section>
 
   <div class="help-shortcuts">
-    <a class="panel" routerLink="/help-center/tickets/new">
-      <span class="stat-icon"><i class="bi bi-plus-circle" aria-hidden="true"></i></span>
-      <strong>{{ 'new_request' | t }}</strong
-      ><small>{{ 'help_request_hint' | t }}</small>
+    <a class="panel" routerLink="/help-center/knowledge">
+      <span class="stat-icon"><i class="bi bi-book" aria-hidden="true"></i></span>
+      <strong>{{ 'knowledge' | t }}</strong>
+      <small>{{ 'help_home_guides' | t }}</small>
     </a>
     <a class="panel" routerLink="/help-center/tickets">
       <span class="stat-icon"><i class="bi bi-ticket-perforated" aria-hidden="true"></i></span>
@@ -76,7 +75,7 @@
     }
     <section class="panel">
       <div class="section-heading">
-        <h2>{{ 'knowledge' | t }}</h2>
+        <h2>{{ 'help_home_common_guides' | t }}</h2>
         <a class="text-button" routerLink="/help-center/knowledge">{{ 'see_all' | t }}</a>
       </div>
       @if (knowledgeFailed()) {
@@ -85,18 +84,7 @@
           {{ 'try_again' | t }}
         </button>
       } @else if (articles(); as rows) {
-        <ul class="portal-updates">
-          @for (article of rows; track article.id) {
-            <li>
-              <div>
-                <a [routerLink]="['/help-center/knowledge', article.id]">{{ article.title }}</a>
-                <p class="muted">{{ article.excerpt }}</p>
-              </div>
-            </li>
-          } @empty {
-            <li>{{ 'no_matching_results' | t }}</li>
-          }
-        </ul>
+        <app-help-articles [articles]="rows" />
       } @else {
         <app-loading />
       }

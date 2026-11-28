@@ -96,26 +96,30 @@
         </select>
       </label>
     </div>
-    <ul class="portal-updates">
-      @for (article of rows(); track article.id) {
-        <li>
-          <div>
-            <a [routerLink]="[basePath, article.id]">{{ article.title }}</a>
-            <p class="muted">
-              {{ article.category }}
-              @if (article.visibility === 'INTERNAL') {
-                · {{ 'knowledge_internal' | t }}
-              }
-            </p>
-            <p>{{ article.excerpt }}</p>
-          </div>
-        </li>
-      } @empty {
-        @if (!loading() && !error()) {
-          <li>{{ 'no_matching_results' | t }}</li>
+    @if (crumb() === 'frequently_asked' && !loading() && !error()) {
+      <app-help-articles [articles]="rows()" />
+    } @else if (crumb() !== 'frequently_asked') {
+      <ul class="portal-updates">
+        @for (article of rows(); track article.id) {
+          <li>
+            <div>
+              <a [routerLink]="[basePath, article.id]">{{ article.title }}</a>
+              <p class="muted">
+                {{ article.category }}
+                @if (article.visibility === 'INTERNAL') {
+                  · {{ 'knowledge_internal' | t }}
+                }
+              </p>
+              <p>{{ article.excerpt }}</p>
+            </div>
+          </li>
+        } @empty {
+          @if (!loading() && !error()) {
+            <li>{{ 'no_matching_results' | t }}</li>
+          }
         }
-      }
-    </ul>
+      </ul>
+    }
     @if (more()) {
       <button type="button" class="secondary" [disabled]="loading()" (click)="next()">
         {{ 'knowledge_more' | t }}

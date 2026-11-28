@@ -47,7 +47,7 @@
         <i class="bi bi-search" aria-hidden="true"></i>
       </button>
     </form>
-    <a class="secondary portal-switch" routerLink="/help-center"
+    <a class="secondary portal-switch" routerLink="/"
       ><i class="bi bi-life-preserver" aria-hidden="true"></i>{{ 'help_center' | t }}</a
     >
     <ng-container *ngTemplateOutlet="accountControls" />
@@ -55,11 +55,18 @@
 } @else if (showHelp) {
   <header class="help-topbar">
     <div class="help-topbar-inner">
-      <a class="brand" routerLink="/help-center">
+      <a class="brand" routerLink="/">
         <span class="brand-mark"><i class="bi bi-headset" aria-hidden="true"></i></span>
         <span>{{ 'tr_m_m_o' | t }}</span>
       </a>
       <nav [attr.aria-label]="'main_navigation' | t">
+        <a
+          routerLink="/"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          ariaCurrentWhenActive="page"
+          >{{ 'help_home_nav' | t }}</a
+        >
         <a
           routerLink="/help-center/knowledge"
           routerLinkActive="active"
@@ -79,6 +86,17 @@
         }
       </nav>
       <div class="help-header-actions">
+        <a class="primary help-submit" routerLink="/help-center/tickets/new">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>{{ 'new_request' | t }}
+        </a>
+        <a
+          class="icon-button help-settings-link"
+          routerLink="/help-center/settings"
+          [attr.aria-label]="'settings' | t"
+          [title]="'settings' | t"
+        >
+          <i class="bi bi-gear" aria-hidden="true"></i>
+        </a>
         @if (staffAccess() && (session.account()?.organizationId || session.mode() === 'demo')) {
           <a class="secondary portal-switch" [routerLink]="session.home">
             <i class="bi bi-grid" aria-hidden="true"></i>{{ 'management_portal' | t }}

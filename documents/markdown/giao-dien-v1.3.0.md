@@ -6,16 +6,16 @@
 
 | Không gian | Đường dẫn | Nội dung |
 | --- | --- | --- |
-| Trung tâm hỗ trợ | `/help-center` | Tìm bài hướng dẫn, mở FAQ, gửi yêu cầu và xem các phiếu mới nhất do mình gửi. |
-| Yêu cầu của tôi | `/help-center/tickets` | Danh sách cá nhân, tạo phiếu tại `/new`, xem chi tiết tại `/:id/view`. Nội dung chi tiết có tiến độ, trò chuyện, xác nhận xử lý hoặc yêu cầu xử lý lại. |
+| Trung tâm hỗ trợ | `/` | Tra cứu hướng dẫn, mở câu trả lời thường gặp, gửi yêu cầu và xem phiếu gần đây sau khi đăng nhập. |
+| Yêu cầu của tôi | `/help-center/tickets` | Thẻ phiếu cá nhân có tìm kiếm, lọc trạng thái và phân trang. Tạo phiếu tại `/new`, xem chi tiết tại `/:id/view`. |
 | Hỗ trợ tự phục vụ | `/help-center/knowledge`, `/help-center/faq` | Khách truy cập và thành viên tra cứu bài công khai cùng nguồn dữ liệu. |
 | Tài khoản cá nhân | `/help-center/profile`, `/help-center/notifications`, `/help-center/settings` | Hồ sơ, thông báo cá nhân và tùy chọn. |
-| Cổng quản lý | `/management`, `/management/dashboard/technician` | Owner và Admin có tổng quan điều phối. Kỹ thuật viên có phiếu được giao, lịch tuần, ghi chú và liên kết tới công việc. |
-| Nghiệp vụ quản lý | `/management/tickets`, `/management/tickets/folders`, `/management/tasks`, `/management/knowledge` | Bảng phiếu, thư mục, nhiệm vụ và kho kiến thức theo quyền. |
-| Quản trị | `/management/users`, `/management/categories`, `/management/reports`, `/management/backup`, `/management/settings` | Nhân sự, cơ cấu và danh mục, báo cáo, sao lưu và phục hồi, cấu hình hệ thống. |
+| Cổng quản lý | `/admin-management`, `/admin-management/dashboard/technician` | Owner và Admin có tổng quan điều phối. Kỹ thuật viên có phiếu được giao, lịch tuần, ghi chú và liên kết tới công việc. |
+| Nghiệp vụ quản lý | `/admin-management/tickets`, `/admin-management/tickets/folders`, `/admin-management/tasks`, `/admin-management/knowledge` | Bảng phiếu, thư mục, nhiệm vụ và kho kiến thức theo quyền. |
+| Quản trị | `/admin-management/users`, `/admin-management/categories`, `/admin-management/reports`, `/admin-management/backup`, `/admin-management/settings` | Nhân sự, cơ cấu và danh mục, báo cáo, sao lưu và phục hồi, cấu hình hệ thống. |
 | Xác thực | `/login`, `/register`, `/activate`, `/forgot-password`, `/reset-password` | Xác thực dùng chung. Tài khoản chưa thuộc tổ chức được chuyển đến màn hình chờ khi mở trang nghiệp vụ. |
 
-Các đường dẫn cũ tới phiếu, cấu hình và kho hướng dẫn vẫn được điều hướng đến trang tương ứng. Hai cổng dùng một bản build Angular, một API Express và một database MySQL.
+Đường dẫn `/help-center` chuyển về `/`. Các đường dẫn cũ dưới `/management` chuyển đến `/admin-management` cùng tham số lọc hiện có. Hai cổng dùng một bản build Angular, một API Express và một database MySQL.
 
 ## Luồng yêu cầu và quyền
 
@@ -37,6 +37,8 @@ Các đường dẫn cũ tới phiếu, cấu hình và kho hướng dẫn vẫn
 | Kịch bản | Kết quả mong đợi |
 | --- | --- |
 | Khách mở Help Center và tìm hướng dẫn | Thấy nội dung công khai. Mở trang gửi phiếu được dẫn đến đăng nhập và quay lại biểu mẫu. |
+| Khách hoặc thành viên mở Cài đặt | Có thể chỉnh giao diện và ngôn ngữ từ Help Center. Hồ sơ và thông báo cá nhân dùng phiên đăng nhập. |
+| Thành viên tìm hoặc lọc yêu cầu của mình | Kết quả hiển thị dưới dạng thẻ, có trạng thái, thời điểm cập nhật và liên kết xem tiến độ. |
 | USER mở cổng quản lý hoặc API thư mục | Giao diện chuyển về Help Center, API trả 403. |
 | Technician chuyển cổng rồi mở yêu cầu của tôi | Giữ nguyên phiên và chỉ thấy phiếu do mình gửi trong Help Center. |
 | Duyệt cùng loại qua năm và tháng, hoặc mở phòng ban | Bảng giữ đúng phạm vi từ thư mục. Phiếu đã lưu trữ vắng mặt trong kết quả. |

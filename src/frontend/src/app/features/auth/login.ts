@@ -91,7 +91,8 @@ export class Login {
 
   private destination() {
     const next = this.route.snapshot.queryParamMap.get('next');
-    return next && /^\/(help-center|management)(?:[/?#]|$)/.test(next) ? next : this.session.home;
+    if (this.session.account()?.status === 'UNASSIGNED') return this.session.home;
+    return next && /^\/(help-center|admin-management)(?:[/?#]|$)/.test(next) ? next : '/';
   }
 
   checkSession() {

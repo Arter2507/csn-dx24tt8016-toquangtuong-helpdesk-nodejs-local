@@ -293,7 +293,7 @@ export class Workspace implements OnInit {
     });
   }
   get listPath() {
-    return (this.personal() ? '/help-center/' : '/management/') + this.resource();
+    return (this.personal() ? '/help-center/' : '/admin-management/') + this.resource();
   }
 
   get scope() {

@@ -28,7 +28,7 @@ export class SettingsPage implements OnInit {
   readonly settingsTab = signal<'general' | 'numbering' | 'theme'>('general');
 
   get base() {
-    return this.personal() ? '/help-center' : '/management';
+    return this.personal() ? '/help-center' : '/admin-management';
   }
 
   ngOnInit() {
@@ -41,7 +41,12 @@ export class SettingsPage implements OnInit {
           : 'general',
       );
     });
-    if (!this.session.account()) this.load();
+    void this.session
+      .initialize()
+      .then(() => {
+        if (!this.destroy.destroyed && this.session.mode() === 'demo') this.load();
+      })
+      .catch(() => undefined);
   }
 
   load() {

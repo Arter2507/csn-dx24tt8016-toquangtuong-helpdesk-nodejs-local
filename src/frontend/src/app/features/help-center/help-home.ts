@@ -9,9 +9,10 @@ import { WorkspaceService } from '../../shared/data/workspace.service';
 import { Row } from '../../shared/data/workspace.types';
 import { Preferences } from '../../core/preferences/preferences';
 import { Loading } from '../../shared/ui/loading';
+import { HelpArticles } from './help-articles';
 
 @Component({
-  imports: [RouterLink, Translate, Loading],
+  imports: [RouterLink, Translate, Loading, HelpArticles],
   templateUrl: './help-home.html',
 })
 export class HelpHome implements OnInit {

@@ -1,9 +1,5 @@
 <header class="page-heading portal-heading">
   <div>
-    <span class="role-kicker"
-      ><i class="bi bi-gear" aria-hidden="true"></i
-      >{{ (session.account() ? 'workspace' : 'demo_workspace') | t }}</span
-    >
     <h1>{{ 'settings' | t }}</h1>
     <p>{{ 'settings_intro' | t }}</p>
   </div>
@@ -99,38 +95,42 @@
             {{ 'toast_notifications_setting' | t }}
           </label>
           <p class="muted">{{ 'toast_notifications_description' | t }}</p>
-          <a class="text-button" [routerLink]="base + '/notifications'">{{
-            'view_all_notifications' | t
-          }}</a>
-        </section>
-        <section class="panel portal-card">
-          <h2>
-            <i class="bi bi-person" aria-hidden="true"></i
-            >{{ (session.account() ? 'account_information' : 'demo_account') | t }}
-          </h2>
-          @if (!session.account()) {
-            <p class="muted">{{ 'account_preference' | t }}</p>
-            @if (users(); as rows) {
-              <label class="field"
-                ><span>{{ 'default_account' | t }}</span>
-                <select
-                  [ngModel]="preferences.account()"
-                  (ngModelChange)="preferences.account.set($event)"
-                >
-                  @for (user of rows; track user.id) {
-                    <option [ngValue]="user.id">{{ i18n.personKey(user) | t }}</option>
-                  }
-                </select>
-              </label>
-            }
-          }
-          <div class="portal-choices">
-            <a class="text-button" [routerLink]="base + '/profile'">{{ 'profile' | t }}</a>
+          @if (session.account()?.organizationId || session.mode() === 'demo') {
             <a class="text-button" [routerLink]="base + '/notifications'">{{
-              'notifications' | t
+              'view_all_notifications' | t
             }}</a>
-          </div>
+          }
         </section>
+        @if (session.account()?.organizationId || session.mode() === 'demo') {
+          <section class="panel portal-card">
+            <h2>
+              <i class="bi bi-person" aria-hidden="true"></i
+              >{{ (session.account() ? 'account_information' : 'demo_account') | t }}
+            </h2>
+            @if (!session.account()) {
+              <p class="muted">{{ 'account_preference' | t }}</p>
+              @if (users(); as rows) {
+                <label class="field"
+                  ><span>{{ 'default_account' | t }}</span>
+                  <select
+                    [ngModel]="preferences.account()"
+                    (ngModelChange)="preferences.account.set($event)"
+                  >
+                    @for (user of rows; track user.id) {
+                      <option [ngValue]="user.id">{{ i18n.personKey(user) | t }}</option>
+                    }
+                  </select>
+                </label>
+              }
+            }
+            <div class="portal-choices">
+              <a class="text-button" [routerLink]="base + '/profile'">{{ 'profile' | t }}</a>
+              <a class="text-button" [routerLink]="base + '/notifications'">{{
+                'notifications' | t
+              }}</a>
+            </div>
+          </section>
+        }
       </div>
     }
   </div>

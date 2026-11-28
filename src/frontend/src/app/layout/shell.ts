@@ -32,7 +32,9 @@ export class Shell {
   readonly preferences = inject(Preferences);
   readonly session = inject(Session);
   readonly portal = signal<'help' | 'management' | null>(null);
-  readonly portalBase = computed(() => (this.portal() === 'help' ? '/help-center' : '/management'));
+  readonly portalBase = computed(() =>
+    this.portal() === 'help' ? '/help-center' : '/admin-management',
+  );
   readonly staffAccess = computed(() =>
     ['ADMIN', 'TECHNICIAN'].some((role) => this.session.allows(role)),
   );
@@ -53,22 +55,26 @@ export class Shell {
     {
       label: 'workspace',
       links: [
-        { path: '/management', label: 'overview', icon: 'bi-grid-1x2' },
-        { path: '/management/dashboard/technician', label: 'technician', icon: 'bi-tools' },
-        { path: '/management/tickets/folders', label: 'ticket_folders', icon: 'bi-folder2' },
-        { path: '/management/tickets', label: 'support_requests', icon: 'bi-ticket-perforated' },
-        { path: '/management/knowledge', label: 'knowledge', icon: 'bi-book' },
-        { path: '/management/tasks', label: 'team_tasks', icon: 'bi-kanban' },
-        { path: '/management/notifications', label: 'notifications', icon: 'bi-bell' },
+        { path: '/admin-management', label: 'overview', icon: 'bi-grid-1x2' },
+        { path: '/admin-management/dashboard/technician', label: 'technician', icon: 'bi-tools' },
+        { path: '/admin-management/tickets/folders', label: 'ticket_folders', icon: 'bi-folder2' },
+        {
+          path: '/admin-management/tickets',
+          label: 'support_requests',
+          icon: 'bi-ticket-perforated',
+        },
+        { path: '/admin-management/knowledge', label: 'knowledge', icon: 'bi-book' },
+        { path: '/admin-management/tasks', label: 'team_tasks', icon: 'bi-kanban' },
+        { path: '/admin-management/notifications', label: 'notifications', icon: 'bi-bell' },
       ],
     },
     {
       label: 'administration',
       links: [
-        { path: '/management/categories', label: 'categories', icon: 'bi-tags' },
-        { path: '/management/reports', label: 'reports', icon: 'bi-bar-chart' },
-        { path: '/management/backup', label: 'backups_2', icon: 'bi-database' },
-        { path: '/management/settings', label: 'settings', icon: 'bi-gear' },
+        { path: '/admin-management/categories', label: 'categories', icon: 'bi-tags' },
+        { path: '/admin-management/reports', label: 'reports', icon: 'bi-bar-chart' },
+        { path: '/admin-management/backup', label: 'backups_2', icon: 'bi-database' },
+        { path: '/admin-management/settings', label: 'settings', icon: 'bi-gear' },
       ],
     },
   ];
@@ -84,7 +90,7 @@ export class Shell {
       const route = this.router.routerState.snapshot.root.firstChild;
       const portal = route?.data['portal'];
       this.portal.set(portal === 'help' || portal === 'management' ? portal : null);
-      const base = portal === 'help' ? '/help-center' : '/management';
+      const base = portal === 'help' ? '/help-center' : '/admin-management';
       if (path !== this.currentPath()) {
         this.currentPath.set(path);
         this.content()?.nativeElement.scrollTo(0, 0);
@@ -143,21 +149,23 @@ export class Shell {
   }
 
   visibleLink(path: string) {
-    if (path === '/management/backup') return this.session.allows('OWNER');
-    if (path === '/management/tasks')
+    if (path === '/admin-management/backup') return this.session.allows('OWNER');
+    if (path === '/admin-management/tasks')
       return this.session.allows('ADMIN') || this.session.allows('TECHNICIAN');
-    if (path === '/management/dashboard/technician') return this.session.allows('TECHNICIAN');
-    if (path === '/management/knowledge') return this.session.mode() === 'mysql';
+    if (path === '/admin-management/dashboard/technician') return this.session.allows('TECHNICIAN');
+    if (path === '/admin-management/knowledge') return this.session.mode() === 'mysql';
     return (
-      !['/management', '/management/categories', '/management/reports'].includes(path) ||
-      this.session.allows('ADMIN')
+      !['/admin-management', '/admin-management/categories', '/admin-management/reports'].includes(
+        path,
+      ) || this.session.allows('ADMIN')
     );
   }
 
   activeLink(link: string) {
     const path = this.currentPath();
-    if (link === '/management/tickets' && path === '/management/tickets/folders') return false;
-    return path === link || (link !== '/management' && path.startsWith(link + '/'));
+    if (link === '/admin-management/tickets' && path === '/admin-management/tickets/folders')
+      return false;
+    return path === link || (link !== '/admin-management' && path.startsWith(link + '/'));
   }
 
   search(value: string) {
@@ -172,6 +180,6 @@ export class Shell {
     for (const key of ['assigneeId', 'requesterId']) {
       if (route?.queryParamMap.has(key)) queryParams[key] = route.queryParamMap.get(key);
     }
-    void this.router.navigate(['/management/tickets'], { queryParams });
+    void this.router.navigate(['/admin-management/tickets'], { queryParams });
   }
 }

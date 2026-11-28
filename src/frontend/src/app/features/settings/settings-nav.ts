@@ -29,13 +29,13 @@ import { Session } from '../../core/auth/session';
       }
       @if (!personal && session.hasRole('ADMIN')) {
         <a
-          routerLink="/management/settings/organizations"
+          routerLink="/admin-management/settings/organizations"
           [attr.aria-current]="active() === 'organization' ? 'page' : null"
         >
           <i class="bi bi-diagram-3" aria-hidden="true"></i>{{ 'organization' | t }}
         </a>
         <a
-          routerLink="/management/settings/sla"
+          routerLink="/admin-management/settings/sla"
           [attr.aria-current]="active() === 'sla' ? 'page' : null"
         >
           <i class="bi bi-clock-history" aria-hidden="true"></i>{{ 'sla_settings' | t }}
@@ -48,5 +48,5 @@ export class SettingsNav {
   readonly active = input.required<'general' | 'numbering' | 'organization' | 'sla' | 'theme'>();
   readonly session = inject(Session);
   readonly personal = inject(ActivatedRoute).snapshot.data['portal'] === 'help';
-  readonly settingsPath = this.personal ? '/help-center/settings' : '/management/settings';
+  readonly settingsPath = this.personal ? '/help-center/settings' : '/admin-management/settings';
 }

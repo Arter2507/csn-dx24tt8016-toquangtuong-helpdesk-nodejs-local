@@ -50,10 +50,10 @@ export class Session {
   get home() {
     if (this.account()?.status === 'UNASSIGNED') return '/pending-assignment';
     return this.allows('ADMIN')
-      ? '/management'
+      ? '/admin-management'
       : this.hasRole('TECHNICIAN')
-        ? '/management/dashboard/technician'
-        : '/help-center';
+        ? '/admin-management/dashboard/technician'
+        : '/';
   }
 
   initialize() {
@@ -97,7 +97,12 @@ export class Session {
   }
 
   logout() {
-    return this.http.post<void>('/api/v1/auth/logout', {}).pipe(tap(() => this.expired()));
+    return this.http.post<void>('/api/v1/auth/logout', {}).pipe(
+      tap(() => {
+        this.expired(false);
+        void this.router.navigateByUrl('/');
+      }),
+    );
   }
 
   expired(redirect = true) {

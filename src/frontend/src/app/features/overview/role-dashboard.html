@@ -364,7 +364,11 @@
       @for (row of rows; track row.id) {
         <li>
           <a
-            [routerLink]="[own ? '/help-center/tickets' : '/management/tickets', row.id, 'view']"
+            [routerLink]="[
+              own ? '/help-center/tickets' : '/admin-management/tickets',
+              row.id,
+              'view',
+            ]"
             [queryParams]="own ? { requesterId: account() } : scope()"
           >
             <span class="ticket-reference">{{ ticketReference(row) }}</span>

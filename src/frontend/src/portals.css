@@ -116,6 +116,9 @@ app-root:has(.management-layout) > .topbar::after {
   align-items: center;
   gap: 0.65rem;
 }
+.help-header-actions .help-settings-link {
+  min-inline-size: 38px;
+}
 .help-topbar nav a {
   color: var(--ds-text-muted);
   text-decoration: none;
@@ -134,14 +137,12 @@ app-root:has(.management-layout) > .topbar::after {
   padding: 1.2rem clamp(0.75rem, 2.4vw, 1.8rem) 1.5rem;
 }
 .help-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(130px, 230px);
-  align-items: center;
-  gap: 1.2rem;
-  background: linear-gradient(110deg, var(--ds-primary-soft), transparent 82%), var(--ds-surface);
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 5%, var(--ds-primary-soft), transparent 72%), var(--ds-surface);
   border: 1px solid var(--ds-border);
   border-radius: 1.5rem;
-  padding: clamp(1rem, 3vw, 2.4rem);
+  padding: clamp(2rem, 6vw, 5rem) clamp(0.8rem, 3vw, 2.4rem) clamp(2rem, 4vw, 3.25rem);
 }
 .help-hero h1 {
   font-size: clamp(1.8rem, 4vw, 3.15rem);
@@ -151,15 +152,25 @@ app-root:has(.management-layout) > .topbar::after {
   color: var(--ds-text-muted);
   margin: 0 0 1.1rem;
 }
-.help-hero img {
-  width: 100%;
-  max-height: 160px;
-  object-fit: contain;
-}
 .help-search {
   display: flex;
   gap: 0.5rem;
   max-inline-size: 38rem;
+  margin: 1.35rem auto 0;
+  padding: 0.35rem;
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-pill);
+  background: var(--ds-surface);
+  box-shadow: var(--ds-shadow-card);
+}
+.help-search input[type='search'] {
+  min-inline-size: 0;
+  border: 0;
+  border-radius: var(--ds-radius-pill);
+  background: transparent;
+}
+.help-search button {
+  flex-shrink: 0;
 }
 .help-shortcuts,
 .help-columns {
@@ -176,20 +187,110 @@ app-root:has(.management-layout) > .topbar::after {
 }
 .help-shortcuts a {
   display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 0.15rem 0.7rem;
+  justify-items: center;
+  align-content: start;
+  gap: 0.45rem;
+  text-align: center;
+  padding: 1.15rem;
   color: var(--ds-text);
   text-decoration: none;
 }
 .help-shortcuts a:hover {
   border-color: var(--ds-primary);
 }
-.help-shortcuts .stat-icon {
-  grid-row: span 2;
-}
 .help-shortcuts small {
   color: var(--ds-text-muted);
+}
+.help-articles {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0;
+  list-style: none;
+}
+.help-articles details {
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-input);
+  background: var(--ds-surface);
+}
+.help-articles summary,
+.help-article-answer {
+  padding: 0.75rem;
+}
+.help-articles summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  list-style: none;
+  cursor: pointer;
+  font-weight: 650;
+}
+.help-articles summary::-webkit-details-marker {
+  display: none;
+}
+.help-articles details[open] summary {
+  border-block-end: 1px solid var(--ds-border);
+}
+.help-articles details[open] summary i {
+  transform: rotate(180deg);
+}
+.help-article-answer p {
+  margin-block: 0 0.65rem;
+}
+.request-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+  margin-block-end: 0.9rem;
+}
+.request-filters .field:first-child {
+  flex: 1 1 16rem;
+}
+.request-filters .field {
+  min-inline-size: min(10rem, 100%);
+}
+.request-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  gap: 0.85rem;
+}
+.request-card {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 0.65rem;
+  min-width: 0;
+}
+.request-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.86rem;
+}
+.request-card h2 {
+  font-size: 1.12rem;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.request-card h2 a {
+  color: var(--ds-text);
+}
+.request-card-excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.request-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+}
+.request-pagination {
+  justify-content: center;
+  margin-block-start: 1rem;
 }
 .ticket-folders {
   display: grid;
@@ -302,12 +403,11 @@ app-root:has(.management-layout) > .topbar::after {
     font-size: 0.88rem;
   }
   .help-shortcuts,
-  .help-hero,
   .admin-summary,
   .technician-overview {
     grid-template-columns: minmax(0, 1fr);
   }
-  .help-hero img {
-    display: none;
+  .help-header-actions {
+    margin-inline-start: 0;
   }
 }

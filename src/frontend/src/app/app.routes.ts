@@ -157,7 +157,16 @@ const helpAccountPages: Routes = managementPages
       route.data?.['resource'] === 'tickets' ||
       ['notifications', 'profile', 'settings'].includes(route.path ?? ''),
   )
-  .map((route) => ({ ...route, data: { ...route.data, personal: true } }));
+  .map((route) => ({
+    ...route,
+    ...(route.path === 'tickets'
+      ? {
+          loadComponent: () =>
+            import('./features/help-center/my-requests').then((module) => module.MyRequests),
+        }
+      : {}),
+    data: { ...route.data, personal: true },
+  }));
 
 const legacyPortal: CanActivateFn = async (_, state) => {
   const session = inject(Session);
@@ -168,13 +177,13 @@ const legacyPortal: CanActivateFn = async (_, state) => {
     return router.parseUrl('/login');
   }
   return router.parseUrl(
-    (staff.some((role) => session.allows(role)) ? '/management' : '/help-center') + state.url,
+    (staff.some((role) => session.allows(role)) ? '/admin-management' : '/help-center') + state.url,
   );
 };
 
-function legacyRedirect(base: string): RedirectFunction {
+function legacyRedirect(base: string, skip = 0): RedirectFunction {
   return ({ url, queryParams, fragment }) =>
-    inject(Router).createUrlTree([base, ...url.map((segment) => segment.path)], {
+    inject(Router).createUrlTree([base, ...url.slice(skip).map((segment) => segment.path)], {
       queryParams,
       fragment: fragment ?? undefined,
     });
@@ -182,15 +191,15 @@ function legacyRedirect(base: string): RedirectFunction {
 
 const managementRoutes: Routes = managementPages.map((route) => ({
   ...route,
-  path: route.path ? 'management/' + route.path : 'management',
+  path: route.path ? 'admin-management/' + route.path : 'admin-management',
   canActivate: [requireSession],
   data: { access: staff, ...route.data, portal: 'management' },
 }));
 
 const helpRoutes: Routes = [...helpPages, ...helpAccountPages].map((route) => ({
   ...route,
-  path: route.path ? 'help-center/' + route.path : 'help-center',
-  canActivate: route.data?.['personal'] ? [requireSession] : undefined,
+  path: route.path ? 'help-center/' + route.path : '',
+  canActivate: route.data?.['personal'] && route.path !== 'settings' ? [requireSession] : undefined,
   data: { ...route.data, portal: 'help' },
 }));
 
@@ -227,8 +236,16 @@ export const routes: Routes = [
   },
   ...helpRoutes,
   ...managementRoutes,
-  { path: '', pathMatch: 'full', redirectTo: 'help-center' },
-  { path: 'dashboard/user', redirectTo: 'help-center' },
+  { path: 'help-center', pathMatch: 'full', redirectTo: '/' },
+  { path: 'dashboard/user', redirectTo: '/' },
+  { path: 'management', pathMatch: 'full', redirectTo: '/admin-management' },
+  ...managementPages
+    .filter((route) => route.path)
+    .map((route) => ({
+      path: 'management/' + route.path,
+      pathMatch: 'full' as const,
+      redirectTo: legacyRedirect('/admin-management', 1),
+    })),
   ...['knowledge', 'knowledge/:id'].map((path) => ({
     path,
     pathMatch: 'full' as const,
@@ -242,7 +259,7 @@ export const routes: Routes = [
         : {
             path: route.path,
             pathMatch: 'full' as const,
-            redirectTo: legacyRedirect('/management'),
+            redirectTo: legacyRedirect('/admin-management'),
           },
     ),
   {

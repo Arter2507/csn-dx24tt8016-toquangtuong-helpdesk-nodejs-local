@@ -28,8 +28,8 @@ export class TicketFolders implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly destroy = inject(DestroyRef);
   private readonly i18n = inject(I18n);
-  readonly directory = '/management/tickets/folders';
-  readonly tickets = '/management/tickets';
+  readonly directory = '/admin-management/tickets/folders';
+  readonly tickets = '/admin-management/tickets';
   readonly byUnit = computed(() => this.by() === 'unit');
   readonly categoryRows = computed(() =>
     (this.rows() ?? []).filter((row) => row.categoryId === Number(this.category())),

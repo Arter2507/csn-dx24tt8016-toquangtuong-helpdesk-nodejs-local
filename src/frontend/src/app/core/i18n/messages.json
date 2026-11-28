@@ -3058,5 +3058,21 @@
   "confirm_password": {
     "vi": "Nhập lại mật khẩu",
     "en": "Confirm password"
+  },
+  "help_home_nav": {
+    "vi": "Trang chủ",
+    "en": "Home"
+  },
+  "help_home_guides": {
+    "vi": "Tìm cách khắc phục theo chủ đề.",
+    "en": "Find troubleshooting guides by topic."
+  },
+  "help_home_common_guides": {
+    "vi": "Hướng dẫn thường dùng",
+    "en": "Common guides"
+  },
+  "help_open_guide": {
+    "vi": "Mở bài hướng dẫn",
+    "en": "Open full guide"
   }
 }

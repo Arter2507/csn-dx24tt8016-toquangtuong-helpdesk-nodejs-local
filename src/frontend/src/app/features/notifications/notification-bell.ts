@@ -11,7 +11,7 @@ import { Preferences } from '../../core/preferences/preferences';
   templateUrl: './notification-bell.html',
 })
 export class NotificationBell {
-  readonly basePath = input('/management');
+  readonly basePath = input('/admin-management');
   readonly inbox = inject(Notifications);
   private readonly preferences = inject(Preferences);
   readonly open = signal(false);
